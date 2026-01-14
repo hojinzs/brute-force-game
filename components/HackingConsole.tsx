@@ -1,25 +1,44 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import {
+  type CharsetType,
+  filterAllowedChars,
+  createPasswordSchema,
+  formatCharsetDisplay,
+} from "@/lib/charset";
 
 type HackingConsoleProps = {
   length: number;
+  charset: CharsetType[];
   disabled: boolean;
   onSubmit: (value: string) => void;
 };
 
 export function HackingConsole({
   length,
+  charset,
   disabled,
   onSubmit,
 }: HackingConsoleProps) {
   const [value, setValue] = useState("");
   const [isShaking, setIsShaking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const passwordSchema = createPasswordSchema(charset, length);
 
   const handleSubmit = useCallback(() => {
     if (disabled) return;
 
-    if (value.length !== length) {
+    // Clear previous error
+    setError(null);
+
+    // Validate with Zod
+    const result = passwordSchema.safeParse(value);
+
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || "Invalid password";
+      setError(errorMessage);
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 400);
       return;
@@ -27,7 +46,7 @@ export function HackingConsole({
 
     onSubmit(value);
     setValue("");
-  }, [value, length, disabled, onSubmit]);
+  }, [value, passwordSchema, disabled, onSubmit]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -37,8 +56,14 @@ export function HackingConsole({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    if (newValue.length <= length) {
-      setValue(newValue);
+
+    // Filter only allowed characters
+    const filteredValue = filterAllowedChars(newValue, charset);
+
+    // Only update if within length limit
+    if (filteredValue.length <= length) {
+      setValue(filteredValue);
+      setError(null); // Clear error when user types
     }
   };
 
@@ -84,9 +109,19 @@ export function HackingConsole({
           CRACK
         </button>
       </div>
-      <p className="text-slate-500 text-xs mt-2">
-        Password length: exactly {length} characters
-      </p>
+      <div className="mt-2 space-y-1">
+        <p className="text-slate-500 text-xs">
+          Password length: exactly {length} characters
+        </p>
+        <p className="text-slate-500 text-xs">
+          Allowed characters: {formatCharsetDisplay(charset)}
+        </p>
+        {error && (
+          <p className="text-red-400 text-xs font-medium animate-pulse">
+            ⚠ {error}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

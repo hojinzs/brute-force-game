@@ -216,6 +216,7 @@ function GameContent() {
 
             <HackingConsole
               length={passwordLength}
+              charset={config.charset}
               disabled={
                 !user ||
                 currentCP <= 0 ||
