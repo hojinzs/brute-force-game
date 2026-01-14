@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Brute Force AI
+
+Global multiplayer password-cracking game where all users compete to crack the same AI-generated password.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ & pnpm
+- Docker Desktop
+- Supabase CLI (`brew install supabase/tap/supabase`)
+
+### 1. Start Local Supabase
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+supabase start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This will start all Supabase services in Docker:
+- **Studio**: http://127.0.0.1:54323
+- **API**: http://127.0.0.1:54321
+- **Database**: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Credentials will be displayed after startup. Copy the keys to `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon_key_from_supabase_start>
+SUPABASE_SERVICE_ROLE_KEY=<service_role_key_from_supabase_start>
+```
 
-## Learn More
+### 2. Install Dependencies
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Run Development Server
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+```
 
-## Deploy on Vercel
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Development Workflow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Database Management
+
+```bash
+supabase db reset          # Reset database (deletes all data)
+supabase db push           # Apply migrations
+supabase migration new     # Create new migration
+```
+
+### Edge Functions
+
+```bash
+supabase functions serve check-answer    # Test function locally
+```
+
+Test with curl:
+```bash
+curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/check-answer' \
+  --header 'Authorization: Bearer <your_jwt_token>' \
+  --header 'Content-Type: application/json' \
+  --data '{"inputValue":"123456","blockId":1}'
+```
+
+### Testing
+
+```bash
+pnpm test                  # Run all tests
+pnpm test:watch            # Watch mode
+pnpm test:coverage         # Coverage report
+```
+
+### CLI Tools
+
+Test similarity algorithm:
+```bash
+npx tsx supabase/functions/_shared/cli/test-similarity.ts "input" "answer"
+```
+
+## Project Structure
+
+```
+brute-force/
+├── app/                   # Next.js App Router
+├── docs/                  # Product specs, design guide
+├── supabase/
+│   ├── functions/         # Edge Functions
+│   │   ├── check-answer/  # Password verification
+│   │   └── _shared/       # Shared utilities & tests
+│   └── migrations/        # Database migrations
+└── public/                # Static assets
+```
+
+## Tech Stack
+
+- **Frontend**: Next.js 16, Tailwind CSS v4, Motion (Framer Motion)
+- **Backend**: Supabase (Edge Functions, Realtime, Auth, PostgreSQL)
+- **State**: TanStack Query, Supabase Client SDK
+- **Testing**: Jest, ts-jest
+- **AI**: ChatGPT 4.1 mini
+
+## Commands
+
+```bash
+pnpm dev              # Start dev server
+pnpm build            # Production build
+pnpm lint             # ESLint check
+pnpm test             # Run tests
+
+supabase start        # Start Supabase stack
+supabase stop         # Stop Supabase stack
+supabase status       # Show service status
+```
+
+## Documentation
+
+See `docs/` for detailed specifications:
+- `PRODUCT_REQUIREMENTS_DOCUMENT.md` - Full PRD (Korean)
+- `TECHNICAL_REQUIREMENTS_DOCUMENTS.md` - DB schema, Edge Functions
+- `DESIGN_CONCEPTS.md` - Design tokens, colors, typography
+- `SYSTEM_POLICIES.md` - Race conditions, abuse prevention
+- `AGENT_GUIDELINES.md` - Quick reference for development
+
+## License
+
+MIT
