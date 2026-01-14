@@ -159,12 +159,6 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     
-    console.log("=== Request Debug ===");
-    console.log("Method:", req.method);
-    console.log("URL:", req.url);
-    console.log("Headers:", Object.fromEntries(req.headers.entries()));
-    console.log("Authorization header:", authHeader ? `${authHeader.substring(0, 30)}...` : "MISSING");
-    
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
@@ -173,8 +167,6 @@ Deno.serve(async (req) => {
     }
 
     const { seedHint, previousBlockId, isGenesis }: RequestBody = await req.json();
-    
-    console.log("Request body:", { seedHint, previousBlockId, isGenesis });
 
     if (seedHint && seedHint.length > 200) {
       return new Response(
