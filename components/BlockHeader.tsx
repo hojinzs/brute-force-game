@@ -6,7 +6,7 @@ import { type CharsetType, CHARSET_LABELS } from "@/lib/charset";
 type BlockHeaderProps = {
   blockId: number;
   seedHint: string | null;
-  status: "active" | "pending" | "completed";
+  status: "active" | "pending" | "processing" | "solved";
   length?: number;
   charset?: CharsetType[];
 };

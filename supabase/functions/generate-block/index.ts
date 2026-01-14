@@ -188,13 +188,20 @@ Deno.serve(async (req) => {
 
     const { seedHint, previousBlockId }: RequestBody = await req.json();
 
+    if (seedHint && seedHint.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Hint must be 200 characters or less" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     let difficultyConfig: DifficultyConfig = getDefaultDifficulty();
-    const finalSeedHint = seedHint || "random password";
+    const finalSeedHint = seedHint || "System Generated";
 
     if (previousBlockId) {
       const { data: previousBlock } = await supabaseAdmin
@@ -203,17 +210,44 @@ Deno.serve(async (req) => {
         .eq("id", previousBlockId)
         .single();
 
-      if (previousBlock) {
-        if (previousBlock.status === "pending" && previousBlock.winner_id !== user.id) {
-          return new Response(
-            JSON.stringify({ error: "Only the winner can generate the next block" }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+      if (!previousBlock) {
+        return new Response(
+          JSON.stringify({ error: "Previous block not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
-        if (previousBlock.difficulty_config) {
-          difficultyConfig = previousBlock.difficulty_config as DifficultyConfig;
-        }
+      if (previousBlock.status !== "pending") {
+        return new Response(
+          JSON.stringify({ error: "Previous block is not in pending status" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (previousBlock.winner_id && previousBlock.winner_id !== user.id && seedHint !== "System Generated") {
+        return new Response(
+          JSON.stringify({ error: "Only the winner can generate the next block" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: updatedBlock, error: updateError } = await supabaseAdmin
+        .from("blocks")
+        .update({ status: "processing" })
+        .eq("id", previousBlockId)
+        .eq("status", "pending")
+        .select()
+        .single();
+
+      if (updateError || !updatedBlock) {
+        return new Response(
+          JSON.stringify({ error: "Block is already being processed by another request" }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (previousBlock.difficulty_config) {
+        difficultyConfig = previousBlock.difficulty_config as DifficultyConfig;
       }
     }
 
@@ -245,7 +279,7 @@ Deno.serve(async (req) => {
     if (previousBlockId) {
       await supabaseAdmin
         .from("blocks")
-        .update({ status: "completed" })
+        .update({ status: "solved" })
         .eq("id", previousBlockId);
     }
 

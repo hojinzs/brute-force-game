@@ -4,23 +4,42 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase, type Block, type Attempt, type AttemptWithNickname } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-export function useActiveBlock() {
+export function useCurrentBlock() {
   return useQuery({
-    queryKey: ["activeBlock"],
-    queryFn: async (): Promise<Block | null> => {
+    queryKey: ["currentBlock"],
+    queryFn: async (): Promise<(Block & { winner_nickname?: string }) | null> => {
       const { data, error } = await supabase
         .from("blocks_public")
         .select("*")
-        .eq("status", "active")
-        .single();
+        .order("id", { ascending: false })
+        .limit(1);
 
       if (error) {
-        if (error.code === "PGRST116") return null;
         throw error;
       }
-      return data;
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      const block = data[0];
+
+      if (block.winner_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("nickname")
+          .eq("id", block.winner_id)
+          .single();
+
+        return {
+          ...block,
+          winner_nickname: profile?.nickname || "Anonymous",
+        };
+      }
+
+      return block;
     },
-    refetchInterval: 30000,
+    refetchInterval: 5000,
   });
 }
 
@@ -168,8 +187,53 @@ export function useCheckAnswer() {
       queryClient.invalidateQueries({ queryKey: ["currentCP"] });
 
       if (data.correct) {
-        queryClient.invalidateQueries({ queryKey: ["activeBlock"] });
+        queryClient.invalidateQueries({ queryKey: ["currentBlock"] });
       }
+    },
+  });
+}
+
+export function useGenerateBlock() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      seedHint,
+      previousBlockId,
+    }: {
+      seedHint: string;
+      previousBlockId: number;
+    }) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-block`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            seedHint,
+            previousBlockId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate block");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["currentBlock"] });
     },
   });
 }

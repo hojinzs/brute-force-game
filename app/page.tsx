@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { BlockHeader } from "@/components/BlockHeader";
 import { CPGauge } from "@/components/CPGauge";
 import { HackingConsole } from "@/components/HackingConsole";
@@ -9,24 +9,28 @@ import { TopAttempts } from "@/components/TopAttempts";
 import { AuthGuard } from "@/components/AuthGuard";
 import { VictoryOverlay } from "@/components/VictoryOverlay";
 import { GenesisBlockForm } from "@/components/GenesisBlockForm";
+import { WinnerHintForm } from "@/components/WinnerHintForm";
+import { PendingBlockOverlay } from "@/components/PendingBlockOverlay";
 import {
-  useActiveBlock,
+  useCurrentBlock,
   useAttempts,
   useAuth,
   useCurrentCP,
   useCheckAnswer,
   useBlockSubscription,
+  useGenerateBlock,
 } from "@/hooks/useGame";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { supabase } from "@/lib/supabase";
 
 function GameContent() {
   const { user } = useAuth();
-  const { data: activeBlock, isLoading: blockLoading, refetch: refetchBlock } = useActiveBlock();
+  const { data: currentBlock, isLoading: blockLoading, refetch: refetchBlock } = useCurrentBlock();
   const { data: currentCP = 0 } = useCurrentCP(user?.id);
-  const { attempts, newAttemptId } = useAttempts(activeBlock?.id);
-  const onlineCount = useOnlineUsers(activeBlock?.id);
+  const { attempts, newAttemptId } = useAttempts(currentBlock?.id);
+  const onlineCount = useOnlineUsers(currentBlock?.id);
   const checkAnswer = useCheckAnswer();
+  const generateBlock = useGenerateBlock();
   const [showVictory, setShowVictory] = useState(false);
   const [victoryInfo, setVictoryInfo] = useState<{ blockId: number; winnerNickname: string } | null>(null);
 
@@ -56,14 +60,36 @@ function GameContent() {
     }, [refetchBlock])
   );
 
+  useEffect(() => {
+    if (currentBlock?.status === "pending" && currentBlock.solved_at && !generateBlock.isPending) {
+      const solvedTime = new Date(currentBlock.solved_at).getTime();
+      const checkTimeout = () => {
+        const now = Date.now();
+        const elapsed = Math.floor((now - solvedTime) / 1000);
+        
+        if (elapsed >= 180 && currentBlock.status === "pending" && !generateBlock.isPending) {
+          generateBlock.mutate({
+            seedHint: "System Generated",
+            previousBlockId: currentBlock.id,
+          });
+        }
+      };
+
+      const interval = setInterval(checkTimeout, 1000);
+      checkTimeout();
+
+      return () => clearInterval(interval);
+    }
+  }, [currentBlock?.id, currentBlock?.status, currentBlock?.solved_at, generateBlock]);
+
   const handleSubmit = useCallback(
     async (value: string) => {
-      if (!activeBlock || currentCP <= 0) return;
+      if (!currentBlock || currentBlock.status !== "active" || currentCP <= 0) return;
 
       try {
         const result = await checkAnswer.mutateAsync({
           inputValue: value,
-          blockId: activeBlock.id,
+          blockId: currentBlock.id,
         });
 
         if (result.correct) {
@@ -74,7 +100,7 @@ function GameContent() {
             .single();
 
           setVictoryInfo({
-            blockId: activeBlock.id,
+            blockId: currentBlock.id,
             winnerNickname: profile?.nickname || "You",
           });
           setShowVictory(true);
@@ -90,7 +116,19 @@ function GameContent() {
         }
       }
     },
-    [activeBlock, currentCP, checkAnswer, user]
+    [currentBlock, currentCP, checkAnswer, user]
+  );
+
+  const handleHintSubmit = useCallback(
+    async (hint: string) => {
+      if (!currentBlock) return;
+      
+      await generateBlock.mutateAsync({
+        seedHint: hint,
+        previousBlockId: currentBlock.id,
+      });
+    },
+    [currentBlock, generateBlock]
   );
 
   if (blockLoading) {
@@ -103,11 +141,47 @@ function GameContent() {
     );
   }
 
-  if (!activeBlock) {
+  if (!currentBlock) {
     return <GenesisBlockForm onSuccess={() => refetchBlock()} />;
   }
 
-  const config = activeBlock.difficulty_config;
+  if (currentBlock.status === "pending") {
+    const isWinner = user?.id === currentBlock.winner_id;
+    const solvedTime = currentBlock.solved_at ? new Date(currentBlock.solved_at).getTime() : Date.now();
+    const elapsed = Math.floor((Date.now() - solvedTime) / 1000);
+    const isTimeout = elapsed >= 180;
+
+    if (isWinner && !isTimeout && !generateBlock.isPending) {
+      return (
+        <WinnerHintForm
+          blockId={currentBlock.id}
+          solvedAt={currentBlock.solved_at || new Date().toISOString()}
+          onSubmit={handleHintSubmit}
+          isSubmitting={generateBlock.isPending}
+        />
+      );
+    } else {
+      return (
+        <PendingBlockOverlay
+          blockId={currentBlock.id}
+          winnerNickname={currentBlock.winner_nickname || "Anonymous"}
+          solvedAt={currentBlock.solved_at || new Date().toISOString()}
+        />
+      );
+    }
+  }
+
+  if (currentBlock.status === "processing") {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="text-slate-400 text-center">
+          <div className="animate-pulse mb-4">Generating new block...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const config = currentBlock.difficulty_config;
   const passwordLength = config.length;
 
   return (
@@ -131,9 +205,9 @@ function GameContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-6">
             <BlockHeader
-              blockId={activeBlock.id}
-              seedHint={activeBlock.seed_hint}
-              status={activeBlock.status}
+              blockId={currentBlock.id}
+              seedHint={currentBlock.seed_hint}
+              status={currentBlock.status}
               length={passwordLength}
               charset={config.charset}
             />
@@ -145,7 +219,7 @@ function GameContent() {
               disabled={
                 !user ||
                 currentCP <= 0 ||
-                activeBlock.status !== "active" ||
+                currentBlock.status !== "active" ||
                 checkAnswer.isPending
               }
               onSubmit={handleSubmit}
@@ -158,14 +232,6 @@ function GameContent() {
                 </p>
                 <p className="text-red-300/70 text-xs">
                   CP refills at 1 per minute (max 50)
-                </p>
-              </div>
-            )}
-
-            {activeBlock.status === "pending" && (
-              <div className="text-center p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <p className="text-amber-400 text-sm">
-                  Block solved! Waiting for next block...
                 </p>
               </div>
             )}

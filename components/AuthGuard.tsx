@@ -12,24 +12,25 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const initialize = async () => {
       if (user && !loading) {
         try {
-          const { data: existingProfile } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("id", user.id)
-            .single();
+          let retries = 0;
+          const maxRetries = 5;
 
-          if (!existingProfile) {
-            const { error: insertError } = await supabase
+          while (retries < maxRetries) {
+            const { data: existingProfile } = await supabase
               .from("profiles")
-              .insert({
-                id: user.id,
-                nickname: user.email?.split("@")[0] || "User",
-                cp_count: 50,
-                last_cp_refill_at: new Date().toISOString(),
-              });
+              .select("id")
+              .eq("id", user.id)
+              .single();
 
-            if (insertError) {
-              console.error("Failed to create profile:", insertError);
+            if (existingProfile) {
+              break;
+            }
+
+            retries++;
+            if (retries < maxRetries) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            } else {
+              console.warn("Profile not found after retries. Trigger may have failed.");
             }
           }
         } catch (error) {

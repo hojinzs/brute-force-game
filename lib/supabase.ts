@@ -14,7 +14,7 @@ export type DifficultyConfig = {
 
 export type Block = {
   id: number;
-  status: "active" | "pending" | "completed";
+  status: "active" | "pending" | "processing" | "solved";
   seed_hint: string | null;
   difficulty_config: DifficultyConfig;
   winner_id: string | null;
