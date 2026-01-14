@@ -11,6 +11,7 @@ const corsHeaders = {
 interface RequestBody {
   seedHint?: string;
   previousBlockId?: number;
+  isGenesis?: boolean;
 }
 
 interface DifficultyConfig {
@@ -157,6 +158,13 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
+    
+    console.log("=== Request Debug ===");
+    console.log("Method:", req.method);
+    console.log("URL:", req.url);
+    console.log("Headers:", Object.fromEntries(req.headers.entries()));
+    console.log("Authorization header:", authHeader ? `${authHeader.substring(0, 30)}...` : "MISSING");
+    
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
@@ -164,29 +172,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const { seedHint, previousBlockId }: RequestBody = await req.json();
+    const { seedHint, previousBlockId, isGenesis }: RequestBody = await req.json();
+    
+    console.log("Request body:", { seedHint, previousBlockId, isGenesis });
 
     if (seedHint && seedHint.length > 200) {
       return new Response(
@@ -199,6 +187,34 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    let user: { id: string } | null = null;
+
+    if (!isGenesis) {
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        {
+          global: {
+            headers: { Authorization: authHeader },
+          },
+        }
+      );
+
+      const {
+        data: { user: authenticatedUser },
+        error: userError,
+      } = await supabaseClient.auth.getUser();
+
+      if (userError || !authenticatedUser) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      user = authenticatedUser;
+    }
 
     let difficultyConfig: DifficultyConfig = getDefaultDifficulty();
     const finalSeedHint = seedHint || "System Generated";
@@ -224,7 +240,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      if (previousBlock.winner_id && previousBlock.winner_id !== user.id && seedHint !== "System Generated") {
+      if (previousBlock.winner_id && user && previousBlock.winner_id !== user.id && seedHint !== "System Generated") {
         return new Response(
           JSON.stringify({ error: "Only the winner can generate the next block" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }

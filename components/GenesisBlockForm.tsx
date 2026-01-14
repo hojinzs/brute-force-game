@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createGenesisBlock } from "@/app/actions/genesis";
 
 interface GenesisBlockFormProps {
   onSuccess: () => void;
@@ -17,34 +18,7 @@ export function GenesisBlockForm({ onSuccess }: GenesisBlockFormProps) {
     setIsCreating(true);
 
     try {
-      const { data: { session } } = await (await import("@/lib/supabase")).supabase.auth.getSession();
-      
-      if (!session) {
-        setError("Not authenticated");
-        setIsCreating(false);
-        return;
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-block`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            seedHint: seedHint.trim() || "genesis",
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create genesis block");
-      }
-
-      const result = await response.json();
+      const result = await createGenesisBlock(seedHint);
       console.log("Genesis block created:", result);
       
       onSuccess();
