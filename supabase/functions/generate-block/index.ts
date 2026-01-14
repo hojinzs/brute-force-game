@@ -157,24 +157,38 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("=== GENERATE-BLOCK START ===");
+    console.log("Step 0: Checking environment variables");
+    console.log({
+      hasOpenAIKey: !!Deno.env.get("OPENAI_API_KEY"),
+      hasSupabaseUrl: !!Deno.env.get("SUPABASE_URL"),
+      hasServiceRoleKey: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+      hasAnonKey: !!Deno.env.get("SUPABASE_ANON_KEY"),
+    });
+
     const authHeader = req.headers.get("Authorization");
     
     if (!authHeader) {
+      console.error("Step 0 FAILED: Missing auth header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("Step 1: Parsing request body");
     const { seedHint, previousBlockId, isGenesis }: RequestBody = await req.json();
+    console.log({ seedHint, previousBlockId, isGenesis });
 
     if (seedHint && seedHint.length > 200) {
+      console.error("Step 1 FAILED: Seed hint too long");
       return new Response(
         JSON.stringify({ error: "Hint must be 200 characters or less" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("Step 2: Creating Supabase admin client");
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -183,6 +197,7 @@ Deno.serve(async (req) => {
     let user: { id: string } | null = null;
 
     if (!isGenesis) {
+      console.log("Step 3: Authenticating user (non-genesis)");
       const supabaseClient = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -199,6 +214,7 @@ Deno.serve(async (req) => {
       } = await supabaseClient.auth.getUser();
 
       if (userError || !authenticatedUser) {
+        console.error("Step 3 FAILED: Auth error", userError);
         return new Response(
           JSON.stringify({ error: "Unauthorized" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -206,12 +222,17 @@ Deno.serve(async (req) => {
       }
 
       user = authenticatedUser;
+      console.log("Step 3 SUCCESS: User authenticated", { userId: user.id });
+    } else {
+      console.log("Step 3 SKIPPED: Genesis block (no auth required)");
     }
 
     let difficultyConfig: DifficultyConfig = getDefaultDifficulty();
     const finalSeedHint = seedHint || "System Generated";
+    console.log("Step 4: Difficulty config set", { difficultyConfig, finalSeedHint });
 
     if (previousBlockId) {
+      console.log("Step 5: Checking previous block", { previousBlockId });
       const { data: previousBlock } = await supabaseAdmin
         .from("blocks")
         .select("difficulty_config, winner_id, status")
@@ -219,6 +240,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (!previousBlock) {
+        console.error("Step 5 FAILED: Previous block not found");
         return new Response(
           JSON.stringify({ error: "Previous block not found" }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -226,6 +248,7 @@ Deno.serve(async (req) => {
       }
 
       if (previousBlock.status !== "pending") {
+        console.error("Step 5 FAILED: Block status is not pending", { status: previousBlock.status });
         return new Response(
           JSON.stringify({ error: "Previous block is not in pending status" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -233,12 +256,14 @@ Deno.serve(async (req) => {
       }
 
       if (previousBlock.winner_id && user && previousBlock.winner_id !== user.id && seedHint !== "System Generated") {
+        console.error("Step 5 FAILED: Not the winner");
         return new Response(
           JSON.stringify({ error: "Only the winner can generate the next block" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      console.log("Step 6: Updating previous block to processing");
       const { data: updatedBlock, error: updateError } = await supabaseAdmin
         .from("blocks")
         .update({ status: "processing" })
@@ -248,6 +273,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (updateError || !updatedBlock) {
+        console.error("Step 6 FAILED: Block already processing", updateError);
         return new Response(
           JSON.stringify({ error: "Block is already being processed by another request" }),
           { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -257,11 +283,23 @@ Deno.serve(async (req) => {
       if (previousBlock.difficulty_config) {
         difficultyConfig = previousBlock.difficulty_config as DifficultyConfig;
       }
+      console.log("Step 6 SUCCESS: Previous block updated to processing");
+    } else {
+      console.log("Step 5-6 SKIPPED: No previous block");
     }
 
+    console.log("Step 7: Calling ChatGPT API");
     const chatGPTResult = await callChatGPT(finalSeedHint, difficultyConfig);
-    const passwordHash = await hashPassword(chatGPTResult.password);
+    console.log("Step 7 SUCCESS: ChatGPT response received", { 
+      passwordLength: chatGPTResult.password.length,
+      passwordPreview: chatGPTResult.password.substring(0, 3) + "..."
+    });
 
+    console.log("Step 8: Hashing password");
+    const passwordHash = await hashPassword(chatGPTResult.password);
+    console.log("Step 8 SUCCESS: Password hashed");
+
+    console.log("Step 9: Inserting new block into database");
     const { data: newBlock, error: insertError } = await supabaseAdmin
       .from("blocks")
       .insert({
@@ -277,20 +315,31 @@ Deno.serve(async (req) => {
       .single();
 
     if (insertError || !newBlock) {
-      console.error("Failed to insert new block:", insertError);
+      console.error("Step 9 FAILED: Insert error", insertError);
       return new Response(
-        JSON.stringify({ error: "Failed to create new block" }),
+        JSON.stringify({ 
+          error: "Failed to create new block",
+          dbError: insertError?.message,
+          dbCode: insertError?.code,
+          dbDetails: insertError?.details
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    console.log("Step 9 SUCCESS: New block created", { blockId: newBlock.id });
 
     if (previousBlockId) {
+      console.log("Step 10: Marking previous block as solved");
       await supabaseAdmin
         .from("blocks")
         .update({ status: "solved" })
         .eq("id", previousBlockId);
+      console.log("Step 10 SUCCESS: Previous block marked solved");
+    } else {
+      console.log("Step 10 SKIPPED: No previous block");
     }
 
+    console.log("=== GENERATE-BLOCK SUCCESS ===");
     return new Response(
       JSON.stringify({
         success: true,
@@ -300,11 +349,17 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error in generate-block function:", error);
+    console.error("=== GENERATE-BLOCK FATAL ERROR ===");
+    console.error("Error type:", error?.constructor?.name);
+    console.error("Error message:", error instanceof Error ? error.message : "Unknown error");
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    
     return new Response(
       JSON.stringify({ 
         error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error instanceof Error ? error.message : "Unknown error",
+        errorType: error?.constructor?.name || "Unknown",
+        stack: error instanceof Error ? error.stack : undefined
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
