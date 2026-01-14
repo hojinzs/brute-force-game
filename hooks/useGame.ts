@@ -155,33 +155,19 @@ export function useCheckAnswer() {
       inputValue: string;
       blockId: number;
     }) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('check-answer', {
+        body: {
+          inputValue,
+          blockId,
+        },
+      });
 
-      if (!session) throw new Error("Not authenticated");
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/check-answer`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            inputValue: inputValue,
-            blockId: blockId,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to check answer");
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw error;
       }
 
-      return response.json();
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["currentCP"] });
@@ -204,33 +190,19 @@ export function useGenerateBlock() {
       seedHint: string;
       previousBlockId: number;
     }) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('generate-block', {
+        body: {
+          seedHint,
+          previousBlockId,
+        },
+      });
 
-      if (!session) throw new Error("Not authenticated");
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-block`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            seedHint,
-            previousBlockId,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate block");
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw error;
       }
 
-      return response.json();
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentBlock"] });
@@ -243,14 +215,36 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const validateAndSetSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        try {
+          const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+          const expectedRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0];
+          
+          if (payload.iss === "supabase-demo" || 
+              (payload.ref && expectedRef && payload.ref !== expectedRef)) {
+            console.warn('⚠️ Invalid session detected (wrong Supabase instance). Clearing...');
+            await supabase.auth.signOut();
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to validate JWT:', e);
+        }
+      }
+      
       setUser(session?.user ? {
         id: session.user.id,
         email: session.user.email,
         is_anonymous: session.user.is_anonymous,
       } : null);
       setLoading(false);
-    });
+    };
+
+    validateAndSetSession();
 
     const {
       data: { subscription },
