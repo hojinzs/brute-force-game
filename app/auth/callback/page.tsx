@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/shared/api";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -20,9 +20,10 @@ export default function AuthCallbackPage() {
         } else {
           setError("No session found. Please try again.");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Auth callback error:", err);
-        setError(err.message || "Authentication failed");
+        const message = err instanceof Error ? err.message : "Authentication failed";
+        setError(message);
       }
     };
 
