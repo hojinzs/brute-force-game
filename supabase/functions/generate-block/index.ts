@@ -310,6 +310,7 @@ Deno.serve(async (req) => {
         answer_plaintext: chatGPTResult.password,
         winner_id: null,
         solved_at: null,
+        previous_block_id: previousBlockId || null,
       })
       .select("id, status, seed_hint, difficulty_config, created_at")
       .single();
