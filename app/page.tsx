@@ -210,6 +210,7 @@ function GameContent() {
               status={currentBlock.status}
               length={passwordLength}
               charset={config.charset}
+              creatorNickname={currentBlock.creator_nickname}
             />
 
             <CPGauge current={currentCP} max={50} />

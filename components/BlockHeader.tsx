@@ -9,9 +9,10 @@ type BlockHeaderProps = {
   status: "active" | "pending" | "processing" | "solved";
   length?: number;
   charset?: CharsetType[];
+  creatorNickname?: string;
 };
 
-export function BlockHeader({ blockId, seedHint, status, length, charset }: BlockHeaderProps) {
+export function BlockHeader({ blockId, seedHint, status, length, charset, creatorNickname }: BlockHeaderProps) {
   return (
     <div className="mb-6">
       <div className="flex items-center gap-3 mb-2">
@@ -36,6 +37,11 @@ export function BlockHeader({ blockId, seedHint, status, length, charset }: Bloc
           {status.toUpperCase()}
         </span>
       </div>
+      {creatorNickname && (
+        <p className="text-slate-400 text-sm">
+          <span className="text-slate-500">Created by:</span> <span className="text-blue-400 font-medium">{creatorNickname}</span>
+        </p>
+      )}
       {seedHint && (
         <p className="text-slate-400 text-sm">
           <span className="text-slate-500">Hint:</span> {seedHint}

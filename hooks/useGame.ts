@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 export function useCurrentBlock() {
   return useQuery({
     queryKey: ["currentBlock"],
-    queryFn: async (): Promise<(Block & { winner_nickname?: string }) | null> => {
+    queryFn: async (): Promise<(Block & { winner_nickname?: string; creator_nickname?: string }) | null> => {
       const { data, error } = await supabase
         .from("blocks_public")
         .select("*")
@@ -24,20 +24,33 @@ export function useCurrentBlock() {
 
       const block = data[0];
 
+      // Fetch winner nickname if exists
+      let winner_nickname: string | undefined;
       if (block.winner_id) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("nickname")
           .eq("id", block.winner_id)
           .single();
-
-        return {
-          ...block,
-          winner_nickname: profile?.nickname || "Anonymous",
-        };
+        winner_nickname = profile?.nickname || "Anonymous";
       }
 
-      return block;
+      // Fetch creator nickname if exists
+      let creator_nickname: string | undefined;
+      if (block.created_by) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("nickname")
+          .eq("id", block.created_by)
+          .single();
+        creator_nickname = profile?.nickname || "Anonymous";
+      }
+
+      return {
+        ...block,
+        winner_nickname,
+        creator_nickname,
+      };
     },
     refetchInterval: 5000,
   });

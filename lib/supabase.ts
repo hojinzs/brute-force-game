@@ -52,6 +52,7 @@ export type Block = {
   winner_id: string | null;
   created_at: string;
   solved_at: string | null;
+  created_by: string | null;
 };
 
 export type Attempt = {
