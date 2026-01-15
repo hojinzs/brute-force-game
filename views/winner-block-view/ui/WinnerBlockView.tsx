@@ -3,25 +3,21 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { useCountdown } from "@/shared/ui/CountdownTimer";
+import { useBlock } from "@/entities/block";
+import { useHintSubmit } from "@/features/generate-block";
 
-type WinnerBlockViewProps = {
-  solvedAt: string;
-  onSubmit: (hint: string) => Promise<void>;
-  isSubmitting: boolean;
-};
-
-export function WinnerBlockView({
-  solvedAt,
-  onSubmit,
-  isSubmitting,
-}: WinnerBlockViewProps) {
+export function WinnerBlockView() {
+  const { block } = useBlock();
+  const { submit, isPending: isSubmitting } = useHintSubmit();
   const [hint, setHint] = useState("");
+  
+  const solvedAt = block?.solved_at || new Date().toISOString();
   const { timeLeft, progress } = useCountdown(solvedAt, 180);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (hint.trim().length === 0 || hint.length > 200) return;
-    await onSubmit(hint);
+    await submit(hint);
   };
 
   return (

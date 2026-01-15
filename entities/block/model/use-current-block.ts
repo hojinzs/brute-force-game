@@ -5,9 +5,12 @@ import { supabase } from "@/shared/api";
 import { BLOCK_REFETCH_INTERVAL_MS } from "@/shared/config";
 import type { Block, BlockWithNicknames } from "./types";
 
-export function useCurrentBlock() {
+export function useCurrentBlock(initialData?: Block) {
   return useQuery({
     queryKey: ["currentBlock"],
+    initialData: initialData
+      ? { ...initialData, winner_nickname: undefined, creator_nickname: undefined }
+      : undefined,
     queryFn: async (): Promise<BlockWithNicknames | null> => {
       const { data, error } = await supabase
         .from("blocks_public")
