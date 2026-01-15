@@ -6,7 +6,6 @@ import { supabase } from "@/shared/api";
 export type AuthUser = {
   id: string;
   email?: string;
-  is_anonymous?: boolean;
 };
 
 export function useAuth() {
@@ -24,7 +23,6 @@ export function useAuth() {
           ? {
               id: session.user.id,
               email: session.user.email,
-              is_anonymous: session.user.is_anonymous,
             }
           : null
       );
@@ -41,7 +39,6 @@ export function useAuth() {
           ? {
               id: session.user.id,
               email: session.user.email,
-              is_anonymous: session.user.is_anonymous,
             }
           : null
       );
@@ -85,14 +82,6 @@ export function useAuth() {
     []
   );
 
-  const convertAnonymousToEmail = useCallback(async (email: string) => {
-    const { data, error } = await supabase.auth.updateUser({
-      email,
-    });
-    if (error) throw error;
-    return data;
-  }, []);
-
   const updatePassword = useCallback(async (password: string) => {
     const { data, error } = await supabase.auth.updateUser({
       password,
@@ -117,10 +106,8 @@ export function useAuth() {
   return {
     user,
     loading,
-    isAnonymous: user?.is_anonymous ?? false,
     signInWithPassword,
     signUpWithEmail,
-    convertAnonymousToEmail,
     updatePassword,
     updateNickname,
     signOut,
