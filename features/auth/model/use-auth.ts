@@ -14,34 +14,10 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const validateAndSetSession = async () => {
+    const initSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-
-      if (session) {
-        try {
-          const payload = JSON.parse(atob(session.access_token.split(".")[1]));
-          const expectedRef = process.env.NEXT_PUBLIC_SUPABASE_URL
-            ?.split("//")[1]
-            ?.split(".")[0];
-
-          if (
-            payload.iss === "supabase-demo" ||
-            (payload.ref && expectedRef && payload.ref !== expectedRef)
-          ) {
-            console.warn(
-              "⚠️ Invalid session detected (wrong Supabase instance). Clearing..."
-            );
-            await supabase.auth.signOut();
-            setUser(null);
-            setLoading(false);
-            return;
-          }
-        } catch (e) {
-          console.error("Failed to validate JWT:", e);
-        }
-      }
 
       setUser(
         session?.user
@@ -55,7 +31,7 @@ export function useAuth() {
       setLoading(false);
     };
 
-    validateAndSetSession();
+    initSession();
 
     const {
       data: { subscription },

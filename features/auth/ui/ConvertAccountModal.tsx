@@ -27,10 +27,14 @@ export function ConvertAccountModal({ isOpen, onClose }: ConvertAccountModalProp
 
     try {
       await convertAnonymousToEmail(email);
-      setStep("password");
       setError(
-        "Verification email sent! Please check your inbox and click the link to verify your email."
+        "Verification email sent! Please check your inbox and click the link, then reopen this modal to set your password."
       );
+      setTimeout(() => {
+        onClose();
+        setEmail("");
+        setError(null);
+      }, 3000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to link email";
       setError(message);

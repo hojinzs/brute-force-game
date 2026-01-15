@@ -5,14 +5,23 @@ import { motion } from "motion/react";
 import { useCountdown } from "@/shared/ui/CountdownTimer";
 import { useBlock } from "@/entities/block";
 import { useHintSubmit } from "@/features/generate-block";
+import { LoadingSpinner } from "@/shared/ui";
 
 export function WinnerBlockView() {
-  const { block } = useBlock();
+  const { block, isLoading } = useBlock();
   const { submit, isPending: isSubmitting } = useHintSubmit();
   const [hint, setHint] = useState("");
-  
-  const solvedAt = block?.solved_at || new Date().toISOString();
+
+  const solvedAt = block?.solved_at ?? new Date().toISOString();
   const { timeLeft, progress } = useCountdown(solvedAt, 180);
+
+  if (isLoading || !block?.solved_at) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a]/90 backdrop-blur-sm">
+        <LoadingSpinner message="Loading..." />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
