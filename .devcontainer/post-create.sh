@@ -4,10 +4,10 @@ set -e
 echo "🚀 Setting up Brute Force AI development environment..."
 
 # Check and setup opencode config if it exists on host
-if [ -d "$HOME/.config/opencode" ]; then
-    echo "✅ OpenCode config directory found and mounted"
+if command -v opencode &> /dev/null; then
+    echo "✅ OpenCode is installed and ready"
 else
-    echo "ℹ️  No OpenCode config directory found (this is optional)"
+    echo "⚠️  OpenCode installation may still be in progress"
 fi
 
 # Install project dependencies
@@ -21,6 +21,9 @@ echo "pnpm version: $(pnpm --version)"
 echo "Bun version: $(bun --version)"
 echo "Deno version: $(deno --version | head -n 1)"
 echo "Supabase CLI version: $(supabase --version)"
+if command -v opencode &> /dev/null; then
+    echo "OpenCode: Installed ✓"
+fi
 
 # Create .env.local if it doesn't exist
 if [ ! -f .env.local ]; then

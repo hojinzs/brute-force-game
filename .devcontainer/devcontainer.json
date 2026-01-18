@@ -15,7 +15,8 @@
     },
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
-    }
+    },
+    "ghcr.io/danzilberdan/devcontainers/opencode:0": {}
   },
 
   // Configure tool-specific properties

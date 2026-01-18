@@ -10,6 +10,7 @@
 - **Deno**: 보안 중심 JavaScript/TypeScript 런타임
 - **Supabase CLI**: 로컬 Supabase 개발 환경
 - **Docker-in-Docker**: 컨테이너 내에서 Docker 실행 지원
+- **OpenCode**: SST의 OpenCode 편집기 (자동 설치)
 
 ## 시작하기
 
@@ -20,16 +21,9 @@
 3. 명령 팔레트 (Cmd/Ctrl+Shift+P) → "Dev Containers: Reopen in Container"
 4. 컨테이너가 빌드되고 시작될 때까지 대기
 
-### OpenCode 설정
+### OpenCode
 
-호스트의 `~/.config/opencode` 디렉토리를 마운트하려면:
-
-```bash
-# .devcontainer 디렉토리에서
-cp docker-compose.override.yml.example docker-compose.override.yml
-```
-
-그런 다음 컨테이너를 다시 빌드하세요. OpenCode 설정이 없어도 dev container는 정상적으로 작동합니다.
+OpenCode는 devcontainer feature를 통해 자동으로 설치됩니다. 인증이 필요한 경우, 호스트의 `~/.local/share/opencode/auth.json`이 자동으로 컨테이너에 마운트됩니다.
 
 ## Supabase 로컬 개발
 

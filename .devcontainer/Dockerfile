@@ -35,12 +35,6 @@ RUN curl -fsSL https://raw.githubusercontent.com/supabase/supabase/master/apps/c
 ENV PATH="/root/.supabase/bin:$PATH"
 RUN su node -c "curl -fsSL https://raw.githubusercontent.com/supabase/supabase/master/apps/cli/install.sh | sh"
 
-# Prepare OpenCode config directory
-# Note: This only creates the directory for optional mounting from the host.
-# OpenCode itself should be installed on the host machine.
-# Users can mount their host ~/.config/opencode via docker-compose.override.yml
-RUN mkdir -p /home/node/.config/opencode && chown -R node:node /home/node/.config
-
 # Set up environment for node user
 USER node
 
