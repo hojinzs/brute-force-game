@@ -77,6 +77,11 @@
   // Commands to run after container creation
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 
+  // Mount OpenCode auth file if it exists on host
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.local/share/opencode/auth.json,target=/mnt/opencode-auth.json,type=bind,consistency=cached"
+  ],
+
   // Use 'node' user for better security
   "remoteUser": "node",
 

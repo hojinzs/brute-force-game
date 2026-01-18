@@ -23,7 +23,11 @@
 
 ### OpenCode
 
-OpenCode는 devcontainer feature를 통해 자동으로 설치됩니다. 인증이 필요한 경우, 호스트의 `~/.local/share/opencode/auth.json`이 자동으로 컨테이너에 마운트됩니다.
+OpenCode는 devcontainer feature를 통해 자동으로 설치됩니다. 인증이 필요한 경우, 호스트의 `~/.local/share/opencode/auth.json` 파일이 있으면 자동으로 컨테이너에 복사됩니다.
+
+**인증 파일 설정:**
+- 호스트에 `~/.local/share/opencode/auth.json` 파일이 있으면 자동으로 사용됩니다
+- 파일이 없어도 OpenCode는 정상적으로 설치됩니다
 
 ## Supabase 로컬 개발
 
