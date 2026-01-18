@@ -19,10 +19,10 @@ function formatPoints(points: number): string {
 }
 
 function getPointsColor(points: number): string {
-  if (points >= 1000) return "text-amber-400"; // Gold for 1000+
-  if (points >= 500) return "text-slate-200"; // Silver for 500+
-  if (points >= 100) return "text-amber-600"; // Bronze for 100+
-  return "text-emerald-400"; // Default green
+  if (points >= 1000) return "text-yellow-400";
+  if (points >= 500) return "text-slate-300";
+  if (points >= 100) return "text-orange-500";
+  return "text-emerald-400";
 }
 
 export function BlockHeader({

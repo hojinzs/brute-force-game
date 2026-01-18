@@ -8,6 +8,6 @@ export type RankingEntry = {
 export type UserRank = {
   userId: string;
   nickname: string;
-  totalPoints: number;
+  total_points: number;
   rank: number;
 };

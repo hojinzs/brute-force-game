@@ -97,7 +97,7 @@ export function RankingWidget() {
               </span>
             </div>
             <span className="font-mono text-sm text-emerald-400">
-              {formatPoints(myRank.totalPoints)} pts
+              {formatPoints(myRank.total_points)} pts
             </span>
           </div>
         </div>

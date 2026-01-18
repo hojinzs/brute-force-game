@@ -127,12 +127,7 @@ Deno.serve(async (req) => {
     }
 
     if (block.status !== "active") {
-      // Refund CP if block is no longer active
-      await supabaseAdmin.rpc("get_current_cp", { p_user_id: user.id });
-      await supabaseAdmin
-        .from("profiles")
-        .update({ cp_count: supabaseAdmin.rpc("get_current_cp", { p_user_id: user.id }) })
-        .eq("id", user.id);
+      await supabaseAdmin.rpc("refund_cp", { p_user_id: user.id });
 
       return new Response(
         JSON.stringify({ error: "Block is no longer active", code: "BLOCK_INACTIVE" } as ErrorResponse),
@@ -140,16 +135,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Increment block points (Prize Pool +1)
-    const { data: newPoints, error: pointsError } = await supabaseAdmin.rpc("increment_block_points", {
-      p_block_id: blockId,
-    });
-
-    if (pointsError) {
-      console.error("Failed to increment block points:", pointsError);
-    }
-
-    // 4. Check if answer is correct
+    // 3. Check if answer is correct
     const inputHash = await hashPassword(inputValue);
     const isCorrect = inputHash === block.answer_hash;
 
@@ -158,7 +144,36 @@ Deno.serve(async (req) => {
       // CORRECT ANSWER FLOW
       // =============================================
       
-      // 4a. Insert attempt with similarity 100 (atomic function for first-submission tracking)
+      // 3a. Try to acquire lock by updating block status FIRST
+      const { error: updateError } = await supabaseAdmin
+        .from("blocks")
+        .update({
+          status: "pending",
+          winner_id: user.id,
+          solved_at: new Date().toISOString(),
+        })
+        .eq("id", blockId)
+        .eq("status", "active");
+
+      if (updateError) {
+        await supabaseAdmin.rpc("refund_cp", { p_user_id: user.id });
+
+        return new Response(
+          JSON.stringify({ error: "Block already solved by another user", code: "BLOCK_ALREADY_SOLVED" } as ErrorResponse),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // 3b. Increment block points (Prize Pool +1)
+      const { data: newPoints, error: pointsError } = await supabaseAdmin.rpc("increment_block_points", {
+        p_block_id: blockId,
+      });
+
+      if (pointsError) {
+        console.error("Failed to increment block points:", pointsError);
+      }
+
+      // 3c. Insert attempt with similarity 100
       const { data: attemptResult, error: attemptError } = await supabaseAdmin
         .rpc("insert_attempt_atomic", {
           p_block_id: blockId,
@@ -174,7 +189,7 @@ Deno.serve(async (req) => {
 
       const attempt = attemptResult ? { id: attemptResult.attempt_id } : null;
 
-      // 4b. Award points to winner
+      // 3d. Award points to winner
       const { data: awardedPoints, error: awardError } = await supabaseAdmin.rpc("award_points_to_winner", {
         p_block_id: blockId,
         p_winner_id: user.id,
@@ -182,32 +197,6 @@ Deno.serve(async (req) => {
 
       if (awardError) {
         console.error("Failed to award points:", awardError);
-      }
-
-      // 4c. Update block status to pending
-      const { error: updateError } = await supabaseAdmin
-        .from("blocks")
-        .update({
-          status: "pending",
-          winner_id: user.id,
-          solved_at: new Date().toISOString(),
-        })
-        .eq("id", blockId)
-        .eq("status", "active");
-
-      if (updateError) {
-        // Race condition: another user already solved it
-        // Note: Points were already awarded but block update failed
-        // This is acceptable as the first solver got the points
-        await supabaseAdmin
-          .from("profiles")
-          .update({ cp_count: supabaseAdmin.rpc("get_current_cp", { p_user_id: user.id }) })
-          .eq("id", user.id);
-
-        return new Response(
-          JSON.stringify({ error: "Block already solved by another user", code: "BLOCK_ALREADY_SOLVED" } as ErrorResponse),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
       }
 
       return new Response(

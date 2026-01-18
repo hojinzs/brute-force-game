@@ -112,7 +112,7 @@ export function RankingClient() {
             <div className="text-right">
               <p className="text-xs text-slate-400">Total Points</p>
               <p className="text-xl font-bold text-emerald-400 font-mono">
-                {formatPoints(myRank.totalPoints)}
+                {formatPoints(myRank.total_points)}
               </p>
             </div>
           </div>

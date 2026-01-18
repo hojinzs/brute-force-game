@@ -37,7 +37,7 @@ export function useMyRank(userId: string | undefined) {
         return {
           userId: profile.id,
           nickname: profile.nickname,
-          totalPoints: profile.total_points,
+          total_points: profile.total_points,
           rank: (count ?? 0) + 1,
         };
       }
@@ -45,7 +45,7 @@ export function useMyRank(userId: string | undefined) {
       return {
         userId: profile.id,
         nickname: profile.nickname,
-        totalPoints: profile.total_points,
+        total_points: profile.total_points,
         rank: rank ?? 1,
       };
     },

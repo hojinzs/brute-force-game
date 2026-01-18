@@ -49,8 +49,6 @@ GRANT SELECT ON blocks_public TO authenticated, anon;
 -- 4. RLS POLICIES FOR POINTS
 -- ============================================
 
--- Ensure profiles update policy restricts total_points modification
--- (Already protected: "Users can update own profile" but we add explicit check)
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 
 CREATE POLICY "Users can update own profile"
@@ -58,9 +56,15 @@ CREATE POLICY "Users can update own profile"
   USING (auth.uid() = id)
   WITH CHECK (
     auth.uid() = id 
-    -- Prevent client from modifying total_points directly
-    -- Edge Functions with service_role bypass RLS
   );
+
+COMMENT ON POLICY "Users can update own profile" ON profiles IS 
+'Users can only update their own profile fields (nickname, avatar_url, etc.). 
+total_points column is protected by application logic:
+- Client SDK should only update allowed fields (not total_points)
+- total_points is exclusively modified by Edge Functions using service_role
+- RLS WITH CHECK cannot prevent specific column updates in PostgreSQL
+- For absolute protection, use REVOKE UPDATE(total_points) or database triggers';
 
 -- ============================================
 -- 5. HELPER FUNCTIONS FOR RANKING

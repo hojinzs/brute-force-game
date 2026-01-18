@@ -156,6 +156,12 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  let previousBlockId: number | undefined;
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
   try {
     console.log("=== GENERATE-BLOCK START ===");
     console.log("Step 0: Checking environment variables");
@@ -177,7 +183,8 @@ Deno.serve(async (req) => {
     }
 
     console.log("Step 1: Parsing request body");
-    const { seedHint, previousBlockId, isGenesis }: RequestBody = await req.json();
+    const { seedHint, previousBlockId: reqPreviousBlockId, isGenesis }: RequestBody = await req.json();
+    previousBlockId = reqPreviousBlockId;
     console.log({ seedHint, previousBlockId, isGenesis });
 
     if (seedHint && seedHint.length > 200) {
@@ -187,12 +194,6 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    console.log("Step 2: Creating Supabase admin client");
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     let user: { id: string } | null = null;
 
@@ -355,18 +356,12 @@ Deno.serve(async (req) => {
     console.error("Error message:", error instanceof Error ? error.message : "Unknown error");
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
 
-    // Rollback: processing → pending
-    const body = await req.clone().json().catch(() => ({})) as RequestBody;
-    if (body.previousBlockId) {
-      console.log("Rolling back block to pending status:", body.previousBlockId);
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-      );
+    if (previousBlockId) {
+      console.log("Rolling back block to pending status:", previousBlockId);
       const { error: rollbackError } = await supabaseAdmin
         .from("blocks")
         .update({ status: "pending" })
-        .eq("id", body.previousBlockId)
+        .eq("id", previousBlockId)
         .eq("status", "processing");
       
       if (rollbackError) {
