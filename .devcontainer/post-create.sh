@@ -27,12 +27,14 @@ if [ ! -f .env.local ]; then
     echo "📝 Creating .env.local template..."
     cat > .env.local << 'EOF'
 # Supabase Configuration
+# ⚠️  WARNING: Replace placeholder values with actual keys from 'supabase start'
+# This file is git-ignored and should NOT be committed
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Add your environment variables here
 EOF
-    echo "⚠️  Please update .env.local with your Supabase keys"
+    echo "⚠️  Please update .env.local with your Supabase keys after running 'supabase start'"
 fi
 
 echo "✨ Dev container setup complete!"

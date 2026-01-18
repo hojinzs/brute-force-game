@@ -24,7 +24,7 @@ Dev Container를 사용하면 모든 도구가 사전 설치된 일관된 개발
 ### Option 2: 로컬 설치
 
 **Prerequisites:**
-- Node.js 18+ & pnpm
+- Node.js 20+ & pnpm
 - Docker Desktop
 - Supabase CLI (`brew install supabase/tap/supabase`)
 
