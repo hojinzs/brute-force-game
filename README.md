@@ -25,8 +25,8 @@ Credentials will be displayed after startup. Copy the keys to `.env.local`:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon_key_from_supabase_start>
-SUPABASE_SERVICE_ROLE_KEY=<service_role_key_from_supabase_start>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable_key_from_supabase_start>
+SUPABASE_SECRET_KEY=<secret_key_from_supabase_start>
 ```
 
 ### 2. Install Dependencies

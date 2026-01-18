@@ -354,6 +354,27 @@ Deno.serve(async (req) => {
     console.error("Error type:", error?.constructor?.name);
     console.error("Error message:", error instanceof Error ? error.message : "Unknown error");
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+
+    // Rollback: processing → pending
+    const body = await req.clone().json().catch(() => ({})) as RequestBody;
+    if (body.previousBlockId) {
+      console.log("Rolling back block to pending status:", body.previousBlockId);
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      const { error: rollbackError } = await supabaseAdmin
+        .from("blocks")
+        .update({ status: "pending" })
+        .eq("id", body.previousBlockId)
+        .eq("status", "processing");
+      
+      if (rollbackError) {
+        console.error("Rollback failed:", rollbackError);
+      } else {
+        console.log("Rollback successful");
+      }
+    }
     
     return new Response(
       JSON.stringify({ 
