@@ -22,6 +22,7 @@ interface SuccessResponse {
   correct: boolean;
   similarity?: number;
   attemptId?: string;
+  pointsAwarded?: number;
 }
 
 const rateLimitMap = new Map<string, number[]>();
@@ -99,6 +100,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // 1. Consume CP
     const { data: cpResult, error: cpError } = await supabaseAdmin.rpc("consume_cp", {
       p_user_id: user.id,
     });
@@ -110,9 +112,10 @@ Deno.serve(async (req) => {
       );
     }
 
+    // 2. Get block info
     const { data: block, error: blockError } = await supabaseAdmin
       .from("blocks")
-      .select("id, answer_hash, answer_plaintext, status")
+      .select("id, answer_hash, answer_plaintext, status, accumulated_points")
       .eq("id", blockId)
       .single();
 
@@ -124,11 +127,7 @@ Deno.serve(async (req) => {
     }
 
     if (block.status !== "active") {
-      await supabaseAdmin.rpc("get_current_cp", { p_user_id: user.id });
-      await supabaseAdmin
-        .from("profiles")
-        .update({ cp_count: supabaseAdmin.rpc("get_current_cp", { p_user_id: user.id }) })
-        .eq("id", user.id);
+      await supabaseAdmin.rpc("refund_cp", { p_user_id: user.id });
 
       return new Response(
         JSON.stringify({ error: "Block is no longer active", code: "BLOCK_INACTIVE" } as ErrorResponse),
@@ -136,10 +135,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    // 3. Increment block points (Prize Pool +1) - ALWAYS on any attempt
+    const { data: newPoints, error: pointsError } = await supabaseAdmin.rpc("increment_block_points", {
+      p_block_id: blockId,
+    });
+
+    if (pointsError) {
+      console.error("Failed to increment block points:", pointsError);
+    }
+
+    // 4. Check if answer is correct
     const inputHash = await hashPassword(inputValue);
     const isCorrect = inputHash === block.answer_hash;
 
     if (isCorrect) {
+      // =============================================
+      // CORRECT ANSWER FLOW
+      // =============================================
+      
+      // 4a. Try to acquire lock by updating block status FIRST
       const { error: updateError } = await supabaseAdmin
         .from("blocks")
         .update({
@@ -151,10 +165,7 @@ Deno.serve(async (req) => {
         .eq("status", "active");
 
       if (updateError) {
-        await supabaseAdmin
-          .from("profiles")
-          .update({ cp_count: supabaseAdmin.rpc("get_current_cp", { p_user_id: user.id }) })
-          .eq("id", user.id);
+        await supabaseAdmin.rpc("refund_cp", { p_user_id: user.id });
 
         return new Response(
           JSON.stringify({ error: "Block already solved by another user", code: "BLOCK_ALREADY_SOLVED" } as ErrorResponse),
@@ -162,23 +173,55 @@ Deno.serve(async (req) => {
         );
       }
 
+      // 4b. Insert attempt with similarity 100
+      const { data: attemptResult, error: attemptError } = await supabaseAdmin
+        .rpc("insert_attempt_atomic", {
+          p_block_id: blockId,
+          p_user_id: user.id,
+          p_input_value: inputValue,
+          p_similarity: 100,
+        })
+        .single();
+
+      if (attemptError) {
+        console.error("Failed to insert winning attempt:", attemptError);
+      }
+
+      const attempt = attemptResult ? { id: attemptResult.attempt_id } : null;
+
+      // 4c. Award points to winner
+      const { data: awardedPoints, error: awardError } = await supabaseAdmin.rpc("award_points_to_winner", {
+        p_block_id: blockId,
+        p_winner_id: user.id,
+      });
+
+      if (awardError) {
+        console.error("Failed to award points:", awardError);
+      }
+
       return new Response(
-        JSON.stringify({ correct: true } as SuccessResponse),
+        JSON.stringify({ 
+          correct: true,
+          attemptId: attempt?.id,
+          pointsAwarded: awardedPoints ?? newPoints,
+        } as SuccessResponse),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // =============================================
+    // WRONG ANSWER FLOW
+    // =============================================
+    
     const similarity = calculateSimilarity(inputValue, block.answer_plaintext);
 
-    const { data: attempt, error: attemptError } = await supabaseAdmin
-      .from("attempts")
-      .insert({
-        block_id: blockId,
-        user_id: user.id,
-        input_value: inputValue,
-        similarity: similarity,
+    const { data: attemptResult, error: attemptError } = await supabaseAdmin
+      .rpc("insert_attempt_atomic", {
+        p_block_id: blockId,
+        p_user_id: user.id,
+        p_input_value: inputValue,
+        p_similarity: similarity,
       })
-      .select("id")
       .single();
 
     if (attemptError) {
@@ -189,7 +232,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         correct: false,
         similarity: similarity,
-        attemptId: attempt?.id,
+        attemptId: attemptResult?.attempt_id,
       } as SuccessResponse),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

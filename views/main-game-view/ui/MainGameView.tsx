@@ -45,6 +45,7 @@ export function MainGameView() {
             length={passwordLength}
             charset={config.charset}
             creatorNickname={block.creator_nickname}
+            accumulatedPoints={block.accumulated_points}
           />
         </div>
 

@@ -37,8 +37,8 @@
 
 | Table | Purpose | Key Columns |
 |-------|---------|-------------|
-| `profiles` | User metadata & CP | `id`, `nickname`, `cp_count`, `last_cp_refill_at` |
-| `blocks` | Hack targets | `id`, `status`, `seed_hint`, `answer_hash`, `winner_id` |
+| `profiles` | User metadata & CP | `id`, `nickname`, `cp_count`, `last_cp_refill_at`, `total_points` |
+| `blocks` | Hack targets | `id`, `status`, `seed_hint`, `answer_hash`, `winner_id`, `accumulated_points` |
 | `attempts` | Global answer logs | `block_id`, `user_id`, `input_value`, `similarity` |
 
 ## Edge Functions
@@ -60,3 +60,4 @@
 - Technical: `docs/TECHNICAL_REQUIREMENTS_DOCUMENTS.md`
 - Design: `docs/DESIGN_CONCEPTS.md`
 - Policies: `docs/SYSTEM_POLICIES.md`
+- Ranking: `docs/RANKING_SYSTEM_POLICY.md`

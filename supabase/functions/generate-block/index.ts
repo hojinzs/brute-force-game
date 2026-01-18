@@ -156,6 +156,12 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  let previousBlockId: number | undefined;
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
   try {
     console.log("=== GENERATE-BLOCK START ===");
     console.log("Step 0: Checking environment variables");
@@ -177,7 +183,8 @@ Deno.serve(async (req) => {
     }
 
     console.log("Step 1: Parsing request body");
-    const { seedHint, previousBlockId, isGenesis }: RequestBody = await req.json();
+    const { seedHint, previousBlockId: reqPreviousBlockId, isGenesis }: RequestBody = await req.json();
+    previousBlockId = reqPreviousBlockId;
     console.log({ seedHint, previousBlockId, isGenesis });
 
     if (seedHint && seedHint.length > 200) {
@@ -187,12 +194,6 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    console.log("Step 2: Creating Supabase admin client");
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     let user: { id: string } | null = null;
 
@@ -354,6 +355,21 @@ Deno.serve(async (req) => {
     console.error("Error type:", error?.constructor?.name);
     console.error("Error message:", error instanceof Error ? error.message : "Unknown error");
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+
+    if (previousBlockId) {
+      console.log("Rolling back block to pending status:", previousBlockId);
+      const { error: rollbackError } = await supabaseAdmin
+        .from("blocks")
+        .update({ status: "pending" })
+        .eq("id", previousBlockId)
+        .eq("status", "processing");
+      
+      if (rollbackError) {
+        console.error("Rollback failed:", rollbackError);
+      } else {
+        console.log("Rollback successful");
+      }
+    }
     
     return new Response(
       JSON.stringify({ 

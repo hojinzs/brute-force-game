@@ -9,7 +9,7 @@ type TopAttemptsProps = {
 
 export function TopAttempts({ attempts }: TopAttemptsProps) {
   const sortedAttempts = [...attempts]
-    .filter((a) => a.similarity > 0)
+    .filter((a) => a.similarity > 0 && a.is_first_submission)
     .sort((a, b) => b.similarity - a.similarity)
     .slice(0, 20);
 

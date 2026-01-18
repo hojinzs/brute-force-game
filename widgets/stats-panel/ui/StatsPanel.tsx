@@ -3,7 +3,7 @@
 import { useBlock } from "@/entities/block";
 import { useAttempts } from "@/entities/attempt";
 import { useOnlineUsers } from "@/features/online-presence";
-import { LiveFeed, TopAttempts } from "@/widgets";
+import { LiveFeed, TopAttempts, RankingWidget } from "@/widgets";
 
 export function StatsPanel() {
   const { block } = useBlock();
@@ -32,8 +32,8 @@ export function StatsPanel() {
         <span className="text-slate-500 text-sm">Block History</span>
       </div>
 
-      <div className="border border-[#334155] rounded-xl bg-[#1e293b] min-h-[200px] flex items-center justify-center">
-        <span className="text-slate-500 text-sm">Ranking</span>
+      <div className="border border-[#334155] rounded-xl bg-[#1e293b] min-h-[200px] overflow-hidden">
+        <RankingWidget />
       </div>
 
       <div className="border border-[#334155] rounded-xl bg-[#1e293b] min-h-[200px] flex items-center justify-center md:col-span-2 lg:col-span-1">

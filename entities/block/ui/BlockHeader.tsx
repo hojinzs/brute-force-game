@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { type CharsetType, CHARSET_LABELS } from "@/shared/lib/charset";
 import type { BlockStatus } from "../model/types";
 
@@ -11,7 +11,19 @@ type BlockHeaderProps = {
   length?: number;
   charset?: CharsetType[];
   creatorNickname?: string;
+  accumulatedPoints?: number;
 };
+
+function formatPoints(points: number): string {
+  return points.toLocaleString();
+}
+
+function getPointsColor(points: number): string {
+  if (points >= 1000) return "text-yellow-400";
+  if (points >= 500) return "text-slate-300";
+  if (points >= 100) return "text-orange-500";
+  return "text-emerald-400";
+}
 
 export function BlockHeader({
   blockId,
@@ -20,6 +32,7 @@ export function BlockHeader({
   length,
   charset,
   creatorNickname,
+  accumulatedPoints = 0,
 }: BlockHeaderProps) {
   return (
     <div className="mb-6">
@@ -45,6 +58,25 @@ export function BlockHeader({
           {status.toUpperCase()}
         </span>
       </div>
+
+      {/* Prize Pool */}
+      <div className="flex items-center gap-2 mb-3 py-2 px-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+        <span className="text-slate-400 text-sm">Prize Pool:</span>
+        <AnimatePresence mode="popLayout">
+          <motion.span
+            key={accumulatedPoints}
+            initial={{ opacity: 0, scale: 1.2, y: -5 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 5 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            className={`font-mono font-bold text-lg ${getPointsColor(accumulatedPoints)}`}
+          >
+            {formatPoints(accumulatedPoints)}
+          </motion.span>
+        </AnimatePresence>
+        <span className="text-slate-500 text-sm">pts</span>
+      </div>
+
       {creatorNickname && (
         <p className="text-slate-400 text-sm">
           <span className="text-slate-500">Created by:</span>{" "}

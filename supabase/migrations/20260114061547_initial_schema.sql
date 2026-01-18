@@ -1,5 +1,8 @@
 -- Enable necessary extensions
-create extension if not exists "uuid-ossp";
+create extension if not exists "uuid-ossp" with schema extensions;
+
+-- Ensure extensions schema is in search path
+set search_path to public, extensions;
 
 -- Create enum for block status
 create type block_status as enum ('active', 'pending');

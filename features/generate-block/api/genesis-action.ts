@@ -2,17 +2,17 @@
 
 export async function createGenesisBlock(seedHint: string) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const secretKey = process.env.SUPABASE_SECRET_KEY;
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   console.log("Genesis Block - Environment check:", {
     hasUrl: !!supabaseUrl,
     urlValue: supabaseUrl,
-    hasServiceKey: !!serviceRoleKey,
-    hasAnonKey: !!anonKey,
+    hasSecretKey: !!secretKey,
+    hasPublishableKey: !!publishableKey,
   });
 
-  if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+  if (!supabaseUrl || !secretKey || !publishableKey) {
     throw new Error("Missing Supabase configuration");
   }
 
@@ -29,8 +29,8 @@ export async function createGenesisBlock(seedHint: string) {
   const response = await fetch(`${supabaseUrl}/functions/v1/generate-block`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${serviceRoleKey}`,
-      apikey: anonKey,
+      Authorization: `Bearer ${secretKey}`,
+      apikey: publishableKey,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(requestBody),

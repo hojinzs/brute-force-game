@@ -9,7 +9,7 @@ import { LoadingSpinner } from "@/shared/ui";
 
 export function WinnerBlockView() {
   const { block, isLoading } = useBlock();
-  const { submit, isPending: isSubmitting } = useHintSubmit();
+  const { submit, isPending: isSubmitting, error } = useHintSubmit();
   const [hint, setHint] = useState("");
 
   const solvedAt = block?.solved_at ?? new Date().toISOString();
@@ -122,6 +122,16 @@ export function WinnerBlockView() {
             {isSubmitting ? "Generating..." : "Submit Hint"}
           </button>
         </form>
+
+        {error && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-red-400 text-sm mt-4"
+          >
+            Failed to generate block. Please try again.
+          </motion.p>
+        )}
 
         {timeLeft === 0 && (
           <motion.p
