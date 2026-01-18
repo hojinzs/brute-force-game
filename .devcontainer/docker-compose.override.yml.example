@@ -1,0 +1,15 @@
+# docker-compose.override.yml.example
+# 
+# OpenCode 설정을 마운트하려면 이 파일을 docker-compose.override.yml로 복사하세요.
+# 
+# cp docker-compose.override.yml.example docker-compose.override.yml
+#
+# 주의: 호스트의 ~/.config/opencode 디렉토리가 존재하는 경우에만 사용하세요.
+
+version: '3.8'
+
+services:
+  app:
+    volumes:
+      # OpenCode 설정 마운트 (호스트에서 가져오기)
+      - ~/.config/opencode:/home/node/.config/opencode:cached

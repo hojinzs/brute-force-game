@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .idea
+
+# devcontainer overrides (user-specific)
+.devcontainer/docker-compose.override.yml

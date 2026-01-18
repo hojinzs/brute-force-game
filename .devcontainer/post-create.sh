@@ -1,0 +1,44 @@
+#!/bin/bash
+set -e
+
+echo "🚀 Setting up Brute Force AI development environment..."
+
+# Check and setup opencode config if it exists on host
+if [ -d "$HOME/.config/opencode" ]; then
+    echo "✅ OpenCode config directory found and mounted"
+else
+    echo "ℹ️  No OpenCode config directory found (this is optional)"
+fi
+
+# Install project dependencies
+echo "📦 Installing pnpm dependencies..."
+pnpm install
+
+# Verify installations
+echo "✅ Verifying tool installations..."
+echo "Node version: $(node --version)"
+echo "pnpm version: $(pnpm --version)"
+echo "Bun version: $(bun --version)"
+echo "Deno version: $(deno --version | head -n 1)"
+echo "Supabase CLI version: $(supabase --version)"
+
+# Create .env.local if it doesn't exist
+if [ ! -f .env.local ]; then
+    echo "📝 Creating .env.local template..."
+    cat > .env.local << 'EOF'
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+
+# Add your environment variables here
+EOF
+    echo "⚠️  Please update .env.local with your Supabase keys"
+fi
+
+echo "✨ Dev container setup complete!"
+echo ""
+echo "📚 Next steps:"
+echo "  1. Run 'supabase start' to start local Supabase"
+echo "  2. Run 'pnpm dev' to start the Next.js development server"
+echo "  3. Open http://localhost:3000 in your browser"
+echo ""
