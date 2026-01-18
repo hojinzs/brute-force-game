@@ -135,7 +135,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Check if answer is correct
+    // 3. Increment block points (Prize Pool +1) - ALWAYS on any attempt
+    const { data: newPoints, error: pointsError } = await supabaseAdmin.rpc("increment_block_points", {
+      p_block_id: blockId,
+    });
+
+    if (pointsError) {
+      console.error("Failed to increment block points:", pointsError);
+    }
+
+    // 4. Check if answer is correct
     const inputHash = await hashPassword(inputValue);
     const isCorrect = inputHash === block.answer_hash;
 
@@ -144,7 +153,7 @@ Deno.serve(async (req) => {
       // CORRECT ANSWER FLOW
       // =============================================
       
-      // 3a. Try to acquire lock by updating block status FIRST
+      // 4a. Try to acquire lock by updating block status FIRST
       const { error: updateError } = await supabaseAdmin
         .from("blocks")
         .update({
@@ -164,16 +173,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      // 3b. Increment block points (Prize Pool +1)
-      const { data: newPoints, error: pointsError } = await supabaseAdmin.rpc("increment_block_points", {
-        p_block_id: blockId,
-      });
-
-      if (pointsError) {
-        console.error("Failed to increment block points:", pointsError);
-      }
-
-      // 3c. Insert attempt with similarity 100
+      // 4b. Insert attempt with similarity 100
       const { data: attemptResult, error: attemptError } = await supabaseAdmin
         .rpc("insert_attempt_atomic", {
           p_block_id: blockId,
@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
 
       const attempt = attemptResult ? { id: attemptResult.attempt_id } : null;
 
-      // 3d. Award points to winner
+      // 4c. Award points to winner
       const { data: awardedPoints, error: awardError } = await supabaseAdmin.rpc("award_points_to_winner", {
         p_block_id: blockId,
         p_winner_id: user.id,
