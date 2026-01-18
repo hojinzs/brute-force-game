@@ -30,7 +30,7 @@ if [ ! -f .env.local ]; then
 # ⚠️  WARNING: Replace placeholder values with actual keys from 'supabase start'
 # This file is git-ignored and should NOT be committed
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=REPLACE_WITH_ACTUAL_ANON_KEY_FROM_SUPABASE_START
+NEXT_PUBLIC_SUPABASE_ANON_KEY=REPLACE_WITH_SUPABASE_ANON_KEY
 
 # Add your environment variables here
 EOF
