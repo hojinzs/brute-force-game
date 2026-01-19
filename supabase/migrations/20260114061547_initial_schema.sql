@@ -46,7 +46,8 @@ create table blocks (
   answer_hash text not null,
   winner_id uuid references profiles(id) on delete set null,
   created_at timestamptz not null default now(),
-  solved_at timestamptz
+  solved_at timestamptz,
+  solved_attempt_id uuid
 );
 
 -- Enable RLS for blocks
