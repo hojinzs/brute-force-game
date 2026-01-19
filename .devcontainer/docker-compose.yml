@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    volumes:
+      # Mount the workspace
+      - ..:/workspace:cached
+      
+      # Mount docker socket for docker-in-docker
+      - /var/run/docker.sock:/var/run/docker.sock
+    
+    # Keep container running
+    command: sleep infinity
+    
+    # Network mode for Supabase
+    network_mode: host
+    
+    # Environment variables for local development
+    # Note: These credentials are only for local Supabase instances
+    # and should NOT be used in production
+    environment:
+      - SUPABASE_URL=http://localhost:54321
+      - SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:54322/postgres
+    
+    # Required for Docker-in-Docker
+    privileged: true

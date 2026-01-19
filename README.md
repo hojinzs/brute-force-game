@@ -4,9 +4,27 @@ Global multiplayer password-cracking game where all users compete to crack the s
 
 ## Getting Started
 
-### Prerequisites
+### Option 1: Dev Container (권장)
 
-- Node.js 18+ & pnpm
+Dev Container를 사용하면 모든 도구가 사전 설치된 일관된 개발 환경을 제공합니다.
+
+**요구사항:**
+- Docker Desktop
+- VS Code / Cursor with Dev Containers extension
+
+**시작하기:**
+1. VS Code/Cursor에서 프로젝트 열기
+2. "Dev Containers: Reopen in Container" 실행
+3. 컨테이너 빌드 완료 후 자동으로 `pnpm install` 실행됨
+4. `supabase start` 로 로컬 Supabase 시작
+5. `pnpm dev` 로 개발 서버 시작
+
+자세한 내용은 [.devcontainer/README.md](.devcontainer/README.md)를 참고하세요.
+
+### Option 2: 로컬 설치
+
+**Prerequisites:**
+- Node.js 20+ & pnpm
 - Docker Desktop
 - Supabase CLI (`brew install supabase/tap/supabase`)
 
