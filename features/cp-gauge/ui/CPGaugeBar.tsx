@@ -12,6 +12,7 @@ export function CPGaugeBar({
   refillRateText = "+1 CP per minute",
 }: CPGaugeBarProps) {
   const percentage = Math.min((current / max) * 100, 100);
+  const fillColorClass = percentage <= 20 ? "bg-red-500" : percentage <= 50 ? "bg-amber-500" : "bg-blue-500";
 
   return (
     <div className="mb-6">
@@ -23,7 +24,7 @@ export function CPGaugeBar({
       </div>
       <div className="h-1 bg-[#334155] rounded-full overflow-hidden">
         <div
-          className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+          className={`h-full ${fillColorClass} rounded-full transition-all duration-500 ease-out`}
           style={{ width: `${percentage}%` }}
         />
       </div>
