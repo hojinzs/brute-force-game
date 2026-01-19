@@ -11,10 +11,12 @@ SELECT
   b.accumulated_points,
   b.solved_attempt_id,
   p.nickname AS winner_nickname,
+  sa.input_value AS solved_answer,
   stats.total_attempts,
   stats.unique_participants
 FROM blocks b
 LEFT JOIN profiles p ON b.winner_id = p.id
+LEFT JOIN attempts sa ON b.solved_attempt_id = sa.id
 LEFT JOIN LATERAL (
   SELECT
     COUNT(*) AS total_attempts,
