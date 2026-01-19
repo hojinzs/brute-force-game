@@ -17,6 +17,7 @@ export type Block = {
   solved_at: string | null;
   created_by: string | null;
   accumulated_points: number;
+  solved_attempt_id?: string | null;
 };
 
 export type BlockWithNicknames = Block & {

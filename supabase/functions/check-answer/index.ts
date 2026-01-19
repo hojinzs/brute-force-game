@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     // 2. Get block info
     const { data: block, error: blockError } = await supabaseAdmin
       .from("blocks")
-      .select("id, answer_hash, answer_plaintext, status, accumulated_points")
+      .select("id, answer_hash, answer_plaintext, status, accumulated_points, solved_attempt_id")
       .eq("id", blockId)
       .single();
 
@@ -164,6 +164,7 @@ Deno.serve(async (req) => {
         .eq("id", blockId)
         .eq("status", "active");
 
+
       if (updateError) {
         await supabaseAdmin.rpc("refund_cp", { p_user_id: user.id });
 
@@ -187,7 +188,18 @@ Deno.serve(async (req) => {
         console.error("Failed to insert winning attempt:", attemptError);
       }
 
-      const attempt = attemptResult ? { id: attemptResult.attempt_id } : null;
+      const attemptId = attemptResult?.attempt_id;
+
+      if (attemptId) {
+        const { error: solveUpdateError } = await supabaseAdmin
+          .from("blocks")
+          .update({ solved_attempt_id: attemptId })
+          .eq("id", blockId);
+
+        if (solveUpdateError) {
+          console.error("Failed to update solved_attempt_id:", solveUpdateError);
+        }
+      }
 
       // 4c. Award points to winner
       const { data: awardedPoints, error: awardError } = await supabaseAdmin.rpc("award_points_to_winner", {
@@ -202,7 +214,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           correct: true,
-          attemptId: attempt?.id,
+          attemptId: attemptId,
           pointsAwarded: awardedPoints ?? newPoints,
         } as SuccessResponse),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
