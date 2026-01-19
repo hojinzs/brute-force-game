@@ -25,7 +25,7 @@ function StatusBadge({ status }: { status: string }) {
     case "pending":
       return <span className={`${base} border-amber-400/40 text-amber-200 bg-amber-500/10`}>Pending</span>;
     case "processing":
-      return <span className={`${base} border-slate-400/40 text-slate-200 bg-slate-500/10`}>Processing</span>;
+      return <span className={`${base} border-emerald-400/40 text-emerald-300 bg-emerald-500/10`}>Solved</span>;
     default:
       return <span className={`${base} border-slate-500/40 text-slate-300 bg-slate-700/40`}>{status}</span>;
   }
@@ -65,9 +65,9 @@ export default function HistoryPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">Block History</h1>
+          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Global Ledger</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Solved blocks with prize pools, winners, and attempts
+            Immutable record of all cracked blocks and verified transactions
           </p>
         </div>
         <Link
@@ -87,8 +87,7 @@ export default function HistoryPage() {
           <div className="col-span-1 text-right">Prize</div>
           <div className="col-span-1 text-right">Attempts</div>
           <div className="col-span-1 text-right">Players</div>
-          <div className="col-span-1">Solved At</div>
-          <div className="col-span-2">Solved Answer</div>
+          <div className="col-span-3">PASSWORD</div>
         </div>
 
         {isLoading && (
@@ -137,12 +136,13 @@ export default function HistoryPage() {
               <div className="col-span-1 text-right text-slate-200 font-mono">
                 {formatNumber(entry.unique_participants)}
               </div>
-              <div className="col-span-1 text-slate-300">
-                <div className="text-xs text-slate-400">Solved</div>
-                <div className="text-sm">{formatDate(entry.solved_at)}</div>
-              </div>
-              <div className="col-span-2 text-slate-100 font-mono truncate" title={entry.solved_answer ?? undefined}>
-                {entry.solved_answer ?? "-"}
+              <div className="col-span-3">
+                <code
+                  className="block max-w-full truncate rounded-md border border-slate-700/60 bg-slate-900/60 px-2 py-1 font-mono text-slate-100"
+                  title={entry.solved_answer ?? undefined}
+                >
+                  {entry.solved_answer ?? "-"}
+                </code>
               </div>
             </div>
           ))}

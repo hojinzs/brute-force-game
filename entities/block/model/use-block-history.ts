@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/shared/api";
 
 export type BlockHistoryEntry = {
@@ -17,6 +17,8 @@ export type BlockHistoryEntry = {
 };
 
 const PAGE_SIZE = 50;
+const HISTORY_STALE_TIME_MS = 10000;
+const RECENT_HISTORY_LIMIT = 20;
 
 export function useBlockHistory() {
   return useInfiniteQuery({
@@ -28,7 +30,7 @@ export function useBlockHistory() {
       const { data, error } = await supabase
         .from("block_history_view")
         .select("*")
-        .order("solved_at", { ascending: false })
+        .order("block_id", { ascending: false })
         .range(from, to);
 
       if (error) {
@@ -44,6 +46,26 @@ export function useBlockHistory() {
       }
       return allPages.length;
     },
-    staleTime: 10000,
+    staleTime: HISTORY_STALE_TIME_MS,
+  });
+}
+
+export function useRecentBlockHistory(limit: number = RECENT_HISTORY_LIMIT) {
+  return useQuery({
+    queryKey: ["blockHistory", "recent", limit],
+    queryFn: async (): Promise<BlockHistoryEntry[]> => {
+      const { data, error } = await supabase
+        .from("block_history_view")
+        .select("*")
+        .order("block_id", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw error;
+      }
+
+      return (data || []) as BlockHistoryEntry[];
+    },
+    staleTime: HISTORY_STALE_TIME_MS,
   });
 }
