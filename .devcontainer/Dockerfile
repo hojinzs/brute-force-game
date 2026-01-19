@@ -22,13 +22,13 @@ RUN npm install -g pnpm@latest
 RUN curl -fsSL https://bun.sh/install | bash
 ENV BUN_INSTALL="/root/.bun"
 ENV PATH="$BUN_INSTALL/bin:$PATH"
-RUN su node -c "curl -fsSL https://bun.sh/install | bash"
+RUN su node -c "BUN_INSTALL=/home/node/.bun curl -fsSL https://bun.sh/install | bash"
 
 # Install Deno
 RUN curl -fsSL https://deno.land/install.sh | sh
 ENV DENO_INSTALL="/root/.deno"
 ENV PATH="$DENO_INSTALL/bin:$PATH"
-RUN su node -c "curl -fsSL https://deno.land/install.sh | sh"
+RUN su node -c "DENO_INSTALL=/home/node/.deno curl -fsSL https://deno.land/install.sh | sh"
 
 # Install Supabase CLI
 RUN curl -fsSL https://raw.githubusercontent.com/supabase/supabase/master/apps/cli/install.sh | sh
