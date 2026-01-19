@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { useMemo, useRef, useEffect, useCallback } from "react";
 import { useBlockHistory } from "@/entities/block";
@@ -30,7 +32,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function HistoryPage() {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useBlockHistory();
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, isError } = useBlockHistory();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const entries = useMemo(() => data?.pages.flatMap((page) => page) ?? [], [data]);
@@ -81,7 +83,7 @@ export default function HistoryPage() {
           <div className="col-span-1">#</div>
           <div className="col-span-2">Status</div>
           <div className="col-span-2">Seed Hint</div>
-          <div className="col-span-2">Winner</div>
+          <div className="col-span-1">Winner</div>
           <div className="col-span-1 text-right">Prize</div>
           <div className="col-span-1 text-right">Attempts</div>
           <div className="col-span-1 text-right">Players</div>
@@ -91,7 +93,14 @@ export default function HistoryPage() {
 
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" aria-label="Loading history" />
+          </div>
+        )}
+
+        {isError && (
+          <div className="flex flex-col items-center justify-center py-12 text-red-400">
+            <p className="text-lg">Failed to load history</p>
+            <p className="text-sm mt-1">{error instanceof Error ? error.message : "Unknown error occurred"}</p>
           </div>
         )}
 
@@ -116,9 +125,8 @@ export default function HistoryPage() {
               <div className="col-span-2 text-slate-200 truncate" title={entry.seed_hint ?? undefined}>
                 {entry.seed_hint ?? "-"}
               </div>
-              <div className="col-span-2">
-                <div className="text-slate-200">{entry.winner_nickname || entry.winner_id || "-"}</div>
-                <div className="text-xs text-slate-500">Prize: {formatNumber(entry.accumulated_points)} pts</div>
+              <div className="col-span-1 truncate" title={entry.winner_nickname || entry.winner_id || undefined}>
+                {entry.winner_nickname || entry.winner_id || "-"}
               </div>
               <div className="col-span-1 text-right font-mono text-emerald-400">
                 {formatNumber(entry.accumulated_points)}
@@ -143,7 +151,10 @@ export default function HistoryPage() {
         <div ref={loadMoreRef} className="py-4">
           {isFetchingNextPage && (
             <div className="flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div
+                className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+                aria-label="Loading more history entries"
+              />
               <span className="ml-2 text-sm text-slate-400">Loading more...</span>
             </div>
           )}
