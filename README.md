@@ -135,6 +135,36 @@ supabase stop         # Stop Supabase stack
 supabase status       # Show service status
 ```
 
+## Deployment
+
+### Migration Order (Critical)
+
+When deploying changes that involve both database schema and application code:
+
+1. **Apply migrations first**: Run `supabase db push` to ensure schema changes are applied
+2. **Deploy code changes**: Deploy Edge Functions and application code after migrations complete
+
+**Why this matters**: Deploying code that references new database columns before migrations are applied will cause runtime errors. For example, the `check-answer` Edge Function references `solved_attempt_id` column which requires the `20260119000001_add_solved_attempt_id_fk.sql` migration to run first.
+
+**Example workflow**:
+```bash
+# 1. Ensure database is up to date
+supabase db push
+
+# 2. Deploy Edge Functions
+supabase functions deploy check-answer
+
+# 3. Deploy application code
+pnpm build && (your deployment command)
+```
+
+### Production Deployment Checklist
+
+- [ ] All database migrations applied (`supabase db push`)
+- [ ] Edge Functions deployed with correct environment variables
+- [ ] Application build passes (`pnpm build`)
+- [ ] Smoke tests pass on production environment
+
 ## Documentation
 
 See `docs/` for detailed specifications:

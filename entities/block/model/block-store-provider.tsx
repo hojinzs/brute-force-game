@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentBlock } from "./use-current-block";
 import { useBlockSubscription } from "./use-block-subscription";
 import { useGameStore } from "@/shared/store";
@@ -14,10 +15,15 @@ type BlockStoreProviderProps = {
 };
 
 export function BlockStoreProvider({ initialBlock, children }: BlockStoreProviderProps) {
+  const queryClient = useQueryClient();
   const { data: block, isLoading, refetch } = useCurrentBlock(initialBlock ?? undefined);
   const setBlock = useGameStore((s) => s.setBlock);
   const setLoading = useGameStore((s) => s.setLoading);
   const { show: showVictory, hide: hideVictory } = useVictory();
+
+  const refreshLedger = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["blockHistory"] });
+  }, [queryClient]);
 
   useEffect(() => {
     setBlock(block ?? null);
@@ -27,6 +33,8 @@ export function BlockStoreProvider({ initialBlock, children }: BlockStoreProvide
   useBlockSubscription(
     useCallback(
       async (updatedBlock) => {
+        refreshLedger();
+
         if (updatedBlock.status === "pending" && updatedBlock.winner_id) {
           const { data: profile } = await supabase
             .from("profiles")
@@ -48,7 +56,7 @@ export function BlockStoreProvider({ initialBlock, children }: BlockStoreProvide
           refetch();
         }
       },
-      [refetch, showVictory, hideVictory]
+      [refreshLedger, refetch, showVictory, hideVictory]
     )
   );
 
