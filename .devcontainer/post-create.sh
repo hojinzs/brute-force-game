@@ -10,6 +10,23 @@ else
     echo "⚠️  OpenCode installation may still be in progress"
 fi
 
+# Install Bun
+echo "📦 Installing Bun..."
+export BUN_INSTALL="/home/node/.bun"
+curl -fsSL https://bun.sh/install | bash
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Install Deno
+echo "📦 Installing Deno..."
+export DENO_INSTALL="/home/node/.deno"
+curl -fsSL https://deno.land/install.sh | sh
+export PATH="$DENO_INSTALL/bin:$PATH"
+
+# Install Supabase CLI
+echo "📦 Installing Supabase CLI..."
+curl -fsSL https://raw.githubusercontent.com/supabase/supabase/master/apps/cli/install.sh | sh
+export PATH="/home/node/.supabase/bin:$PATH"
+
 # Install project dependencies
 echo "📦 Installing pnpm dependencies..."
 pnpm install
