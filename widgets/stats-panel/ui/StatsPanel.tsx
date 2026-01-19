@@ -44,7 +44,7 @@ function BlockHistoryList() {
       </div>
       <div className="flex-1 overflow-y-auto">
         {history.map((block: BlockHistoryEntry) => {
-          const isSolved = block.status === "solved" || block.status === "processing";
+          const isSolved = block.status === "solved";
           const displayTime = block.solved_at ?? block.created_at;
 
           return (

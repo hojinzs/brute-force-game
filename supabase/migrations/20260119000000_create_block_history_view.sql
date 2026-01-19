@@ -11,19 +11,16 @@ SELECT
   b.accumulated_points,
   b.solved_attempt_id,
   p.nickname AS winner_nickname,
-  sa.input_value AS solved_answer,
   stats.total_attempts,
   stats.unique_participants
 FROM blocks b
 LEFT JOIN profiles p ON b.winner_id = p.id
-LEFT JOIN attempts sa ON b.solved_attempt_id = sa.id
 LEFT JOIN LATERAL (
   SELECT
     COUNT(*) AS total_attempts,
     COUNT(DISTINCT a.user_id) AS unique_participants
   FROM attempts a
   WHERE a.block_id = b.id
-) stats ON true
-ORDER BY b.id DESC;
+) stats ON true;
 
 GRANT SELECT ON block_history_view TO authenticated, anon;

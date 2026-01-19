@@ -11,7 +11,6 @@ export type BlockHistoryEntry = {
   accumulated_points: number;
   solved_attempt_id: string | null;
   winner_nickname: string | null;
-  solved_answer: string | null;
   total_attempts: number;
   unique_participants: number;
 };

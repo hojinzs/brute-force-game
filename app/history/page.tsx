@@ -82,12 +82,11 @@ export default function HistoryPage() {
         <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800 border-b border-slate-700 text-xs font-medium text-slate-400 uppercase tracking-wider">
           <div className="col-span-1">#</div>
           <div className="col-span-2">Status</div>
-          <div className="col-span-2">Seed Hint</div>
-          <div className="col-span-1">Winner</div>
+          <div className="col-span-4">Seed Hint</div>
+          <div className="col-span-2">Winner</div>
           <div className="col-span-1 text-right">Prize</div>
           <div className="col-span-1 text-right">Attempts</div>
           <div className="col-span-1 text-right">Players</div>
-          <div className="col-span-3">PASSWORD</div>
         </div>
 
         {isLoading && (
@@ -121,10 +120,10 @@ export default function HistoryPage() {
                 <StatusBadge status={entry.status} />
                 <div className="text-xs text-slate-500 mt-1">{formatDate(entry.created_at)}</div>
               </div>
-              <div className="col-span-2 text-slate-200 truncate" title={entry.seed_hint ?? undefined}>
+              <div className="col-span-4 text-slate-200 truncate" title={entry.seed_hint ?? undefined}>
                 {entry.seed_hint ?? "-"}
               </div>
-              <div className="col-span-1 truncate" title={entry.winner_nickname || entry.winner_id || undefined}>
+              <div className="col-span-2 truncate" title={entry.winner_nickname || entry.winner_id || undefined}>
                 {entry.winner_nickname || entry.winner_id || "-"}
               </div>
               <div className="col-span-1 text-right font-mono text-emerald-400">
@@ -135,14 +134,6 @@ export default function HistoryPage() {
               </div>
               <div className="col-span-1 text-right text-slate-200 font-mono">
                 {formatNumber(entry.unique_participants)}
-              </div>
-              <div className="col-span-3">
-                <code
-                  className="block max-w-full truncate rounded-md border border-slate-700/60 bg-slate-900/60 px-2 py-1 font-mono text-slate-100"
-                  title={entry.solved_answer ?? undefined}
-                >
-                  {entry.solved_answer ?? "-"}
-                </code>
               </div>
             </div>
           ))}
