@@ -22,11 +22,6 @@ export DENO_INSTALL="/home/node/.deno"
 curl -fsSL https://deno.land/install.sh | sh
 export PATH="$DENO_INSTALL/bin:$PATH"
 
-# Install Supabase CLI
-echo "📦 Installing Supabase CLI..."
-curl -fsSL https://raw.githubusercontent.com/supabase/supabase/master/apps/cli/install.sh | sh
-export PATH="/home/node/.supabase/bin:$PATH"
-
 # Install project dependencies
 echo "📦 Installing pnpm dependencies..."
 pnpm install
@@ -37,7 +32,9 @@ echo "Node version: $(node --version)"
 echo "pnpm version: $(pnpm --version)"
 echo "Bun version: $(bun --version)"
 echo "Deno version: $(deno --version | head -n 1)"
-echo "Supabase CLI version: $(supabase --version)"
+if command -v supabase &> /dev/null; then
+    echo "Supabase CLI version: $(supabase --version)"
+fi
 if command -v opencode &> /dev/null; then
     echo "OpenCode: Installed ✓"
 fi

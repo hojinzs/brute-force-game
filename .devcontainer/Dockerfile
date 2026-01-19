@@ -13,6 +13,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     unzip \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
+# Install Supabase CLI
+RUN echo 'deb [trusted=yes] https://apt.supabase.com/ /' | tee /etc/apt/sources.list.d/supabase.list \
+    && apt-get update \
+    && apt-get install -y supabase \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
 # Install pnpm only
 RUN npm install -g pnpm@latest
 
