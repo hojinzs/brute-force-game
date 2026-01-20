@@ -8,6 +8,11 @@ import { useVictory } from "@/shared/context";
 import { supabase } from "@/shared/api";
 import { useCheckAnswer } from "./use-check-answer";
 
+type SubmitAnswerResult = {
+  similarity: number;
+  isCorrect: boolean;
+};
+
 export function useSubmitAnswer() {
   const { block } = useBlock();
   const { user } = useAuth();
@@ -16,8 +21,8 @@ export function useSubmitAnswer() {
   const { show: showVictory } = useVictory();
 
   const submit = useCallback(
-    async (value: string) => {
-      if (!block || block.status !== "active" || currentCP <= 0) return;
+    async (value: string): Promise<SubmitAnswerResult | null> => {
+      if (!block || block.status !== "active" || currentCP <= 0) return null;
 
       try {
         const result = await checkAnswer.mutateAsync({
@@ -37,6 +42,11 @@ export function useSubmitAnswer() {
             winnerNickname: profile?.nickname || "You",
           });
         }
+
+        return {
+          similarity: result.similarity,
+          isCorrect: result.correct,
+        };
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         if (errorMessage.includes("RATE_LIMITED")) {
