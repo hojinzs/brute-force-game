@@ -17,17 +17,15 @@ AS $func$
 DECLARE
   v_attempt_id UUID;
   v_is_first BOOLEAN;
-  v_existing_id UUID;
 BEGIN
-  -- Check if this input_value already exists for this block
-  SELECT id INTO v_existing_id
-  FROM attempts 
-  WHERE block_id = p_block_id 
-    AND input_value = p_input_value
-  LIMIT 1;
-  
-  -- Set is_first_submission based on whether this is the first time
-  v_is_first := v_existing_id IS NULL;
+  -- Check if this input_value already exists for this block (only check first submissions)
+  SELECT NOT EXISTS(
+    SELECT 1 
+    FROM attempts 
+    WHERE block_id = p_block_id 
+      AND input_value = p_input_value
+      AND is_first_submission = true
+  ) INTO v_is_first;
   
   -- Always insert a new row (allow duplicates)
   INSERT INTO attempts (block_id, user_id, input_value, similarity, is_first_submission)
