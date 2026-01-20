@@ -30,7 +30,6 @@ export function HackingConsole({
     lastAttemptIsCorrect,
     isValidLength,
     handleChange,
-    handleKeyDown,
     handleSubmit,
   } = useHackingConsole({
     length,
@@ -54,9 +53,7 @@ export function HackingConsole({
       cpCurrent={currentCP}
       cpMax={max}
       onChange={handleChange}
-      onKeyDown={handleKeyDown}
       onSubmit={handleSubmit}
     />
   );
 }
-

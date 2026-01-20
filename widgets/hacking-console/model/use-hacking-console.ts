@@ -30,7 +30,6 @@ type UseHackingConsoleResult = {
   lastAttemptIsCorrect: boolean | null;
   isValidLength: boolean;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   handleSubmit: () => void;
   resetError: () => void;
 };
@@ -141,14 +140,6 @@ export function useHackingConsole({
     })();
   }, [disabled, passwordSchema, value, onSubmit]);
 
-  const handleKeyDown = useCallback(
-    (_e: React.KeyboardEvent<HTMLInputElement>) => {
-      // Note: Enter key is handled by MaskedPasswordInput's onEnter prop
-      // to avoid double submission
-    },
-    []
-  );
-
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
@@ -191,7 +182,6 @@ export function useHackingConsole({
     lastAttemptIsCorrect,
     isValidLength,
     handleChange,
-    handleKeyDown,
     handleSubmit,
     resetError,
   };

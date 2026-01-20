@@ -31,7 +31,6 @@ export const Default: Story = {
     cpCurrent: 35,
     cpMax: 50,
     onChange: () => {},
-    onKeyDown: () => {},
     onSubmit: () => {},
   },
 };
@@ -120,12 +119,6 @@ export const Interactive: Story = {
       setShowErrorBorder(false);
     };
 
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === "Enter") {
-        handleSubmit();
-      }
-    };
-
     return (
       <HackingConsoleView
         {...args}
@@ -139,7 +132,6 @@ export const Interactive: Story = {
         lastAttemptIsCorrect={lastAttemptIsCorrect}
         cpCurrent={cpCurrent}
         onChange={handleChange}
-        onKeyDown={handleKeyDown}
         onSubmit={handleSubmit}
       />
     );

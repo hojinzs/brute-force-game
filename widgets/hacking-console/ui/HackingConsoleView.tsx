@@ -5,7 +5,6 @@ import { CPGaugeBar } from "@/features/cp-gauge";
 import { type CharsetType } from "@/shared/lib/charset";
 import { CharsetBadge } from "@/shared/ui/CharsetBadge";
 import { MaskedPasswordInput } from "./MaskedPasswordInput";
-import { PreviousAttemptDisplay } from "./PreviousAttemptDisplay";
 
 type LastAttempt = {
   input: string;
@@ -26,7 +25,6 @@ type HackingConsoleViewProps = {
   cpCurrent: number;
   cpMax: number;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
 };
 
@@ -44,7 +42,6 @@ export function HackingConsoleView({
   cpCurrent,
   cpMax,
   onChange,
-  onKeyDown,
   onSubmit,
 }: HackingConsoleViewProps) {
   const cpEmpty = cpCurrent <= 0;
@@ -68,7 +65,6 @@ export function HackingConsoleView({
           length={length}
           value={value}
           onChange={(val) => onChange({ target: { value: val } } as any)}
-          onKeyDown={(e) => onKeyDown(e as any)}
           disabled={disabled}
           isError={!!error || showErrorBorder}
           onEnter={isValidLength && !disabled ? onSubmit : undefined}
