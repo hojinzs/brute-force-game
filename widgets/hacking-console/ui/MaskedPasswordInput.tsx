@@ -74,7 +74,7 @@ export function MaskedPasswordInput({
         onKeyDown={handleKeyDownInternal}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-text"
+        className="absolute inset-0 w-full h-full opacity-0 cursor-text caret-transparent"
         disabled={disabled}
         autoComplete="off"
         spellCheck={false}
