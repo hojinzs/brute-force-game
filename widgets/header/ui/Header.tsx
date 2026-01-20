@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth, SignInModal, SignUpModal } from "@/features/auth";
+import Link from "next/link";
+import { useAuth, SignInModal } from "@/features/auth";
 
-type ModalType = "signin" | "signup" | null;
+type ModalType = "signin" | null;
 
 export function Header() {
   const { user, loading, signOut } = useAuth();
@@ -35,12 +36,12 @@ export function Header() {
                 >
                   Sign In
                 </button>
-                <button
-                  onClick={() => setModalOpen("signup")}
+                <Link
+                  href="/auth/signup"
                   className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-semibold rounded-lg transition-colors"
                 >
                   Sign Up
-                </button>
+                </Link>
               </>
             )}
           </nav>
@@ -48,7 +49,6 @@ export function Header() {
       </header>
 
       <SignInModal isOpen={modalOpen === "signin"} onClose={closeModal} />
-      <SignUpModal isOpen={modalOpen === "signup"} onClose={closeModal} />
     </>
   );
 }

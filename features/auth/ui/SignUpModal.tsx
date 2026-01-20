@@ -25,7 +25,12 @@ export function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
     setLoading(true);
 
     try {
-      await signUpWithEmail(email, password, nickname);
+      await signUpWithEmail({
+        email,
+        password,
+        nickname,
+        emailConsent: false,
+      });
       setError("Account created! Please check your email to verify your account.");
       setTimeout(() => {
         onClose();
