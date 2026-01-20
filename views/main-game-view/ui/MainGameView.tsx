@@ -111,22 +111,22 @@ export function MainGameView() {
            </div>
 
            {/* 3. AD Placeholder */}
-           <div className="h-[500px] border border-[#334155] rounded-xl bg-[#1e293b] flex items-center justify-center md:col-span-2 lg:col-span-1">
+           <div className="h-[500px] border border-[#334155]/50 rounded-xl bg-[#1e293b]/40 backdrop-blur-md flex items-center justify-center md:col-span-2 lg:col-span-1">
              <span className="text-slate-500 text-sm">AD</span>
            </div>
 
            {/* 4. Block History */}
-           <div className="h-[500px] border border-[#334155] rounded-xl bg-[#1e293b] overflow-hidden">
+           <div className="h-[500px] border border-[#334155]/50 rounded-xl bg-[#1e293b]/40 backdrop-blur-md overflow-hidden">
              <BlockHistoryList />
            </div>
 
            {/* 5. Ranking */}
-           <div className="h-[500px] bg-[#1e293b] border border-[#334155] rounded-xl overflow-hidden">
+           <div className="h-[500px] bg-[#1e293b]/40 backdrop-blur-md border border-[#334155]/50 rounded-xl overflow-hidden">
               <RankingWidget />
            </div>
 
            {/* 6. Communication Placeholder */}
-           <div className="h-[500px] border border-[#334155] rounded-xl bg-[#1e293b] flex items-center justify-center md:col-span-2 lg:col-span-1">
+           <div className="h-[500px] border border-[#334155]/50 rounded-xl bg-[#1e293b]/40 backdrop-blur-md flex items-center justify-center md:col-span-2 lg:col-span-1">
              <span className="text-slate-500 text-sm">Communication</span>
            </div>
         </div>

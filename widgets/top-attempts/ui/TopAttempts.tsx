@@ -14,7 +14,7 @@ export function TopAttempts({ attempts }: TopAttemptsProps) {
     .slice(0, 20);
 
   return (
-    <div className="bg-[#1e293b] border border-[#334155] rounded-xl overflow-hidden h-full">
+    <div className="bg-[#1e293b]/40 backdrop-blur-md border border-[#334155]/50 rounded-xl overflow-hidden h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#334155]">
         <h2 className="text-slate-50 font-medium flex items-center gap-2">
           <span>🎯</span>

@@ -31,7 +31,7 @@ export function RankingWidget() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
         <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
           <span>🏆</span>
           TOP PLAYERS

@@ -53,7 +53,7 @@ export function HackingConsoleView({
     <motion.div
       animate={isShaking ? { x: [0, -5, 5, -5, 5, 0] } : { x: 0 }}
       transition={{ duration: 0.2 }}
-      className="bg-[#1e293b] border border-slate-700 rounded-xl p-5"
+      className="bg-[#1e293b]/40 backdrop-blur-md border border-slate-700/50 rounded-xl p-5"
     >
       {/* CP Gauge */}
       <CPGaugeBar 

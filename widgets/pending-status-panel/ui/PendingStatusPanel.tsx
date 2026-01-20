@@ -15,7 +15,7 @@ export function PendingStatusPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-[#1e293b] border border-emerald-500/30 rounded-xl p-6 text-center">
+      <div className="bg-[#1e293b]/40 backdrop-blur-md border border-emerald-500/30 rounded-xl p-6 text-center">
         <div className="flex items-center justify-center gap-3 mb-4">
           <motion.div
             animate={{ rotate: 360 }}

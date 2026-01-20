@@ -11,7 +11,7 @@ type LiveFeedProps = {
 
 export function LiveFeed({ attempts, newAttemptId, onlineCount }: LiveFeedProps) {
   return (
-    <div className="bg-[#1e293b] border border-[#334155] rounded-xl overflow-hidden h-full">
+    <div className="bg-[#1e293b]/40 backdrop-blur-md border border-[#334155]/50 rounded-xl overflow-hidden h-full">
       <div className="px-4 py-3 border-b border-[#334155] flex items-center justify-between">
         <div>
           <h2 className="text-slate-50 font-medium">Live Feed</h2>
