@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/shared/api";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -16,7 +17,8 @@ export default function AuthCallbackPage() {
         if (error) throw error;
         
         if (data.session) {
-          router.push("/");
+          const next = searchParams.get("next") || "/";
+          router.push(next);
         } else {
           setError("No session found. Please try again.");
         }
@@ -28,7 +30,7 @@ export default function AuthCallbackPage() {
     };
 
     handleCallback();
-  }, [router]);
+  }, [router, searchParams]);
 
   if (error) {
     return (

@@ -8,6 +8,15 @@ export type AuthUser = {
   email?: string;
 };
 
+export type SignUpParams = {
+  email: string;
+  password: string;
+  nickname: string;
+  country: string;
+  emailConsent: boolean;
+  redirectTo?: string;
+};
+
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +69,10 @@ export function useAuth() {
   );
 
   const signUpWithEmail = useCallback(
-    async (email: string, password: string, nickname: string) => {
+    async (params: SignUpParams) => {
+      const { email, password, nickname, country, emailConsent, redirectTo = "/" } = params;
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+
       const {
         data: { user: authUser },
         error: signUpError,
@@ -70,7 +82,10 @@ export function useAuth() {
         options: {
           data: {
             nickname,
+            country,
+            email_consent: emailConsent,
           },
+          emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
         },
       });
 
@@ -111,5 +126,14 @@ export function useAuth() {
     updatePassword,
     updateNickname,
     signOut,
+  };
+}
+
+export function useRequireAuth() {
+  const { user, loading } = useAuth();
+  return {
+    isAuthenticated: !!user,
+    isLoading: loading,
+    requiresSignup: !user && !loading,
   };
 }
