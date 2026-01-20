@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth, SignInModal } from "@/features/auth";
+import { SoundButton } from "@/shared/sounds/ui/SoundButton";
+import { SoundSettingsModal } from "@/shared/sounds/ui/SoundSettingsModal";
 
-type ModalType = "signin" | null;
+type ModalType = "signin" | "sound" | null;
 
 export function Header() {
   const { user, loading, signOut } = useAuth();
@@ -21,6 +23,8 @@ export function Header() {
 
         {!loading && (
           <nav className="flex items-center gap-2">
+            <SoundButton onClick={() => setModalOpen("sound")} />
+            
             {user ? (
               <button
                 onClick={signOut}
@@ -49,6 +53,7 @@ export function Header() {
       </header>
 
       <SignInModal isOpen={modalOpen === "signin"} onClose={closeModal} />
+      <SoundSettingsModal isOpen={modalOpen === "sound"} onClose={closeModal} />
     </>
   );
 }

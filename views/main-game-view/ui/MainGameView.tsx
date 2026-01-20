@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { SignInModal } from "@/features/auth";
 
@@ -9,6 +9,7 @@ import { useAuth } from "@/features/auth";
 import { useCPGauge } from "@/features/cp-gauge";
 import { useSubmitAnswer } from "@/features/check-answer";
 import { useVictory } from "@/shared/context";
+import { emitSoundEvent, SOUND_EVENTS } from "@/shared/sounds";
 import { BlockHeader } from "@/entities/block";
 import {
   HackingConsole,
@@ -36,6 +37,38 @@ export function MainGameView() {
   // Stats Data
   const { attempts, newAttemptId } = useAttempts(block?.id);
   const onlineCount = useOnlineUsers(block?.id);
+
+  const prevTopSimilarityRef = useRef<number | null>(null);
+  const isFirstTopAttemptRef = useRef(true);
+
+  useEffect(() => {
+    isFirstTopAttemptRef.current = true;
+    prevTopSimilarityRef.current = null;
+  }, [block?.id]);
+
+  useEffect(() => {
+    if (!attempts.length) return;
+
+    const topCandidates = attempts
+      .filter((attempt) => attempt.is_first_submission && attempt.similarity > 0)
+      .map((attempt) => attempt.similarity);
+
+    if (!topCandidates.length) return;
+
+    const currentTop = Math.max(...topCandidates);
+
+    if (isFirstTopAttemptRef.current) {
+      isFirstTopAttemptRef.current = false;
+      prevTopSimilarityRef.current = currentTop;
+      return;
+    }
+
+    if (prevTopSimilarityRef.current !== null && currentTop > prevTopSimilarityRef.current) {
+      emitSoundEvent(SOUND_EVENTS.topAttempt);
+    }
+
+    prevTopSimilarityRef.current = currentTop;
+  }, [attempts]);
 
   if (!block) {
     return null;

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { filterAllowedChars, createPasswordSchema, type CharsetType } from "@/shared/lib/charset";
+import { emitSoundEvent, SOUND_EVENTS } from "@/shared/sounds";
 
 export type SubmitAnswerResult = {
   similarity: number;
@@ -126,6 +127,7 @@ export function useHackingConsole({
           setLastAttemptIsCorrect(submitResult.isCorrect);
 
           if (!submitResult.isCorrect) {
+            emitSoundEvent(SOUND_EVENTS.wrongAnswer);
             triggerErrorFeedback();
           }
         }
@@ -157,6 +159,7 @@ export function useHackingConsole({
       // Ignore if deleting (newValue length is shorter than current value)
       if (newValue.length > filteredValue.length && newValue.length >= value.length) {
         setError("Invalid character");
+        emitSoundEvent(SOUND_EVENTS.invalidChar);
         triggerErrorFeedback();
         
         // Clear error after 2 seconds
