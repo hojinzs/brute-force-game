@@ -142,12 +142,11 @@ export function useHackingConsole({
   }, [disabled, passwordSchema, value, onSubmit]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
-        handleSubmit();
-      }
+    (_e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Note: Enter key is handled by MaskedPasswordInput's onEnter prop
+      // to avoid double submission
     },
-    [handleSubmit]
+    []
   );
 
   const handleChange = useCallback(
