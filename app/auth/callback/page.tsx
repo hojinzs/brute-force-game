@@ -1,10 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/shared/api";
 
-export default function AuthCallbackPage() {
+function LoadingState() {
+  return (
+    <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block w-16 h-16 border-4 border-slate-600 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-400">Verifying your email...</p>
+      </div>
+    </div>
+  );
+}
+
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -13,9 +24,9 @@ export default function AuthCallbackPage() {
     const handleCallback = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
-        
+
         if (error) throw error;
-        
+
         if (data.session) {
           const next = searchParams.get("next") || "/";
           router.push(next);
@@ -49,12 +60,13 @@ export default function AuthCallbackPage() {
     );
   }
 
+  return <LoadingState />;
+}
+
+export default function AuthCallbackPage() {
   return (
-    <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-      <div className="text-center">
-        <div className="inline-block w-16 h-16 border-4 border-slate-600 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-400">Verifying your email...</p>
-      </div>
-    </div>
+    <Suspense fallback={<LoadingState />}>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
