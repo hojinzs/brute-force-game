@@ -93,7 +93,7 @@ emitSoundEvent(SOUND_EVENTS.topAttempt);
 ### 6.1 Header 버튼
 
 - 위치: Header 우측 네비게이션 영역
-- 표시: `[VOL]` (소리 켜짐) / `[MUT]` (음소거)
+- 표시: 스피커 아이콘 (파란색: 소리 켜짐, 회색: 음소거)
 - 클릭 시 설정 모달 열림
 
 ### 6.2 설정 모달
@@ -101,8 +101,8 @@ emitSoundEvent(SOUND_EVENTS.topAttempt);
 | 항목 | UI 요소 | 설명 |
 |------|---------|------|
 | MASTER GAIN | 슬라이더 (0-100%) | 전체 볼륨 조절 |
-| BGM STREAM | 토글 `[ON]/[OFF]` | 배경음악 켜기/끄기 |
-| SFX MODULE | 토글 `[ON]/[OFF]` | 효과음 켜기/끄기 |
+| CHANNEL 01 / BGM | 채널 라벨 + 상태 표시 점(● 활성 / ○ 비활성) | 배경음악 채널 켜기/끄기 |
+| CHANNEL 02 / SFX | 채널 라벨 + 상태 표시 점(● 활성 / ○ 비활성) | 효과음 채널 켜기/끄기 |
 
 ## 7. ZZFX 프리셋
 

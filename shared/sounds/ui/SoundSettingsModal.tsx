@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChangeEvent } from "react";
+import { useEffect, type ChangeEvent } from "react";
 import { useSoundSettingsStore } from "../sound-settings-store";
 import { soundManager } from "../sound-manager";
 
@@ -19,6 +19,17 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
   const setSfxEnabled = useSoundSettingsStore((s) => s.setSfxEnabled);
   const setVolume = useSoundSettingsStore((s) => s.setVolume);
   const toggleMasterMute = useSoundSettingsStore((s) => s.toggleMasterMute);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -46,14 +57,16 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
       <div
-        className="bg-[#0f172a] border border-[#334155] rounded-xl overflow-hidden max-w-sm w-full shadow-2xl ring-1 ring-white/10"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        onClick={onClose}
       >
+        <div
+          className="bg-[#0f172a] border border-[#334155] rounded-xl overflow-hidden max-w-sm w-full shadow-2xl ring-1 ring-white/10"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
         {/* Header */}
         <div className="bg-[#1e293b] p-4 flex justify-between items-center border-b border-[#334155]">
           <div className="flex items-center gap-2">
@@ -93,6 +106,8 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
             </div>
             <button
               onClick={toggleMasterMute}
+              aria-label="Toggle master audio"
+              aria-pressed={masterMuted}
               className={`
                 relative w-12 h-6 rounded-full transition-colors duration-200 ease-in-out focus:outline-none ring-offset-2 ring-offset-[#0f172a] focus:ring-2 focus:ring-blue-500
                 ${!masterMuted ? "bg-blue-600" : "bg-slate-700"}
@@ -111,7 +126,10 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
             {/* Volume Slider */}
             <div className="space-y-3">
               <div className="flex justify-between items-end">
-                <label className="text-xs font-bold text-slate-400 font-mono tracking-wider">
+                <label
+                  className="text-xs font-bold text-slate-400 font-mono tracking-wider"
+                  htmlFor="master-gain"
+                >
                   MASTER GAIN
                 </label>
                 <span className="text-xs font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
@@ -119,12 +137,14 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
                 </span>
               </div>
               <input
+                id="master-gain"
                 type="range"
                 min="0"
                 max="100"
                 value={volume * 100}
                 onChange={handleVolumeChange}
                 disabled={masterMuted}
+                aria-valuetext={`${Math.round(volume * 100)}%`}
                 className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:accent-blue-400"
               />
             </div>
@@ -135,6 +155,8 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
               <button
                 onClick={toggleBgm}
                 disabled={masterMuted}
+                aria-label="Toggle background music"
+                aria-pressed={bgmEnabled}
                 className={`
                   p-3 rounded-lg border text-left transition-all
                   ${bgmEnabled 
@@ -153,6 +175,8 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
               <button
                 onClick={toggleSfx}
                 disabled={masterMuted}
+                aria-label="Toggle sound effects"
+                aria-pressed={sfxEnabled}
                 className={`
                   p-3 rounded-lg border text-left transition-all
                   ${sfxEnabled 

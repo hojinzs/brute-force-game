@@ -76,11 +76,11 @@ export const useSoundSettingsStore = create<SoundSettingsState & SoundSettingsAc
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         if (isExpired(state.lastUpdated)) {
-          state.reset();
+          useSoundSettingsStore.getState().reset();
           localStorage.removeItem(STORAGE_KEY);
           return;
         }
-        state.touch();
+        useSoundSettingsStore.getState().touch();
       },
     }
   )

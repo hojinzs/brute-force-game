@@ -14,6 +14,7 @@ class SoundManager {
   private bgmEnabled = false;
   private sfxEnabled = false;
   private volume = 0.5;
+  private eventAbortController: AbortController | null = null;
   private zzfxModulePromise: Promise<{
     zzfx: (...parameters: Array<number | undefined>) => AudioBufferSourceNode;
     ZZFX: { volume: number; audioContext: AudioContext };
@@ -26,15 +27,36 @@ class SoundManager {
   }
 
   private bindEventListeners() {
-    window.addEventListener(SOUND_EVENTS.wrongAnswer, () => {
+    this.eventAbortController?.abort();
+    this.eventAbortController = new AbortController();
+    const { signal } = this.eventAbortController;
+
+    window.addEventListener(
+      SOUND_EVENTS.wrongAnswer,
+      () => {
       this.playSfx("wrongAnswer");
-    });
-    window.addEventListener(SOUND_EVENTS.invalidChar, () => {
+      },
+      { signal }
+    );
+    window.addEventListener(
+      SOUND_EVENTS.invalidChar,
+      () => {
       this.playSfx("invalidChar");
-    });
-    window.addEventListener(SOUND_EVENTS.topAttempt, () => {
+      },
+      { signal }
+    );
+    window.addEventListener(
+      SOUND_EVENTS.topAttempt,
+      () => {
       this.playSfx("topAttempt");
-    });
+      },
+      { signal }
+    );
+  }
+
+  dispose() {
+    this.eventAbortController?.abort();
+    this.eventAbortController = null;
   }
 
   private loadZzfx() {
@@ -90,10 +112,19 @@ class SoundManager {
     if (!this.bgmElement) return;
 
     const playPromise = this.bgmElement.play();
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => {
-        this.pendingBgmPlay = true;
-      });
+    if (
+      playPromise &&
+      typeof playPromise.then === "function" &&
+      typeof playPromise.catch === "function"
+    ) {
+      playPromise
+        .then(() => {
+          this.pendingBgmPlay = false;
+        })
+        .catch(() => {
+          this.pendingBgmPlay = true;
+        });
+      return;
     }
     this.pendingBgmPlay = false;
   }
