@@ -11,6 +11,7 @@ type SoundSettingsState = {
   bgmEnabled: boolean;
   sfxEnabled: boolean;
   volume: number;
+  masterMuted: boolean;
   lastUpdated: number;
 };
 
@@ -18,6 +19,8 @@ type SoundSettingsActions = {
   setBgmEnabled: (enabled: boolean) => void;
   setSfxEnabled: (enabled: boolean) => void;
   setVolume: (volume: number) => void;
+  setMasterMuted: (muted: boolean) => void;
+  toggleMasterMute: () => void;
   touch: () => void;
   reset: () => void;
 };
@@ -26,6 +29,7 @@ const DEFAULT_SETTINGS: SoundSettingsState = {
   bgmEnabled: false,
   sfxEnabled: false,
   volume: 0.5,
+  masterMuted: false,
   lastUpdated: 0,
 };
 
@@ -53,6 +57,16 @@ export const useSoundSettingsStore = create<SoundSettingsState & SoundSettingsAc
           volume,
           lastUpdated: Date.now(),
         }),
+      setMasterMuted: (muted) =>
+        set({
+          masterMuted: muted,
+          lastUpdated: Date.now(),
+        }),
+      toggleMasterMute: () =>
+        set((state) => ({
+          masterMuted: !state.masterMuted,
+          lastUpdated: Date.now(),
+        })),
       touch: () => set({ lastUpdated: Date.now() }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
