@@ -9,7 +9,6 @@ type MaskedPasswordInputProps = {
   disabled?: boolean;
   isError?: boolean;
   onChange: (value: string) => void;
-  onKeyDown?: (e: React.KeyboardEvent) => void;
   onEnter?: () => void;
 };
 
@@ -19,7 +18,6 @@ export function MaskedPasswordInput({
   disabled = false,
   isError = false,
   onChange,
-  onKeyDown,
   onEnter,
 }: MaskedPasswordInputProps) {
   // Track if we should restore focus after submission (disabled state cycle)
@@ -51,7 +49,6 @@ export function MaskedPasswordInput({
       shouldRestoreFocus.current = true;
       onEnter();
     }
-    onKeyDown?.(e);
   };
 
   return (
