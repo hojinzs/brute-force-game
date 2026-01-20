@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { filterAllowedChars, createPasswordSchema, type CharsetType } from "@/shared/lib/charset";
 
 export type SubmitAnswerResult = {
@@ -36,6 +36,7 @@ type UseHackingConsoleResult = {
 
 const SHAKE_DURATION_MS = 400;
 const ERROR_BORDER_DURATION_MS = 300;
+const ERROR_MESSAGE_DURATION_MS = 2000;
 
 export function useHackingConsole({
   length,
@@ -87,6 +88,17 @@ export function useHackingConsole({
     setError(null);
     clearErrorBorder();
     clearShake();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (shakeTimeoutRef.current) {
+        clearTimeout(shakeTimeoutRef.current);
+      }
+      if (errorBorderTimeoutRef.current) {
+        clearTimeout(errorBorderTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleSubmit = useCallback(() => {
@@ -154,7 +166,7 @@ export function useHackingConsole({
         errorBorderTimeoutRef.current = setTimeout(() => {
           setError(null);
           setShowErrorBorder(false);
-        }, 2000);
+        }, ERROR_MESSAGE_DURATION_MS);
       }
 
       if (filteredValue.length <= length) {

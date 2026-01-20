@@ -43,8 +43,7 @@ export function MaskedPasswordInput({
   }, [disabled]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value.slice(0, length);
-    onChange(newValue);
+    onChange(e.target.value);
   };
 
   const handleKeyDownInternal = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -77,7 +76,6 @@ export function MaskedPasswordInput({
         onBlur={() => setIsFocused(false)}
         className="absolute inset-0 w-full h-full opacity-0 cursor-text"
         disabled={disabled}
-        maxLength={length}
         autoComplete="off"
         spellCheck={false}
       />
