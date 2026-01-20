@@ -124,7 +124,7 @@ export function HackingConsoleView({
                  lastAttempt.similarity >= 40 ? 'bg-amber-500/10 text-amber-400' : 
                  'bg-rose-500/10 text-rose-400'}
              `}>
-               {lastAttempt.similarity.toFixed(1)}%
+               {(lastAttempt.similarity ?? 0).toFixed(1)}%
              </div>
           </div>
         </div>
