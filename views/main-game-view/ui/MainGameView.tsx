@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
+import { SignInModal } from "@/features/auth";
+
 import { useBlock } from "@/entities/block";
 import { useAuth } from "@/features/auth";
 import { useCPGauge } from "@/features/cp-gauge";
@@ -26,6 +30,8 @@ export function MainGameView() {
   const { current: currentCP } = useCPGauge(user?.id);
   const { victory, isVisible: showVictory } = useVictory();
   const { submit, isPending: isCheckingAnswer, error: checkAnswerError } = useSubmitAnswer();
+
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
 
   // Stats Data
   const { attempts, newAttemptId } = useAttempts(block?.id);
@@ -70,24 +76,53 @@ export function MainGameView() {
               <PendingStatusPanel />
             ) : (
               <>
-                <HackingConsole
-                  length={passwordLength}
-                  charset={config.charset}
-                  disabled={
-                    !user ||
-                    currentCP <= 0 ||
-                    block.status !== "active" ||
-                    isCheckingAnswer
-                  }
-                  onSubmit={submit}
-                />
+                {!user ? (
+                  <div className="w-full bg-[#1e293b] border border-[#334155] rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-6 min-h-[300px]">
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-50 mb-2">Authentication Required</h3>
+                      <p className="text-slate-400 max-w-sm mx-auto">
+                        To access the brute-force terminal and contribute to the decryption process, you must be a registered agent.
+                      </p>
+                    </div>
 
-                {checkAnswerError && (
-                  <div className="mt-4 text-center p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <p className="text-red-400 text-sm">
-                      {checkAnswerError.message || "Failed to submit. Please try again."}
-                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
+                      <Link
+                        href="/auth/signup"
+                        className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+                      >
+                        Join the Game
+                      </Link>
+                      <button
+                        onClick={() => setIsSignInOpen(true)}
+                        className="flex-1 bg-[#334155] hover:bg-[#475569] text-slate-200 font-semibold py-3 px-4 rounded-lg transition-colors"
+                      >
+                        Sign In
+                      </button>
+                    </div>
+
+                    <SignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
                   </div>
+                ) : (
+                  <>
+                    <HackingConsole
+                      length={passwordLength}
+                      charset={config.charset}
+                      disabled={
+                        currentCP <= 0 ||
+                        block.status !== "active" ||
+                        isCheckingAnswer
+                      }
+                      onSubmit={submit}
+                    />
+
+                    {checkAnswerError && (
+                      <div className="mt-4 text-center p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                        <p className="text-red-400 text-sm">
+                          {checkAnswerError.message || "Failed to submit. Please try again."}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
