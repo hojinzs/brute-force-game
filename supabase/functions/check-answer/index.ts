@@ -20,7 +20,7 @@ interface ErrorResponse {
 
 interface SuccessResponse {
   correct: boolean;
-  similarity?: number;
+  similarity: number;
   attemptId?: string;
   pointsAwarded?: number;
 }
@@ -214,6 +214,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           correct: true,
+          similarity: 100,
           attemptId: attemptId,
           pointsAwarded: awardedPoints ?? newPoints,
         } as SuccessResponse),

@@ -63,7 +63,7 @@ export function AttemptCard({
           <span
             className={`font-mono text-sm font-medium ${getSimilarityColor(similarity)}`}
           >
-            {similarity.toFixed(1)}%
+            {(similarity ?? 0).toFixed(1)}%
           </span>
         </div>
       </div>
