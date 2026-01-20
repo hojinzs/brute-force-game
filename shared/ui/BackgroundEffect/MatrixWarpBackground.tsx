@@ -152,10 +152,28 @@ export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
   }, [speed, density, chars]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={`fixed top-0 left-0 w-full h-full pointer-events-none -z-10 ${className}`}
-      style={{ backgroundColor: 'black' }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        className={`fixed top-0 left-0 w-full h-full pointer-events-none -z-10 ${className}`}
+        style={{ backgroundColor: 'black' }}
+      />
+      
+      {/* Top Gradient for Safe Area */}
+      <div 
+        className="fixed top-0 left-0 w-full h-[15vh] pointer-events-none -z-10"
+        style={{
+          background: 'linear-gradient(to bottom, black, transparent)'
+        }}
+      />
+
+      {/* Bottom Gradient for Safe Area */}
+      <div 
+        className="fixed bottom-0 left-0 w-full h-[15vh] pointer-events-none -z-10"
+        style={{
+          background: 'linear-gradient(to top, black, transparent)'
+        }}
+      />
+    </>
   );
 };
