@@ -14,10 +14,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Brute Force AI",
-  description: "Global social hacking simulation - crack AI-generated passwords",
+  title: "Brute Force AI - Global Social Hacking Simulation",
+  description:
+    "Crack the password and take the prize. A global social hacking simulation where everyone targets the same block.",
+  openGraph: {
+    title: "Brute Force AI - Global Social Hacking Simulation",
+    description:
+      "Crack the password and take the prize. A global social hacking simulation where everyone targets the same block.",
+    siteName: "Brute Force AI",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Brute Force AI Game Interface",
+      },
+    ],
+    type: "website",
+  },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.png",
   },
 };
 
