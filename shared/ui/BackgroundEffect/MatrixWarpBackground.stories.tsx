@@ -20,7 +20,7 @@ type Story = StoryObj<typeof MatrixWarpBackground>;
 
 export const Default: Story = {
   args: {
-    speed: 2,
+    speed: 6,
     density: 300,
     chars: '0123456789ABCDEF',
   },

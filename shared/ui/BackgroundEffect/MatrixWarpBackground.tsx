@@ -12,7 +12,7 @@ interface MatrixWarpBackgroundProps {
 export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
   className = '',
   speed = 6,
-  density = 600,
+  density = 500,
   chars = '0123456789ABCDEF',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,13 +24,13 @@ export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId: number | null = null;
     let width = 0;
     let height = 0;
     let cx = 0;
     let cy = 0;
 
-    // Star state
+    // Matrix character/particle state
     interface Star {
       x: number;
       y: number;
@@ -54,29 +54,15 @@ export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
       }
     };
 
-    const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      cx = width / 2;
-      cy = height / 2;
-      canvas.width = width;
-      canvas.height = height;
-      initStars();
-    };
+    const prefersReducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let prefersReducedMotion = prefersReducedMotionQuery.matches;
+    let isPageVisible = !document.hidden;
 
     // Scroll interaction state
     let scrollY = 0;
     let targetScrollY = 0;
 
-    const handleScroll = () => {
-      targetScrollY = window.scrollY;
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('scroll', handleScroll);
-    handleResize();
-
-    const render = () => {
+    const drawFrame = () => {
       // Smooth scroll interpolation
       scrollY += (targetScrollY - scrollY) * 0.1;
 
@@ -94,7 +80,7 @@ export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
       ctx.textBaseline = 'middle';
 
       for (const star of stars) {
-        // Move star AWAY from camera (increase z) -> "Sucked in" effect
+        // Move character away from camera (increase z) so it shrinks toward the vanishing point
         star.z += speed * star.speedMult;
 
         // Reset if too far
@@ -125,7 +111,6 @@ export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
           
           const opacity = nearFade * farFade;
           
-          const size = (1 - star.z / zLimit) * 5 + 10; // Simple size scaling? No, K does perspective sizing.
           // Actually K scales positions. Size should also scale by K.
           const fontSize = 14 * (256 / star.z);
 
@@ -139,15 +124,85 @@ export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
       }
 
       ctx.globalAlpha = 1.0;
+    };
+
+    const render = () => {
+      if (!isPageVisible || prefersReducedMotion) return;
+      drawFrame();
       animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    const renderOnce = () => {
+      drawFrame();
+    };
+
+    const handleResize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      cx = width / 2;
+      cy = height / 2;
+      canvas.width = width;
+      canvas.height = height;
+      initStars();
+      if (prefersReducedMotion) {
+        renderOnce();
+      }
+    };
+
+    const handleScroll = () => {
+      targetScrollY = window.scrollY;
+      if (prefersReducedMotion) {
+        renderOnce();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      if (!isPageVisible && animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+        return;
+      }
+      if (isPageVisible && !prefersReducedMotion && animationFrameId === null) {
+        render();
+      }
+    };
+
+    const handleReducedMotionChange = (event: MediaQueryListEvent) => {
+      prefersReducedMotion = event.matches;
+      if (prefersReducedMotion) {
+        if (animationFrameId !== null) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        renderOnce();
+        return;
+      }
+      if (isPageVisible && animationFrameId === null) {
+        render();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    prefersReducedMotionQuery.addEventListener('change', handleReducedMotionChange);
+    handleResize();
+
+    if (prefersReducedMotion) {
+      renderOnce();
+    } else {
+      render();
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
-      cancelAnimationFrame(animationFrameId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      prefersReducedMotionQuery.removeEventListener('change', handleReducedMotionChange);
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
     };
   }, [speed, density, chars]);
 
@@ -157,6 +212,7 @@ export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
         ref={canvasRef}
         className={`fixed top-0 left-0 w-full h-full pointer-events-none -z-10 ${className}`}
         style={{ backgroundColor: 'black' }}
+        aria-hidden="true"
       />
       
       {/* Top Gradient for Safe Area */}
