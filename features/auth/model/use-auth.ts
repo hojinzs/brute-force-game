@@ -12,7 +12,7 @@ export type SignUpParams = {
   email: string;
   password: string;
   nickname: string;
-  country: string;
+  country?: string | null;
   emailConsent: boolean;
   redirectTo?: string;
 };
@@ -72,6 +72,7 @@ export function useAuth() {
     async (params: SignUpParams) => {
       const { email, password, nickname, country, emailConsent, redirectTo = "/" } = params;
       const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const normalizedCountry = country && country.trim().length > 0 ? country : null;
 
       const {
         data: { user: authUser },
@@ -82,7 +83,7 @@ export function useAuth() {
         options: {
           data: {
             nickname,
-            country,
+            country: normalizedCountry,
             email_consent: emailConsent,
           },
           emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,

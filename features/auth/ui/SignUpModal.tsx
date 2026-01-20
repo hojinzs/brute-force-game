@@ -29,7 +29,6 @@ export function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
         email,
         password,
         nickname,
-        country: "",
         emailConsent: false,
       });
       setError("Account created! Please check your email to verify your account.");

@@ -100,7 +100,6 @@ export function MainGameView() {
                       </button>
                     </div>
 
-                    <SignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
                   </div>
                 ) : (
                   <>
@@ -166,6 +165,8 @@ export function MainGameView() {
            </div>
         </div>
       </div>
+
+      <SignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
     </>
   );
 }

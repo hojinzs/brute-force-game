@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth, SignInModal } from "@/features/auth";
 
-type ModalType = "signin" | "signup" | null;
+type ModalType = "signin" | null;
 
 export function Header() {
   const { user, loading, signOut } = useAuth();

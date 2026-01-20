@@ -28,8 +28,9 @@ function AuthCallbackContent() {
         if (error) throw error;
 
         if (data.session) {
-          const next = searchParams.get("next") || "/";
-          router.push(next);
+          const next = searchParams.get("next");
+          const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+          router.push(safeNext);
         } else {
           setError("No session found. Please try again.");
         }

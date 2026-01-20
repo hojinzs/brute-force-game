@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth";
 
 const COUNTRIES = [
@@ -16,18 +15,16 @@ const COUNTRIES = [
   { code: "CA", name: "Canada" },
   { code: "AU", name: "Australia" },
   { code: "SG", name: "Singapore" },
-  { code: "OTHER", name: "Other" },
+  { code: "ZZ", name: "Other" },
 ];
 
 export default function SignupPage() {
   const { signUpWithEmail } = useAuth();
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [nickname, setNickname] = useState("");
-  const [country, setCountry] = useState("KR"); // Default to Korea for now
+  const [country, setCountry] = useState("");
   const [emailConsent, setEmailConsent] = useState(false);
   
   const [error, setError] = useState<string | null>(null);
@@ -56,15 +53,9 @@ export default function SignupPage() {
         nickname,
         country,
         emailConsent,
-        redirectTo: "/", // Redirect to home after signup
+        redirectTo: "/",
       });
-      // Successful signup logic might handle redirect automatically or we can force it,
-      // but usually supabase auth state change will trigger it.
-      // However, for email confirmation flows, we might just show a success message.
-      // The requirement said "redirectTo= functionality", implying after flow completion.
-      
-      // For now, let's assume immediate success or email verification requirement
-      router.push("/");
+      setError("Signup complete. Please check your email to verify your account.");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to sign up";
       setError(message);
