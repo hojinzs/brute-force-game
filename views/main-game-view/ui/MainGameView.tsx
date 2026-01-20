@@ -42,8 +42,6 @@ export function MainGameView() {
             blockId={block.id}
             seedHint={block.seed_hint}
             status={block.status}
-            length={passwordLength}
-            charset={config.charset}
             creatorNickname={block.creator_nickname}
             accumulatedPoints={block.accumulated_points}
           />

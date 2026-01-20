@@ -93,8 +93,22 @@ export function filterAllowedChars(
   value: string,
   charsetTypes: CharsetType[]
 ): string {
+  let processedValue = value;
+
+  const hasLowercase = charsetTypes.includes("lowercase");
+  const hasUppercase = charsetTypes.includes("uppercase");
+
+  // If only lowercase is allowed, convert to lowercase
+  if (hasLowercase && !hasUppercase) {
+    processedValue = value.toLowerCase();
+  }
+  // If only uppercase is allowed, convert to uppercase
+  else if (!hasLowercase && hasUppercase) {
+    processedValue = value.toUpperCase();
+  }
+
   const allowedChars = buildCharset(charsetTypes);
-  return value
+  return processedValue
     .split("")
     .filter((char) => allowedChars.includes(char))
     .join("");

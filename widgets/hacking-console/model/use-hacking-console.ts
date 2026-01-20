@@ -141,12 +141,31 @@ export function useHackingConsole({
       const newValue = e.target.value;
       const filteredValue = filterAllowedChars(newValue, charset);
 
+      // Check if characters were filtered out (length mismatch)
+      // Ignore if deleting (newValue length is shorter than current value)
+      if (newValue.length > filteredValue.length && newValue.length >= value.length) {
+        setError("Invalid character");
+        triggerErrorFeedback();
+        
+        // Clear error after 2 seconds
+        if (errorBorderTimeoutRef.current) {
+          clearTimeout(errorBorderTimeoutRef.current);
+        }
+        errorBorderTimeoutRef.current = setTimeout(() => {
+          setError(null);
+          setShowErrorBorder(false);
+        }, 2000);
+      }
+
       if (filteredValue.length <= length) {
         setValue(filteredValue);
-        setError(null);
+        // Only clear error if we didn't just set it for invalid char
+        if (newValue.length === filteredValue.length) {
+          setError(null);
+        }
       }
     },
-    [charset, length]
+    [charset, length, value, triggerErrorFeedback]
   );
 
   return {
