@@ -58,7 +58,7 @@ export function BlockHeader({
       </div>
 
       {/* Hint & Master Card */}
-      <div className="w-full max-w-sm bg-[#1e293b] border border-slate-700 rounded-xl p-4 shadow-sm relative overflow-hidden">
+      <div className="w-full max-w-sm bg-[#1e293b]/40 backdrop-blur-md border border-slate-700/50 rounded-xl p-4 shadow-sm relative overflow-hidden">
         {/* Hint Section */}
         {seedHint && (
           <div className="mb-6 text-left">
