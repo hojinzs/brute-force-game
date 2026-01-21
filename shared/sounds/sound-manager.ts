@@ -98,10 +98,10 @@ class SoundManager {
     }
 
     void (async () => {
-      // For ZZFX, we set global volume to master * sfx because zzfx controls SFX only basically
-      // But ZZFX.volume is global.
-      // Actually ZZFX.volume might affect all generated sounds.
-      // Let's check playSfx implementation below.
+      // ZZFX.volume is a global gain applied to all zzfx-generated sounds.
+      // In this manager we treat it as (master volume * SFX volume) so that:
+      // - BGM loudness is controlled via the HTMLAudioElement (bgmElement), and
+      // - SFX loudness is controlled via ZZFX.volume (set in playSfx before playing).
 
       if (this.bgmVolume > 0 && this.volume > 0) {
         this.playBgm();
