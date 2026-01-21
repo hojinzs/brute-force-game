@@ -8,17 +8,17 @@ const EXPIRY_DAYS = 3;
 const EXPIRY_MS = EXPIRY_DAYS * 24 * 60 * 60 * 1000;
 
 type SoundSettingsState = {
-  bgmEnabled: boolean;
-  sfxEnabled: boolean;
   volume: number;
+  bgmVolume: number;
+  sfxVolume: number;
   masterMuted: boolean;
   lastUpdated: number;
 };
 
 type SoundSettingsActions = {
-  setBgmEnabled: (enabled: boolean) => void;
-  setSfxEnabled: (enabled: boolean) => void;
   setVolume: (volume: number) => void;
+  setBgmVolume: (volume: number) => void;
+  setSfxVolume: (volume: number) => void;
   setMasterMuted: (muted: boolean) => void;
   toggleMasterMute: () => void;
   touch: () => void;
@@ -26,9 +26,9 @@ type SoundSettingsActions = {
 };
 
 const DEFAULT_SETTINGS: SoundSettingsState = {
-  bgmEnabled: false,
-  sfxEnabled: false,
   volume: 0.5,
+  bgmVolume: 0.5,
+  sfxVolume: 0.5,
   masterMuted: false,
   lastUpdated: 0,
 };
@@ -42,14 +42,14 @@ export const useSoundSettingsStore = create<SoundSettingsState & SoundSettingsAc
   persist(
     (set) => ({
       ...DEFAULT_SETTINGS,
-      setBgmEnabled: (enabled) =>
+      setBgmVolume: (volume) =>
         set({
-          bgmEnabled: enabled,
+          bgmVolume: volume,
           lastUpdated: Date.now(),
         }),
-      setSfxEnabled: (enabled) =>
+      setSfxVolume: (volume) =>
         set({
-          sfxEnabled: enabled,
+          sfxVolume: volume,
           lastUpdated: Date.now(),
         }),
       setVolume: (volume) =>
@@ -73,6 +73,13 @@ export const useSoundSettingsStore = create<SoundSettingsState & SoundSettingsAc
     {
       name: STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        volume: state.volume,
+        bgmVolume: state.bgmVolume,
+        sfxVolume: state.sfxVolume,
+        lastUpdated: state.lastUpdated,
+        masterMuted: state.masterMuted,
+      }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         if (isExpired(state.lastUpdated)) {

@@ -10,14 +10,14 @@ type SoundSettingsModalProps = {
 };
 
 export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps) {
-  const bgmEnabled = useSoundSettingsStore((s) => s.bgmEnabled);
-  const sfxEnabled = useSoundSettingsStore((s) => s.sfxEnabled);
   const volume = useSoundSettingsStore((s) => s.volume);
+  const bgmVolume = useSoundSettingsStore((s) => s.bgmVolume);
+  const sfxVolume = useSoundSettingsStore((s) => s.sfxVolume);
   const masterMuted = useSoundSettingsStore((s) => s.masterMuted);
 
-  const setBgmEnabled = useSoundSettingsStore((s) => s.setBgmEnabled);
-  const setSfxEnabled = useSoundSettingsStore((s) => s.setSfxEnabled);
   const setVolume = useSoundSettingsStore((s) => s.setVolume);
+  const setBgmVolume = useSoundSettingsStore((s) => s.setBgmVolume);
+  const setSfxVolume = useSoundSettingsStore((s) => s.setSfxVolume);
   const toggleMasterMute = useSoundSettingsStore((s) => s.toggleMasterMute);
 
   useEffect(() => {
@@ -42,31 +42,35 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
     }
   };
 
-  const toggleBgm = () => {
-    if (!bgmEnabled && !masterMuted) {
+  const handleBgmVolumeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newVol = Number(e.target.value);
+    setBgmVolume(newVol / 100);
+    if (!masterMuted) {
       soundManager.activateFromUserGesture();
     }
-    setBgmEnabled(!bgmEnabled);
-  };
+  }
 
-  const toggleSfx = () => {
-    if (!sfxEnabled && !masterMuted) {
+  const handleSfxVolumeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newVol = Number(e.target.value);
+    setSfxVolume(newVol / 100);
+    if (!masterMuted) {
       soundManager.activateFromUserGesture();
     }
-    setSfxEnabled(!sfxEnabled);
-  };
+  }
+
+
 
   return (
+    <div
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        onClick={onClose}
+        className="bg-[#0f172a] border border-[#334155] rounded-xl overflow-hidden max-w-sm w-full shadow-2xl ring-1 ring-white/10"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
-        <div
-          className="bg-[#0f172a] border border-[#334155] rounded-xl overflow-hidden max-w-sm w-full shadow-2xl ring-1 ring-white/10"
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-        >
         {/* Header */}
         <div className="bg-[#1e293b] p-4 flex justify-between items-center border-b border-[#334155]">
           <div className="flex items-center gap-2">
@@ -149,57 +153,69 @@ export function SoundSettingsModal({ isOpen, onClose }: SoundSettingsModalProps)
               />
             </div>
 
-            {/* Individual Toggles */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* BGM Toggle */}
-              <button
-                onClick={toggleBgm}
+            {/* BGM Volume Slider */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <label
+                  className="text-xs font-bold text-slate-400 font-mono tracking-wider"
+                  htmlFor="bgm-gain"
+                >
+                  BGM GAIN
+                </label>
+                <span className="text-xs font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
+                  {Math.round(bgmVolume * 100).toString().padStart(3, "0")}%
+                </span>
+              </div>
+              <input
+                id="bgm-gain"
+                type="range"
+                min="0"
+                max="100"
+                value={bgmVolume * 100}
+                onChange={handleBgmVolumeChange}
                 disabled={masterMuted}
-                aria-label="Toggle background music"
-                aria-pressed={bgmEnabled}
-                className={`
-                  p-3 rounded-lg border text-left transition-all
-                  ${bgmEnabled 
-                    ? "bg-blue-500/10 border-blue-500/50 text-blue-200" 
-                    : "bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-800"}
-                `}
-              >
-                <div className="text-[10px] font-mono mb-1 opsz-label tracking-wider opacity-70">CHANNEL 01</div>
-                <div className="font-bold text-sm flex items-center justify-between">
-                  <span>BGM</span>
-                  <div className={`w-2 h-2 rounded-full ${bgmEnabled ? "bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]" : "bg-slate-600"}`} />
-                </div>
-              </button>
-
-              {/* SFX Toggle */}
-              <button
-                onClick={toggleSfx}
-                disabled={masterMuted}
-                aria-label="Toggle sound effects"
-                aria-pressed={sfxEnabled}
-                className={`
-                  p-3 rounded-lg border text-left transition-all
-                  ${sfxEnabled 
-                    ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-200" 
-                    : "bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-800"}
-                `}
-              >
-                <div className="text-[10px] font-mono mb-1 opsz-label tracking-wider opacity-70">CHANNEL 02</div>
-                <div className="font-bold text-sm flex items-center justify-between">
-                  <span>SFX</span>
-                  <div className={`w-2 h-2 rounded-full ${sfxEnabled ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" : "bg-slate-600"}`} />
-                </div>
-              </button>
+                aria-valuetext={`${Math.round(bgmVolume * 100)}%`}
+                className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:accent-blue-400"
+              />
             </div>
+
+            {/* SFX Volume Slider */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <label
+                  className="text-xs font-bold text-slate-400 font-mono tracking-wider"
+                  htmlFor="sfx-gain"
+                >
+                  SFX GAIN
+                </label>
+                <span className="text-xs font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
+                  {Math.round(sfxVolume * 100).toString().padStart(3, "0")}%
+                </span>
+              </div>
+              <input
+                id="sfx-gain"
+                type="range"
+                min="0"
+                max="100"
+                value={sfxVolume * 100}
+                onChange={handleSfxVolumeChange}
+                disabled={masterMuted}
+                aria-valuetext={`${Math.round(sfxVolume * 100)}%`}
+                className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:accent-blue-400"
+              />
+            </div>
+
+            {/* Individual Toggles */}
+
           </div>
-          
+
         </div>
 
         {/* Footer */}
         <div className="bg-[#1e293b] p-3 border-t border-[#334155] flex justify-between items-center text-[10px] text-slate-500 font-mono">
           <span>SYSTEM_AUDIO_CTL</span>
           <span className={masterMuted ? "text-red-400" : "text-emerald-500"}>
-             STATUS: {masterMuted ? "MUTED" : "ACTIVE"}
+            STATUS: {masterMuted ? "MUTED" : "ACTIVE"}
           </span>
         </div>
       </div>
