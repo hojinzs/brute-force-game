@@ -29,6 +29,7 @@ export function HackingConsole({
     lastAttempt,
     lastAttemptIsCorrect,
     isValidLength,
+    isCracking,
     handleChange,
     handleSubmit,
   } = useHackingConsole({
@@ -52,6 +53,7 @@ export function HackingConsole({
       lastAttemptIsCorrect={lastAttemptIsCorrect}
       cpCurrent={currentCP}
       cpMax={max}
+      isCracking={isCracking}
       onChange={handleChange}
       onSubmit={handleSubmit}
     />

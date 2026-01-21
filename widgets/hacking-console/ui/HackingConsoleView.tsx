@@ -24,6 +24,7 @@ type HackingConsoleViewProps = {
   lastAttemptIsCorrect: boolean | null;
   cpCurrent: number;
   cpMax: number;
+  isCracking: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
 };
@@ -41,10 +42,12 @@ export function HackingConsoleView({
   lastAttemptIsCorrect,
   cpCurrent,
   cpMax,
+  isCracking,
   onChange,
   onSubmit,
 }: HackingConsoleViewProps) {
   const cpEmpty = cpCurrent <= 0;
+  const isErrorState = !!error || showErrorBorder;
 
   return (
     <motion.div
@@ -65,9 +68,9 @@ export function HackingConsoleView({
           length={length}
           value={value}
           onChange={(val) => onChange({ target: { value: val } } as any)}
-          disabled={disabled}
-          isError={!!error || showErrorBorder}
-          onEnter={isValidLength && !disabled ? onSubmit : undefined}
+          disabled={disabled || isCracking}
+          isError={isErrorState}
+          onEnter={isValidLength && !disabled && !isCracking ? onSubmit : undefined}
         />
         <div className="flex justify-start mt-2">
           {/* Rules Area */}
@@ -95,17 +98,58 @@ export function HackingConsoleView({
       {/* Crack Button */}
       <button
         onClick={onSubmit}
-        disabled={disabled || !isValidLength}
-        className="
-          w-full py-3 rounded-lg
-          bg-blue-500 hover:bg-blue-600 active:bg-blue-700
-          disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed
-          text-white font-medium text-sm tracking-wide
+        disabled={disabled || !isValidLength || isCracking}
+        className={`
+          relative w-full py-3 rounded-lg overflow-hidden
+          font-medium text-sm tracking-wide text-white
           transition-colors duration-200
+          ${isErrorState 
+            ? "bg-rose-500 hover:bg-rose-600 border border-rose-400/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]" 
+            : "bg-blue-500 hover:bg-blue-600 active:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
+          }
           mb-4
-        "
+        `}
       >
-        CRACK
+        {/* Progress Bar Background */}
+        {isCracking && !isErrorState && (
+          <motion.div
+            className="absolute inset-0 bg-blue-700 z-0 origin-left"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 3, ease: "linear" }}
+          />
+        )}
+
+        {/* Button Content */}
+        <span className="relative z-10 flex items-center justify-center gap-2">
+          {isCracking ? (
+            <>
+              <svg 
+                className="animate-spin h-4 w-4 text-white" 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24"
+              >
+                <circle 
+                  className="opacity-25" 
+                  cx="12" 
+                  cy="12" 
+                  r="10" 
+                  stroke="currentColor" 
+                  strokeWidth="4"
+                />
+                <path 
+                  className="opacity-75" 
+                  fill="currentColor" 
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              CRACKING...
+            </>
+          ) : (
+            isErrorState ? "ERROR" : "CRACK"
+          )}
+        </span>
       </button>
 
       {/* Previous Attempt */}

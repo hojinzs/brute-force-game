@@ -32,6 +32,16 @@ export const Default: Story = {
     cpMax: 50,
     onChange: () => {},
     onSubmit: () => {},
+    isCracking: false,
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    ...Default.args,
+    value: "password",
+    isValidLength: true,
+    isCracking: true,
   },
 };
 
@@ -48,6 +58,7 @@ export const Interactive: Story = {
     const [isShaking, setIsShaking] = useState(false);
     const [showErrorBorder, setShowErrorBorder] = useState(false);
     const [cpCurrent, setCpCurrent] = useState(args.cpCurrent ?? 8);
+    const [isCracking, setIsCracking] = useState(false);
     const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const isValidLength = value.length === args.length;
@@ -66,6 +77,10 @@ export const Interactive: Story = {
       setShowErrorBorder(true);
       shakeTimeoutRef.current = setTimeout(() => {
         setIsShaking(false);
+        // Error state persists for a bit then clears
+        setTimeout(() => {
+            setShowErrorBorder(false);
+        }, 300);
       }, 500);
     };
 
@@ -86,7 +101,9 @@ export const Interactive: Story = {
       return Math.round((matches / maxLength) * 100);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+      if (disabled || isCracking) return;
+
       if (disabled) {
         setError("CP가 부족합니다.");
         triggerShake();
@@ -101,12 +118,19 @@ export const Interactive: Story = {
 
       setError(null);
       setShowErrorBorder(false);
+      setIsCracking(true);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       setCpCurrent((prev) => Math.max(prev - 1, 0));
 
       const similarity = calculateSimilarity(value, demoAnswer);
       const isCorrect = value === demoAnswer;
       setLastAttempt({ input: value, similarity });
       setLastAttemptIsCorrect(isCorrect);
+        
+      setIsCracking(false);
 
       if (!isCorrect) {
         triggerShake();
@@ -131,6 +155,7 @@ export const Interactive: Story = {
         lastAttempt={lastAttempt}
         lastAttemptIsCorrect={lastAttemptIsCorrect}
         cpCurrent={cpCurrent}
+        isCracking={isCracking}
         onChange={handleChange}
         onSubmit={handleSubmit}
       />
