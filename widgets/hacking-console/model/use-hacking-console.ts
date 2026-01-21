@@ -29,6 +29,7 @@ type UseHackingConsoleResult = {
   lastAttempt: LastAttempt | null;
   lastAttemptIsCorrect: boolean | null;
   isValidLength: boolean;
+  isCracking: boolean;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: () => void;
   resetError: () => void;
@@ -101,8 +102,10 @@ export function useHackingConsole({
     };
   }, []);
 
+  const [isCracking, setIsCracking] = useState(false);
+
   const handleSubmit = useCallback(() => {
-    if (disabled) return;
+    if (disabled || isCracking) return;
 
     setError(null);
 
@@ -114,6 +117,8 @@ export function useHackingConsole({
       triggerErrorFeedback();
       return;
     }
+
+    setIsCracking(true);
 
     void (async () => {
       try {
@@ -136,9 +141,11 @@ export function useHackingConsole({
           submitError instanceof Error ? submitError.message : String(submitError || "");
         setError(errorMessage || "Failed to submit answer. Please try again.");
         triggerErrorFeedback();
+      } finally {
+        setIsCracking(false);
       }
     })();
-  }, [disabled, passwordSchema, value, onSubmit]);
+  }, [disabled, isCracking, passwordSchema, value, onSubmit]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,6 +188,7 @@ export function useHackingConsole({
     lastAttempt,
     lastAttemptIsCorrect,
     isValidLength,
+    isCracking,
     handleChange,
     handleSubmit,
     resetError,
