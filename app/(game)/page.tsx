@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/shared/api";
+import { createServerSupabaseClient } from "@/shared/api/supabase-server";
 import { GenesisBlockView } from "@/views";
 import { GameClient } from "./_components/GameClient";
 import type { Block } from "@/entities/block";
@@ -6,7 +6,7 @@ import type { Block } from "@/entities/block";
 export const dynamic = "force-dynamic";
 
 export default async function GamePage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
     .from("blocks_public")
