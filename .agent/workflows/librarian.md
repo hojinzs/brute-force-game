@@ -4,7 +4,7 @@ description: librarian bot
 
 # Rules
 
-작업 완료 후, /docs 에서 문서와 관련된 기능 명세를 찾아본 뒤, 다음을 추가로 제안한다.
+After completing the requested work, search `/docs` for the relevant feature specifications, then additionally propose:
 
-1. 문서 수정 - 문서가 존재하나 수정된 기능으로 인해 정책 / 명세 수정이 필요함
-2. 문서 추가 - 사용자가 요청한 기능이 문서에 있는 기능이 아님 (판단 기준: 서비스의 유저시나리오에 영향을 주었을 경우)
+1. Documentation update – when documentation exists but needs policy/specification changes due to the updated feature
+2. New documentation – when the requested feature is not covered by existing docs (criteria: it affects the service’s user scenarios)
