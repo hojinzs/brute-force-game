@@ -1,16 +1,18 @@
 "use client";
 
-import { useCPGauge } from "@/features/cp-gauge";
-import { useAuth } from "@/features/auth";
+import * as React from "react";
 import { type CharsetType } from "@/shared/lib/charset";
 import { useHackingConsole } from "../model/use-hacking-console";
 import { HackingConsoleView } from "./HackingConsoleView";
 
- type HackingConsoleProps = {
+type HackingConsoleProps = {
   length: number;
   charset: CharsetType[];
   disabled: boolean;
   onSubmit: (value: string) => Promise<{ similarity: number; isCorrect: boolean } | null>;
+  currentCP: number;
+  maxCP: number;
+  isCPLoading: boolean;
 };
 
 export function HackingConsole({
@@ -18,9 +20,11 @@ export function HackingConsole({
   charset,
   disabled,
   onSubmit,
+  currentCP,
+  maxCP,
+  isCPLoading,
 }: HackingConsoleProps) {
-  const { user } = useAuth();
-  const { current: currentCP, max } = useCPGauge(user?.id);
+  // Logic moved to GameSessionManager
   const {
     value,
     error,
@@ -40,22 +44,26 @@ export function HackingConsole({
   });
 
   return (
-    <HackingConsoleView
-      length={length}
-      charset={charset}
-      disabled={disabled}
-      isValidLength={isValidLength}
-      value={value}
-      error={error}
-      isShaking={isShaking}
-      showErrorBorder={showErrorBorder}
-      lastAttempt={lastAttempt}
-      lastAttemptIsCorrect={lastAttemptIsCorrect}
-      cpCurrent={currentCP}
-      cpMax={max}
-      isCracking={isCracking}
-      onChange={handleChange}
-      onSubmit={handleSubmit}
-    />
+    <>
+      {/* Debug UI Removed/Moved */}
+
+      <HackingConsoleView
+        length={length}
+        charset={charset}
+        disabled={disabled}
+        isValidLength={isValidLength}
+        value={value}
+        error={error}
+        isShaking={isShaking}
+        showErrorBorder={showErrorBorder}
+        lastAttempt={lastAttempt}
+        lastAttemptIsCorrect={lastAttemptIsCorrect}
+        cpCurrent={currentCP}
+        cpMax={maxCP}
+        isCracking={isCracking}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+      />
+    </>
   );
 }

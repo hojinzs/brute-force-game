@@ -6,6 +6,7 @@ import { supabase } from "@/shared/api";
 export type AuthUser = {
   id: string;
   email?: string;
+  is_anonymous?: boolean;
 };
 
 export type SignUpParams = {
@@ -30,9 +31,10 @@ export function useAuth() {
       setUser(
         session?.user
           ? {
-              id: session.user.id,
-              email: session.user.email,
-            }
+            id: session.user.id,
+            email: session.user.email,
+            is_anonymous: session.user.is_anonymous,
+          }
           : null
       );
       setLoading(false);
@@ -46,9 +48,10 @@ export function useAuth() {
       setUser(
         session?.user
           ? {
-              id: session.user.id,
-              email: session.user.email,
-            }
+            id: session.user.id,
+            email: session.user.email,
+            is_anonymous: session.user.is_anonymous,
+          }
           : null
       );
     });
@@ -63,6 +66,12 @@ export function useAuth() {
         password,
       });
       if (error) throw error;
+
+      // 정식 로그인 이력 저장
+      if (typeof window !== "undefined") {
+        localStorage.setItem("has-logged-in", "true");
+      }
+
       return data;
     },
     []
@@ -92,6 +101,11 @@ export function useAuth() {
 
       if (signUpError) throw signUpError;
       if (!authUser) throw new Error("Failed to create user");
+
+      // 회원가입도 정식 로그인 이력으로 간주
+      if (typeof window !== "undefined") {
+        localStorage.setItem("has-logged-in", "true");
+      }
 
       return { user: authUser };
     },
@@ -127,6 +141,18 @@ export function useAuth() {
     updatePassword,
     updateNickname,
     signOut,
+    signInAnonymously: useCallback(async (visitorId?: string) => {
+      const { data, error } = await supabase.auth.signInAnonymously({
+        options: {
+          data: {
+            is_anonymous: true, // Tag as anonymous in metadata
+            visitor_id: visitorId, // Setup Fingerprint
+          },
+        },
+      });
+      if (error) throw error;
+      return data;
+    }, []),
   };
 }
 
@@ -137,4 +163,9 @@ export function useRequireAuth() {
     isLoading: loading,
     requiresSignup: !user && !loading,
   };
+}
+
+export function hasEverLoggedIn(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("has-logged-in") === "true";
 }
