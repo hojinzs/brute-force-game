@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useMemo, useRef, useLayoutEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import * as THREE from 'three';
 
 interface MatrixWarpBackgroundProps {
   className?: string;
@@ -9,227 +11,218 @@ interface MatrixWarpBackgroundProps {
   chars?: string;
 }
 
-export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps> = ({
-  className = '',
-  speed = 6,
-  density = 500,
-  chars = '0123456789ABCDEF',
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// Generate a texture atlas for characters with higher resolution for larger sizes
+const createMatrixTexture = (chars: string) => {
+  const fontSize = 128; // Increased from 64 for better clarity when large
+  const cols = 8;
+  const rows = Math.ceil(chars.length / cols);
+  const width = cols * fontSize;
+  const height = rows * fontSize;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  if (typeof document === 'undefined') return { texture: null, cols, rows };
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
 
-    let animationFrameId: number | null = null;
-    let width = 0;
-    let height = 0;
-    let cx = 0;
-    let cy = 0;
+  if (!ctx) return { texture: null, cols, rows };
 
-    // Matrix character/particle state
-    interface Star {
-      x: number;
-      y: number;
-      z: number;
-      char: string;
-      speedMult: number; // Add random speed multiplier for variation
+  ctx.clearRect(0, 0, width, height);
+  ctx.font = `bold ${fontSize}px monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'white';
+
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = col * fontSize + fontSize / 2;
+    const y = row * fontSize + fontSize / 2;
+    ctx.fillText(char, x, y);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  
+  return { texture, cols, rows };
+};
+
+const MatrixStarField = ({ speed, density, chars, direction = 'backward' }: { speed: number; density: number; chars: string; direction?: 'forward' | 'backward' }) => {
+  const meshRef = useRef<THREE.Points>(null);
+  const { viewport } = useThree();
+
+  // Generate Geometry and Material once
+  const { geometry, material, uniforms } = useMemo(() => {
+    // Texture
+    const { texture, cols, rows } = createMatrixTexture(chars);
+    
+    // Geometry
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(density * 3);
+    const speeds = new Float32Array(density);
+    const charIndices = new Float32Array(density);
+    
+    const depth = 100; // Deep field
+    const spreadX = 120; // Slightly wider
+    const spreadY = 120;
+
+    for (let i = 0; i < density; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * spreadX;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * spreadY;
+        positions[i * 3 + 2] = Math.random() * depth;
+        
+        speeds[i] = Math.random() * 0.4 + 0.6; // 0.6 to 1.0 multiplier
+        charIndices[i] = Math.floor(Math.random() * chars.length);
     }
+    
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('aSpeedMulti', new THREE.BufferAttribute(speeds, 1));
+    geo.setAttribute('aCharIndex', new THREE.BufferAttribute(charIndices, 1));
 
-    const stars: Star[] = [];
+    // Shader Material
+    const mat = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uSpeed: { value: speed },
+            uDepth: { value: depth },
+            uTexture: { value: texture },
+            uCols: { value: cols },
+            uRows: { value: rows },
+            uColor: { value: new THREE.Color('#0f0') }
+        },
+        vertexShader: `
+            uniform float uTime;
+            uniform float uDepth;
+            uniform float uSpeed;
+            attribute float aSpeedMulti;
+            attribute float aCharIndex;
+            varying float vCharIndex;
+            varying float vOpacity;
+            
+            void main() {
+                vCharIndex = aCharIndex;
+                vec3 pos = position;
+                
+                float travel = mod(pos.z + uTime * uSpeed * aSpeedMulti, uDepth);
+                float z = -uDepth + travel;
+                
+                vec4 mvPosition = modelViewMatrix * vec4(pos.x, pos.y, z, 1.0);
+                gl_Position = projectionMatrix * mvPosition;
+                
+                gl_PointSize = 1200.0 / -mvPosition.z; 
+                
+                float normalizeZ = travel / uDepth; // 0=far, 1=close
+                
+                // Enhanced depth fade: Distant ones stay semi-transparent longer
+                float fadeIn = pow(normalizeZ, 1.5); // Non-linear fade in for deeper look
+                float fadeOut = smoothstep(1.0, 0.8, normalizeZ);
+                
+                vOpacity = fadeIn * fadeOut;
+            }
+        `,
+        fragmentShader: `
+            uniform sampler2D uTexture;
+            uniform float uCols;
+            uniform float uRows;
+            uniform vec3 uColor;
+            varying float vCharIndex;
+            varying float vOpacity;
+            
+            void main() {
+                // Minimum threshold for performance
+                if (vOpacity < 0.05) discard;
+            
+                vec2 uv = gl_PointCoord;
+                
+                float index = floor(vCharIndex);
+                float col = mod(index, uCols);
+                float row = floor(index / uCols);
+                
+                float atlasV = (uRows - 1.0 - row + (1.0 - uv.y)) / uRows;
+                float atlasU = (col + uv.x) / uCols;
 
-    const initStars = () => {
-      stars.length = 0;
-      for (let i = 0; i < density; i++) {
-        stars.push({
-          x: Math.random() * width - cx,
-          y: Math.random() * height - cy,
-          z: Math.random() * width, // Start anywhere in Z
-          char: chars[Math.floor(Math.random() * chars.length)],
-          speedMult: Math.random() * 0.5 + 0.75, // 0.75x to 1.25x speed
-        });
-      }
-    };
+                vec4 texColor = texture2D(uTexture, vec2(atlasU, atlasV));
+                
+                if (texColor.a < 0.5) discard;
+                
+                // Color gets darker with opacity (distance) for stronger depth perception
+                // vOpacity here acts as both alpha and brightness multiplier
+                vec3 finalColor = uColor * (0.2 + 0.8 * vOpacity);
+                
+                gl_FragColor = vec4(finalColor, texColor.a * vOpacity);
+            }
+        `,
+        transparent: true,
+        depthWrite: false,
+    });
 
-    const prefersReducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let prefersReducedMotion = prefersReducedMotionQuery.matches;
-    let isPageVisible = !document.hidden;
+    return { geometry: geo, material: mat, uniforms: mat.uniforms };
+  }, [chars, density, speed]);
 
-    // Scroll interaction state
-    let scrollY = 0;
-    let targetScrollY = 0;
+  useFrame((state, delta) => {
+    if (uniforms) {
+        uniforms.uTime.value += delta;
+        // If backward (default), we want particles to move AWAY from camera.
+        // Current logic: Speed > 0 -> Travel increases -> Z increases (Far to Near).
+        // To move Near to Far, we need Travel to decrease.
+        // So passing negative speed works.
+        const directionMult = direction === 'backward' ? -1 : 1;
+        uniforms.uSpeed.value = speed * directionMult;
+    }
+  });
 
-    const drawFrame = () => {
-      // Smooth scroll interpolation
-      scrollY += (targetScrollY - scrollY) * 0.1;
+  return <points ref={meshRef} geometry={geometry} material={material} />;
+};
 
-      // Clear with transparency for trail effect (optional, strictly clearing for now)
-      ctx.fillStyle = 'black';
-      ctx.fillRect(0, 0, width, height);
+export const MatrixWarpBackground: React.FC<MatrixWarpBackgroundProps & { direction?: 'forward' | 'backward' }> = ({
+  className = '',
+  speed = 10,
+  density = 1000,
+  chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  direction = 'backward',
+}) => {
+  useLayoutEffect(() => {
+    // Dynamic theme color adaptation
+    // When this background is active, we want the safe area (theme-color) to be black
+    // to match the background, creating a seamless immersive experience.
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    const originalThemeColor = metaThemeColor?.getAttribute('content');
 
-      // Adjust Vanishing Point based on scroll
-      // As we scroll down, the vanishing point moves up (or effect looks like we are looking down)
-      const vanishingPointY = cy - scrollY * 0.5;
+    console.log("originalThemeColor => ", originalThemeColor);
+    console.log("metaThemeColor => ", metaThemeColor);
 
-      ctx.fillStyle = '#0f0'; // Default Matrix green, can be overridden by props or context if needed, but keeping simple for now
-      ctx.font = '14px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
-      for (const star of stars) {
-        // Move character away from camera (increase z) so it shrinks toward the vanishing point
-        star.z += speed * star.speedMult;
-
-        // Reset if too far
-        if (star.z >= width) {
-          star.z = 1; // Reset near camera (but not 0 to avoid div/0)
-          star.x = Math.random() * width - cx;
-          star.y = Math.random() * height - cy;
-          star.char = chars[Math.floor(Math.random() * chars.length)];
-        }
-
-        // Project 3D position to 2D
-        // Perspective formula: x' = x * (focal_length / z)
-        const k = 256 / star.z; // Focal length approximation
-        const px = star.x * k + cx;
-        const py = star.y * k + vanishingPointY;
-
-        // Size and opacity based on Z
-        // Farther stars (larger z) are smaller and dimmer
-        if (px >= 0 && px <= width && py >= 0 && py <= height) {
-          // As z increases (moving away), opacity should NOT just fade, strictly.
-          // In "warp" usually they fade as they reach center, or get small.
-          // Standard perspective handles size. 
-          // Let's fade out as they get very far (near limit) to avoid sudden disappearance?
-          // OR fade in as they start?
-          const zLimit = width;
-          const nearFade = Math.min(star.z / 100, 1); // Fade in when very close to camera
-          const farFade = 1 - (star.z / zLimit); // Fade out as it reaches limit
-          
-          const opacity = nearFade * farFade;
-          
-          // Actually K scales positions. Size should also scale by K.
-          const fontSize = 14 * (256 / star.z);
-
-          if (opacity > 0 && fontSize > 0.5) {
-            ctx.globalAlpha = opacity;
-            ctx.fillStyle = `rgba(0, 255, 0, ${opacity})`; // Green tint
-            ctx.font = `${fontSize}px monospace`;
-            ctx.fillText(star.char, px, py);
-          }
-        }
-      }
-
-      ctx.globalAlpha = 1.0;
-    };
-
-    const render = () => {
-      if (!isPageVisible || prefersReducedMotion) return;
-      drawFrame();
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    const renderOnce = () => {
-      drawFrame();
-    };
-
-    const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      cx = width / 2;
-      cy = height / 2;
-      canvas.width = width;
-      canvas.height = height;
-      initStars();
-      if (prefersReducedMotion) {
-        renderOnce();
-      }
-    };
-
-    const handleScroll = () => {
-      targetScrollY = window.scrollY;
-      if (prefersReducedMotion) {
-        renderOnce();
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      isPageVisible = !document.hidden;
-      if (!isPageVisible && animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-        return;
-      }
-      if (isPageVisible && !prefersReducedMotion && animationFrameId === null) {
-        render();
-      }
-    };
-
-    const handleReducedMotionChange = (event: MediaQueryListEvent) => {
-      prefersReducedMotion = event.matches;
-      if (prefersReducedMotion) {
-        if (animationFrameId !== null) {
-          cancelAnimationFrame(animationFrameId);
-          animationFrameId = null;
-        }
-        renderOnce();
-        return;
-      }
-      if (isPageVisible && animationFrameId === null) {
-        render();
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('scroll', handleScroll);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    prefersReducedMotionQuery.addEventListener('change', handleReducedMotionChange);
-    handleResize();
-
-    if (prefersReducedMotion) {
-      renderOnce();
-    } else {
-      render();
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', '#000000');
     }
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleScroll);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      prefersReducedMotionQuery.removeEventListener('change', handleReducedMotionChange);
-      if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
+      // Restore original theme color on unmount
+      if (metaThemeColor && originalThemeColor) {
+        metaThemeColor.setAttribute('content', originalThemeColor);
       }
     };
-  }, [speed, density, chars]);
+  }, []);
 
   return (
-    <>
-      <canvas
-        ref={canvasRef}
-        className={`fixed top-0 left-0 w-full h-full pointer-events-none -z-10 ${className}`}
-        style={{ backgroundColor: 'black' }}
-        aria-hidden="true"
-      />
+    <div className={`fixed top-0 left-0 w-full h-full pointer-events-none -z-10 bg-black ${className}`}>
+      <Canvas
+        camera={{ position: [0, 0, 5], fov: 60 }}
+        gl={{ antialias: false, alpha: false }} // Optimization
+        dpr={[1, 2]} // Handle high DPI but limit to 2x
+      >
+        <MatrixStarField speed={speed} density={density} chars={chars} direction={direction} />
+      </Canvas>
       
-      {/* Top Gradient for Safe Area */}
+      {/* Gradients */}
       <div 
-        className="fixed top-0 left-0 w-full h-[15vh] pointer-events-none -z-10"
-        style={{
-          background: 'linear-gradient(to bottom, black, transparent)'
-        }}
+        className="absolute top-0 left-0 w-full h-[15vh] pointer-events-none bg-linear-to-b from-black to-transparent"
       />
-
-      {/* Bottom Gradient for Safe Area */}
       <div 
-        className="fixed bottom-0 left-0 w-full h-[15vh] pointer-events-none -z-10"
-        style={{
-          background: 'linear-gradient(to top, black, transparent)'
-        }}
+        className="absolute bottom-0 left-0 w-full h-[15vh] pointer-events-none bg-linear-to-t from-black to-transparent"
       />
-    </>
+    </div>
   );
 };

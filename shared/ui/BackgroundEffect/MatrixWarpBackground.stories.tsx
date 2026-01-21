@@ -9,9 +9,10 @@ const meta: Meta<typeof MatrixWarpBackground> = {
   },
   tags: ['autodocs'],
   argTypes: {
-    speed: { control: { type: 'range', min: 0.1, max: 20, step: 0.1 } },
-    density: { control: { type: 'range', min: 50, max: 2000, step: 50 } },
+    speed: { control: { type: 'range', min: 0.1, max: 50, step: 0.1 } },
+    density: { control: { type: 'range', min: 100, max: 5000, step: 100 } },
     chars: { control: 'text' },
+    direction: { control: 'radio', options: ['forward', 'backward'] },
   },
 };
 
@@ -20,8 +21,8 @@ type Story = StoryObj<typeof MatrixWarpBackground>;
 
 export const Default: Story = {
   args: {
-    speed: 6,
-    density: 300,
+    speed: 20.2,
+    density: 1200,
     chars: '0123456789ABCDEF',
   },
 };
