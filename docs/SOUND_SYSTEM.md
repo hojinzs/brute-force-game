@@ -28,8 +28,9 @@ shared/sounds/
 ├── assets/
 │   └── zzfx-presets.ts           # ZZFX 사운드 프리셋 정의
 └── ui/
-    ├── SoundButton.tsx           # Header 스피커 아이콘 버튼
-    └── SoundSettingsModal.tsx    # 설정 모달 UI
+    ├── SoundSettingsModal.tsx    # 설정 모달 UI
+    ├── SoundChoiceModal.tsx      # 최초 진입 시 사운드 선택 모달
+    └── SoundControlFAB.tsx       # 좌측 하단 플로팅 컨트롤 버튼
 ```
 
 ## 4. 효과음 이벤트
@@ -69,40 +70,44 @@ emitSoundEvent(SOUND_EVENTS.topAttempt);
 
 | 항목 | 기본값 | 설명 |
 |------|--------|------|
-| `bgmEnabled` | `false` | 배경음악 OFF |
-| `sfxEnabled` | `false` | 효과음 OFF |
-| `volume` | `0.5` (50%) | 마스터 볼륨 |
+| `volume` | `0.5` (50%) | 마스터 볼륨 (전체 게인) |
+| `bgmVolume` | `0.5` (50%) | 배경음악 볼륨 (Master * BGM) |
+| `sfxVolume` | `0.5` (50%) | 효과음 볼륨 (Master * SFX) |
+| `masterMuted` | `false` | 음소거 상태 (저장되지 않음) |
 
 ### 5.2 저장 정책
 
 - **저장소**: `localStorage` (키: `brute-force-sound`)
-- **유효기간**: 3일
-- **갱신 조건**: 사용자가 재접속하면 유효기간 리프레시
-- **만료 시 동작**: 설정 초기화 (기본값으로 복원)
+- **저장 항목**: `volume`, `bgmVolume`, `sfxVolume`, `lastUpdated`
+- **비저장 항목**: `masterMuted` (세션마다 초기화하여 사용자 의도 재확인)
+- **갱신 조건**: 사용자가 재접속하면 유효기간 로직에 따라 처리 (현재 단순 저장)
 
-### 5.3 브라우저 오디오 정책 대응
+### 5.3 브라우저 오디오 정책 대응 및 사용자 경험
 
-현대 브라우저는 사용자 인터랙션 없이 오디오 재생을 차단합니다.
-
-- 사운드 설정을 변경하는 시점에 `AudioContext.resume()` 호출
-- BGM/SFX 토글 또는 볼륨 조절 시 `soundManager.activateFromUserGesture()` 실행
-- ZZFX 모듈은 동적 import로 로드 (SSR 환경에서 `AudioContext` 오류 방지)
+- **최초 진입 시**: `SoundChoiceModal`을 통해 명시적으로 사운드 사용 여부(Sound ON/OFF)를 선택받습니다.
+- **Sound ON 선택**: `masterMuted: false`로 설정하고 `soundManager.activateFromUserGesture()` 실행.
+- **Sound OFF 선택**: `masterMuted: true`로 설정.
+- **자동 재생 차단 방지**: 모든 사운드 활성화는 사용자 제스처(클릭) 이벤트 내에서 처리됩니다.
 
 ## 6. UI 구성
 
-### 6.1 Header 버튼
+### 6.1 Floating Action Button (FAB)
 
-- 위치: Header 우측 네비게이션 영역
-- 표시: 스피커 아이콘 (파란색: 소리 켜짐, 회색: 음소거)
-- 클릭 시 설정 모달 열림
+- **위치**: 화면 좌측 하단 (`bottom-6 left-6`)
+- **기능**:
+  - **Mute Toggle**: 현재 상태에 따라 즉시 음소거/해제 (아이콘 변경)
+  - **Settings**: 상세 설정 모달 열기 (기어 아이콘)
 
 ### 6.2 설정 모달
 
 | 항목 | UI 요소 | 설명 |
 |------|---------|------|
-| MASTER GAIN | 슬라이더 (0-100%) | 전체 볼륨 조절 |
-| CHANNEL 01 / BGM | 채널 라벨 + 상태 표시 점(● 활성 / ○ 비활성) | 배경음악 채널 켜기/끄기 |
-| CHANNEL 02 / SFX | 채널 라벨 + 상태 표시 점(● 활성 / ○ 비활성) | 효과음 채널 켜기/끄기 |
+| MASTER AUDIO | 토글 버튼 | 전체 사운드 즉시 음소거/해제 |
+| MASTER GAIN | 슬라이더 (0-100%) | 전체 출력의 기준 볼륨 조절 |
+| BGM GAIN | 슬라이더 (0-100%) | 배경음악의 상대적 크기 조절 |
+| SFX GAIN | 슬라이더 (0-100%) | 효과음의 상대적 크기 조절 |
+
+> **참고**: BGM/SFX 개별 켜기/끄기 토글은 제거되었습니다. 해당 사운드를 끄려면 볼륨 슬라이더를 0%로 설정하면 됩니다.
 
 ## 7. ZZFX 프리셋
 
@@ -136,16 +141,17 @@ export const SFX_PRESETS = {
 
 ### 8.1 게임 레이아웃
 
-`app/(game)/layout.tsx`에서 `<SoundInitializer />` 마운트
+`app/(game)/layout.tsx`
 
 ```tsx
-import { SoundInitializer } from "@/shared/sounds/sound-initializer";
-
 export default function GameLayout({ children }) {
   return (
     <VictoryProvider>
       <div>
         <SoundInitializer />
+        {/* 모달과 FAB는 레이아웃 레벨에서 관리 */}
+        <SoundChoiceModal />
+        <SoundControlFAB />
         <Header />
         {children}
       </div>
@@ -165,27 +171,11 @@ export default function GameLayout({ children }) {
 
 `views/main-game-view/ui/MainGameView.tsx`
 
-- Top Attempt 갱신 감지: `attempts` 변경 시 이전 최고값과 비교
-- 갱신 시: `emitSoundEvent(SOUND_EVENTS.topAttempt)`
+- Top Attempt 갱신 감지 및 재생
 
 ## 9. 타입 정의
 
-ZZFX 라이브러리에 타입 정의가 없어 로컬 타입 스텁 사용:
-
-`types/zzfx.d.ts`
-
-```typescript
-declare module "zzfx" {
-  export const ZZFX: {
-    volume: number;
-    audioContext: AudioContext;
-    // ...
-  };
-  export function zzfx(...parameters: Array<number | undefined>): AudioBufferSourceNode;
-}
-```
-
-`tsconfig.json`의 `include`에 `types/**/*.d.ts` 포함 필요.
+ZZFX 라이브러리에 타입 정의가 없어 로컬 타입 스텁 사용: `types/zzfx.d.ts`
 
 ## 10. 향후 확장 계획
 

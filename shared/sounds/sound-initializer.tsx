@@ -5,18 +5,19 @@ import { useSoundSettingsStore } from "./sound-settings-store";
 import { soundManager } from "./sound-manager";
 
 export function SoundInitializer() {
-  const bgmEnabled = useSoundSettingsStore((s) => s.bgmEnabled);
-  const sfxEnabled = useSoundSettingsStore((s) => s.sfxEnabled);
+
   const volume = useSoundSettingsStore((s) => s.volume);
+  const bgmVolume = useSoundSettingsStore((s) => s.bgmVolume);
+  const sfxVolume = useSoundSettingsStore((s) => s.sfxVolume);
   const masterMuted = useSoundSettingsStore((s) => s.masterMuted);
 
   useEffect(() => {
     soundManager.syncSettings({
-      bgmEnabled: bgmEnabled && !masterMuted,
-      sfxEnabled: sfxEnabled && !masterMuted,
-      volume,
+      volume: masterMuted ? 0 : volume,
+      bgmVolume,
+      sfxVolume,
     });
-  }, [bgmEnabled, sfxEnabled, volume, masterMuted]);
+  }, [volume, bgmVolume, sfxVolume, masterMuted]);
 
   return null;
 }
