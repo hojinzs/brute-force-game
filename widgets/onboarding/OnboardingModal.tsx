@@ -30,9 +30,10 @@ const slides = [
 interface OnboardingModalProps {
     isOpen: boolean;
     onComplete: () => void;
+    onClose: () => void;
 }
 
-export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
+export function OnboardingModal({ isOpen, onComplete, onClose }: OnboardingModalProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
 
     if (!isOpen) return null;
@@ -63,7 +64,7 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
 
                 {/* Close Button */}
                 <button
-                    onClick={onComplete}
+                    onClick={onClose}
                     className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
                 >
                     <X className="w-5 h-5" />
@@ -102,7 +103,7 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
                             className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-all active:scale-[0.98]"
                         >
                             {currentIndex === slides.length - 1 ? (
-                                "Start Hacking"
+                                "Play as Guest"
                             ) : (
                                 <>
                                     Next <ChevronRight className="w-4 h-4" />

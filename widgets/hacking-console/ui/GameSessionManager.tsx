@@ -7,7 +7,10 @@ import { useCPGauge } from "@/features/cp-gauge";
 import { useFingerprint } from "@/features/auth/model/use-fingerprint";
 import { OnboardingModal } from "@/widgets/onboarding";
 import { SignupPromptModal } from "@/features/auth/ui/SignupPromptModal";
+import { AuthenticationRequiredBlock } from "@/features/auth/ui/AuthenticationRequiredBlock";
+import { SignInModal } from "@/features/auth/ui/SignInModal";
 import { HackingConsole } from "./HackingConsole";
+import { useRouter } from "next/navigation";
 
 type GameSessionManagerProps = {
     length: number;
@@ -31,7 +34,9 @@ export function GameSessionManager({
 
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+    const [showSignIn, setShowSignIn] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
+    const router = useRouter();
 
     // Initial Session Check
     useEffect(() => {
@@ -42,25 +47,12 @@ export function GameSessionManager({
 
             if (!onboardingCompleted) {
                 setShowOnboarding(true);
+                // Mark as seen immediately so it doesn't reappear on refresh
+                localStorage.setItem("brute-force-onboarding-completed", "true");
                 setIsInitializing(false);
-                return;
+            } else {
+                setIsInitializing(false);
             }
-
-            if (!user) {
-                // 정식 로그인 이력이 있으면 게스트 유저 생성 안 함 (로그아웃 상태 유지)
-                if (!hasEverLoggedIn()) {
-                    // Try to sign in anonymously if not logged in
-                    try {
-                        // Pass visitorId as metadata for abuse tracking
-                        await signInAnonymously(visitorId || undefined);
-                    } catch (error) {
-                        console.error("Failed to sign in anonymously:", error);
-                        // Stay logged out if failed (e.g. blocked by backend in future)
-                    }
-                }
-            }
-
-            setIsInitializing(false);
         };
 
         checkSession();
@@ -78,12 +70,19 @@ export function GameSessionManager({
         setShowOnboarding(false);
 
         if (!user) {
-            // 온보딩 완료 후에는 정식 로그인 이력 없이 게스트 유저 생성
             try {
                 await signInAnonymously(visitorId || undefined);
             } catch (error) {
                 console.error("Failed to sign in anonymously:", error);
             }
+        }
+    };
+
+    const handleGuestLogin = async () => {
+        try {
+            await signInAnonymously(visitorId || undefined);
+        } catch (error) {
+            console.error("Failed to sign in anonymously:", error);
         }
     };
 
@@ -102,18 +101,31 @@ export function GameSessionManager({
 
     return (
         <>
-            <HackingConsole
-                length={length}
-                charset={charset}
-                disabled={isConsoleDisabled}
-                onSubmit={onSubmit}
-                currentCP={currentCP}
-                maxCP={maxCP}
-                isCPLoading={isCPLoading}
-            />
+            {user ? (
+                <HackingConsole
+                    length={length}
+                    charset={charset}
+                    disabled={isConsoleDisabled}
+                    onSubmit={onSubmit}
+                    currentCP={currentCP}
+                    maxCP={maxCP}
+                    isCPLoading={isCPLoading}
+                />
+            ) : (
+                <AuthenticationRequiredBlock
+                    onGuestLogin={handleGuestLogin}
+                    onJoin={() => router.push("/auth/signup")}
+                    onSignIn={() => setShowSignIn(true)}
+                />
+            )}
 
-            <OnboardingModal isOpen={showOnboarding} onComplete={handleOnboardingComplete} />
+            <OnboardingModal 
+                isOpen={showOnboarding} 
+                onComplete={handleOnboardingComplete} 
+                onClose={() => setShowOnboarding(false)} 
+            />
             <SignupPromptModal isOpen={showSignupPrompt} onClose={() => setShowSignupPrompt(false)} />
+            <SignInModal isOpen={showSignIn} onClose={() => setShowSignIn(false)} />
         </>
     );
 }
