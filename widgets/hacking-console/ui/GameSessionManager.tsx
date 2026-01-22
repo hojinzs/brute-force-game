@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { type CharsetType } from "@/shared/lib/charset";
-import { useAuth, hasEverLoggedIn } from "@/features/auth";
+import { useAuth } from "@/features/auth";
 import { useCPGauge } from "@/features/cp-gauge";
 import { useFingerprint } from "@/features/auth/model/use-fingerprint";
 import { OnboardingModal } from "@/widgets/onboarding";
