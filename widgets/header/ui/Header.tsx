@@ -21,14 +21,30 @@ export function Header() {
 
         {!loading && (
           <nav className="flex items-center gap-2">
-
             {user ? (
-              <button
-                onClick={signOut}
-                className="text-slate-400 hover:text-slate-200 text-sm font-medium transition-colors"
-              >
-                Sign Out
-              </button>
+              user.is_anonymous ? (
+                <>
+                  <button
+                    onClick={() => setModalOpen("signin")}
+                    className="px-4 py-2 text-slate-300 hover:text-slate-100 text-sm font-medium transition-colors"
+                  >
+                    Sign In
+                  </button>
+                  <Link
+                    href="/auth/signup"
+                    className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-semibold rounded-lg transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={signOut}
+                  className="text-slate-400 hover:text-slate-200 text-sm font-medium transition-colors"
+                >
+                  Sign Out
+                </button>
+              )
             ) : (
               <>
                 <button
