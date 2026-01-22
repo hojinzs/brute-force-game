@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { SignInModal } from "@/features/auth";
+import { useEffect, useRef } from "react";
 
 import { useBlock } from "@/entities/block";
-import { useAuth } from "@/features/auth";
-import { useCPGauge } from "@/features/cp-gauge";
 import { useSubmitAnswer } from "@/features/check-answer";
 import { useVictory } from "@/shared/context";
 import { emitSoundEvent, SOUND_EVENTS } from "@/shared/sounds";
@@ -27,12 +23,8 @@ import { BlockHistoryList } from "./BlockHistoryList";
 
 export function MainGameView() {
   const { block } = useBlock();
-  const { user } = useAuth();
-  const { current: currentCP } = useCPGauge(user?.id);
   const { victory, isVisible: showVictory } = useVictory();
   const { submit, isPending: isCheckingAnswer, error: checkAnswerError } = useSubmitAnswer();
-
-  const [isSignInOpen, setIsSignInOpen] = useState(false);
 
   // Stats Data
   const { attempts, newAttemptId } = useAttempts(block?.id);
@@ -169,7 +161,6 @@ export function MainGameView() {
         </div>
       </div>
 
-      <SignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
     </>
   );
 }

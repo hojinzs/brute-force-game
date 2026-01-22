@@ -108,6 +108,16 @@ export function useAuth() {
         if (updateError) throw updateError;
         if (!updatedUser) throw new Error("Failed to update user");
 
+        const { error: profileUpdateError } = await supabase
+          .from("profiles")
+          .update({
+            is_anonymous: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", updatedUser.id);
+
+        if (profileUpdateError) throw profileUpdateError;
+
         // 정식 로그인 이력 저장
         if (typeof window !== "undefined") {
           localStorage.setItem("has-logged-in", "true");

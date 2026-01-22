@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { type CharsetType } from "@/shared/lib/charset";
 import { useHackingConsole } from "../model/use-hacking-console";
 import { HackingConsoleView } from "./HackingConsoleView";
@@ -12,7 +11,6 @@ type HackingConsoleProps = {
   onSubmit: (value: string) => Promise<{ similarity: number; isCorrect: boolean } | null>;
   currentCP: number;
   maxCP: number;
-  isCPLoading: boolean;
 };
 
 export function HackingConsole({
@@ -22,7 +20,6 @@ export function HackingConsole({
   onSubmit,
   currentCP,
   maxCP,
-  isCPLoading,
 }: HackingConsoleProps) {
   // Logic moved to GameSessionManager
   const {

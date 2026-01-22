@@ -28,7 +28,7 @@ export function GameSessionManager({
     const { user, loading: authLoading, signInAnonymously } = useAuth();
     const { current: currentCP, max: maxCP, isLoading: isCPLoading } = useCPGauge(
         user?.id,
-        user?.is_anonymous
+        !!user?.is_anonymous
     );
     const { visitorId, isLoading: isFingerprintLoading } = useFingerprint();
 
@@ -109,7 +109,6 @@ export function GameSessionManager({
                     onSubmit={onSubmit}
                     currentCP={currentCP}
                     maxCP={maxCP}
-                    isCPLoading={isCPLoading}
                 />
             ) : (
                 <AuthenticationRequiredBlock

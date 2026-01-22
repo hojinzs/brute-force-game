@@ -14,17 +14,60 @@ begin
   -- Note: new.is_anonymous is available in Supabase Auth
   is_anon := (new.is_anonymous is true);
 
-  insert into public.profiles (id, nickname, cp_count, last_cp_refill_at, is_anonymous)
+  insert into public.profiles (
+    id,
+    nickname,
+    cp_count,
+    last_cp_refill_at,
+    is_anonymous,
+    country,
+    email_consent,
+    email_consent_at
+  )
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'nickname', 'Player_' || substr(new.id::text, 1, 8)),
     case when is_anon then 5 else 50 end,
     now(),
-    is_anon
+    is_anon,
+    new.raw_user_meta_data->>'country',
+    coalesce((new.raw_user_meta_data->>'email_consent')::boolean, false),
+    case
+      when coalesce((new.raw_user_meta_data->>'email_consent')::boolean, false) = true
+      then now()
+      else null
+    end
   );
   return new;
 end;
 $$;
+
+-- Prevent clients from toggling is_anonymous directly
+create or replace function prevent_is_anonymous_update()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.is_anonymous is distinct from old.is_anonymous then
+    if auth.uid() is null then
+      return new;
+    end if;
+
+    if coalesce(auth.jwt()->>'role', '') = 'service_role' then
+      return new;
+    end if;
+
+    raise exception 'is_anonymous cannot be updated directly';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_is_anonymous_update on profiles;
+create trigger prevent_is_anonymous_update
+before update on profiles
+for each row execute function prevent_is_anonymous_update();
 
 -- Update get_current_cp function to skip refill for anonymous users
 drop function if exists get_current_cp(uuid);
