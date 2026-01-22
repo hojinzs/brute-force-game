@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { ZapOff, LogIn, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 
