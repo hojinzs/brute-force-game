@@ -81,7 +81,7 @@ export default function SignupPage() {
             BRUTE FORCE
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-50 mb-6 leading-tight">
-            {isAnonymousUpgrade ? "Secure Your Guest Session" : "Join the Brutal Force Member"}
+            {isAnonymousUpgrade ? "Secure Your Guest Session" : "Join Brute Force"}
           </h1>
           <div className="space-y-6 text-slate-400 leading-relaxed">
             <p>
