@@ -124,7 +124,14 @@ export function GameSessionManager({
                 onComplete={handleOnboardingComplete} 
                 onClose={() => setShowOnboarding(false)} 
             />
-            <SignupPromptModal isOpen={showSignupPrompt} onClose={() => setShowSignupPrompt(false)} />
+            <SignupPromptModal 
+                isOpen={showSignupPrompt} 
+                onClose={() => setShowSignupPrompt(false)} 
+                onLogin={() => {
+                    setShowSignupPrompt(false);
+                    setShowSignIn(true);
+                }}
+            />
             <SignInModal isOpen={showSignIn} onClose={() => setShowSignIn(false)} />
         </>
     );

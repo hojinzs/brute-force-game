@@ -7,9 +7,10 @@ import Link from "next/link";
 interface SignupPromptModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onLogin: () => void;
 }
 
-export function SignupPromptModal({ isOpen, onClose }: SignupPromptModalProps) {
+export function SignupPromptModal({ isOpen, onClose, onLogin }: SignupPromptModalProps) {
     if (!isOpen) return null;
 
     return (
@@ -50,13 +51,13 @@ export function SignupPromptModal({ isOpen, onClose }: SignupPromptModalProps) {
                             Sign Up
                         </Link>
 
-                        <Link
-                            href="/auth/login"
+                        <button
+                            onClick={onLogin}
                             className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition-all active:scale-[0.98]"
                         >
                             <LogIn className="w-4 h-4" />
                             Login
-                        </Link>
+                        </button>
                     </div>
                 </div>
             </motion.div>

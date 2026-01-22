@@ -19,7 +19,7 @@ const COUNTRIES = [
 ];
 
 export default function SignupPage() {
-  const { signUpWithEmail } = useAuth();
+  const { signUpWithEmail, user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,6 +29,8 @@ export default function SignupPage() {
   
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const isAnonymousUpgrade = user?.is_anonymous;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +57,9 @@ export default function SignupPage() {
         emailConsent,
         redirectTo: "/",
       });
-      setError("Signup complete. Please check your email to verify your account.");
+      setError(isAnonymousUpgrade 
+        ? "Account upgraded! Please check your email to verify your permanent access." 
+        : "Signup complete. Please check your email to verify your account.");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to sign up";
       setError(message);
@@ -64,21 +68,27 @@ export default function SignupPage() {
     }
   };
 
+  if (authLoading) {
+    return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-slate-500">Loading secure link...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-[#0f172a] flex flex-col md:flex-row">
       {/* Left: Info Section */}
       <div className="w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-[#1e293b] border-b md:border-b-0 md:border-r border-[#334155]">
         <div className="max-w-lg mx-auto md:mx-0">
           <Link href="/" className="text-2xl font-bold text-blue-500 mb-8 block">
-            BRUTE FORCE AI
+            BRUTE FORCE
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-50 mb-6 leading-tight">
-            Join the Global Intelligence Network
+            {isAnonymousUpgrade ? "Secure Your Guest Session" : "Join the Brutal Force Member"}
           </h1>
           <div className="space-y-6 text-slate-400 leading-relaxed">
             <p>
-              Brute Force AI is a massive multiplayer social hacking simulation.
-              To participate in the global effort to decrypt the blocks, authentication is required to maintain the integrity of the ledger.
+              {isAnonymousUpgrade 
+                ? "You are currently operating on a temporary guest frequency. Converting to a permanent agent account will preserve your accumulated history, rank, and computing power."
+                : "Brute Force is a massive multiplayer social hacking simulation. To participate in the global effort to decrypt the blocks, authentication is required to maintain the integrity of the ledger."
+              }
             </p>
             
             <div className="bg-[#0f172a]/50 p-6 rounded-xl border border-[#334155]/50">
@@ -113,8 +123,15 @@ export default function SignupPage() {
       <div className="w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex items-center justify-center">
         <div className="w-full max-w-md">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-slate-50 mb-2">Create Account</h2>
-            <p className="text-slate-400">Enter your details to generate your access key.</p>
+            <h2 className="text-2xl font-bold text-slate-50 mb-2">
+              {isAnonymousUpgrade ? "Upgrade Access" : "Create Account"}
+            </h2>
+            <p className="text-slate-400">
+              {isAnonymousUpgrade 
+                ? "Enter your details to finalize your permanent agent profile." 
+                : "Enter your details to generate your access key."
+              }
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -217,7 +234,7 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-lg transition-all shadow-lg shadow-blue-900/20"
             >
-              {loading ? "Establishing Link..." : "Initialize Account"}
+              {loading ? "Establishing Link..." : (isAnonymousUpgrade ? "Confirm Upgrade" : "Initialize Account")}
             </button>
           </form>
 

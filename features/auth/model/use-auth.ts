@@ -82,32 +82,66 @@ export function useAuth() {
       const { email, password, nickname, country, emailConsent, redirectTo = "/" } = params;
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const normalizedCountry = country && country.trim().length > 0 ? country : null;
+      const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
 
-      const {
-        data: { user: authUser },
-        error: signUpError,
-      } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            nickname,
-            country: normalizedCountry,
-            email_consent: emailConsent,
+      // Check current session state specifically for this operation
+      const { data: { session } } = await supabase.auth.getSession();
+      const isAnonymous = session?.user?.is_anonymous;
+
+      if (isAnonymous) {
+        // 익명 사용자 -> 정식 사용자 전환 (Update)
+        const { data: { user: updatedUser }, error: updateError } = await supabase.auth.updateUser(
+          {
+            email,
+            password,
+            data: {
+              nickname,
+              country: normalizedCountry,
+              email_consent: emailConsent,
+            },
+          }, 
+          { 
+            emailRedirectTo 
+          }
+        );
+
+        if (updateError) throw updateError;
+        if (!updatedUser) throw new Error("Failed to update user");
+
+        // 정식 로그인 이력 저장
+        if (typeof window !== "undefined") {
+          localStorage.setItem("has-logged-in", "true");
+        }
+
+        return { user: updatedUser };
+      } else {
+        // 신규 가입 (Create)
+        const {
+          data: { user: authUser },
+          error: signUpError,
+        } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              nickname,
+              country: normalizedCountry,
+              email_consent: emailConsent,
+            },
+            emailRedirectTo,
           },
-          emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-        },
-      });
+        });
 
-      if (signUpError) throw signUpError;
-      if (!authUser) throw new Error("Failed to create user");
+        if (signUpError) throw signUpError;
+        if (!authUser) throw new Error("Failed to create user");
 
-      // 회원가입도 정식 로그인 이력으로 간주
-      if (typeof window !== "undefined") {
-        localStorage.setItem("has-logged-in", "true");
+        // 정식 로그인 이력 저장
+        if (typeof window !== "undefined") {
+          localStorage.setItem("has-logged-in", "true");
+        }
+
+        return { user: authUser };
       }
-
-      return { user: authUser };
     },
     []
   );
