@@ -1,79 +1,78 @@
 # BRUTE FORCE AI
 
-**Generated:** 2026-01-14 | **Commit:** ff2f5c5 | **Branch:** main
+**Generated:** 2026-01-22 | **Commit:** (latest) | **Branch:** main
 
 ## OVERVIEW
 
-Social hacking simulation where global users compete to crack AI-generated passwords. Next.js 16 + Supabase serverless architecture. MVP stage.
+Social hacking simulation where global users compete to crack AI-generated passwords. High-stakes multiplayer competition powered by Next.js 16 and Supabase serverless architecture.
 
-## STRUCTURE
+## STRUCTURE (Feature-Sliced Design)
 
 ```
 brute-force/
-├── app/           # Next.js App Router (page.tsx, layout.tsx, globals.css)
-├── docs/          # Product specs, design guide, policies (READ THESE FIRST)
-├── public/        # Static assets (SVGs)
-└── configs        # tsconfig, eslint, postcss, next.config
+├── app/            # Next.js App Router (Routes & Providers)
+├── views/          # Page-level compositions (MainGame, Ranking)
+├── widgets/        # Complex UI components (HackingConsole, LiveFeed)
+├── features/       # User interactions (CheckAnswer, Auth, CPGauge)
+├── entities/       # Business logic & data (Block, Attempt, Profile)
+├── shared/         # Reusable infra (API clients, UI kit, Utils)
+├── supabase/       # Edge Functions & DB Migrations
+├── public/         # Assets & Sounds
+└── docs/           # Specifications (PRD, Technical Docs)
 ```
 
 ## WHERE TO LOOK
 
 | Task | Location | Notes |
 |------|----------|-------|
-| UI entry | `app/page.tsx` | Main landing, edit here to start |
-| Layout/fonts | `app/layout.tsx` | Geist fonts configured |
-| Global styles | `app/globals.css` | Tailwind v4 import |
-| Product requirements | `docs/PRODUCT_REQUIREMENTS_DOCUMENT.md` | Korean, full PRD |
-| Technical spec | `docs/TECHNICAL_REQUIREMENTS_DOCUMENTS.md` | DB schema, edge functions |
-| Design tokens | `docs/DESIGN_CONCEPTS.md` | Colors, typography, animations |
-| Edge cases | `docs/SYSTEM_POLICIES.md` | Race conditions, abuse prevention |
-| Quick reference | `docs/AGENT_GUIDELINES.md` | Condensed tech stack & tokens |
+| Main Game UI | `app/(game)/page.tsx` | Entry point for the hacking interface |
+| Game Views | `views/main-game-view/` | Core game layout and components |
+| DB Schema | `supabase/migrations/` | PostgreSQL table definitions & RLS |
+| Edge Functions| `supabase/functions/` | Server-side logic (Password hashing/checking) |
+| Audio System | `shared/sounds/` | ZZFX-based sound engine |
+| Global Styles | `app/globals.css` | Tailwind v4 configurations |
+| Design Tokens | `docs/DESIGN_CONCEPTS.md` | Colors, typography, and "Hacker" aesthetic |
 
 ## CONVENTIONS
 
-### Stack (from docs)
-- Frontend: Next.js 16+ (App Router), Tailwind CSS, Motion (Framer Motion)
-- Backend: Supabase (Edge Functions, Realtime, Auth, PostgreSQL)
-- State: TanStack Query, Supabase Client SDK
-- AI: ChatGPT 4.1 mini
-
-### Path Alias
-```json
-"@/*": ["./*"]  // Use @/app/*, @/components/*, etc.
-```
-
-### Styling
-- Tailwind v4 via `@tailwindcss/postcss`
-- Dark mode: `prefers-color-scheme` based (see globals.css)
-- Design tokens defined in `docs/DESIGN_CONCEPTS.md`:
-  - Background: `#0f172a`, Surface: `#1e293b`
-  - Primary: `#3b82f6`, Success: `#10b981`
-  - Fonts: Pretendard (UI), JetBrains Mono (data/logs)
-
-### TypeScript
-- Strict mode enabled
-- Target: ES2017, JSX: react-jsx
-- No `as any`, `@ts-ignore`, `@ts-expect-error`
+- **Architecture**: Strict FSD (Feature-Sliced Design). Avoid cross-imports within layers.
+- **Dual Testing**: 
+  - **Jest**: Backend logic & Supabase Edge Functions (`pnpm test`)
+  - **Vitest**: Frontend UI, Hooks, and Storybook interactions
+- **Dev Container**: Recommended environment for consistent toolchains (Docker required).
+- **Deployment**: Migration-first. Always `supabase db push` before code deployment.
+- **Path Alias**: Always use `@/*` (points to root `./*`).
+- **State**: Server state via TanStack Query; client UI state via Zustand.
 
 ## ANTI-PATTERNS
 
-- Never expose `answer_hash` to client (RLS restricts to service_role only)
-- Never store plaintext passwords in DB (salted hash only)
-- Rate limit: 2 req/sec per user for `check-answer`
+- **Security**: Never expose `answer_hash` to client. RLS must restrict sensitive data.
+- **TS Strictness**: No `as any`, `@ts-ignore`, or implicit `any` types.
+- **Deployment**: Never deploy app code before database migrations are healthy.
+- **Performance**: Avoid heavy computations in the main thread; use Framer Motion for animations.
+
+## UNIQUE STYLES
+
+- **Aesthetic**: "Clean-Tech Hacker" - Dark mode, high contrast, glitch effects.
+- **CP System**: Computing Power (CP) limits attempts (Refills 1/min, Max 50).
+- **Audio**: Retro procedural sounds using ZZFX (no heavy MP3s except background).
 
 ## COMMANDS
 
 ```bash
-pnpm dev      # Start dev server (http://localhost:3000)
-pnpm build    # Production build
-pnpm lint     # ESLint check
-pnpm start    # Start production server
+pnpm dev              # Start Next.js development server
+pnpm build            # Production build
+pnpm test             # Run Jest tests (Backend/Shared)
+pnpm vitest           # Run Vitest (UI/Frontend)
+pnpm storybook        # Launch Storybook
+
+supabase start        # Start local Supabase environment
+supabase db push      # Apply local migrations to remote
+supabase functions serve [name] # Local Edge Function testing
 ```
 
 ## NOTES
 
-- MVP stage: Focus on core loop validation
-- Supabase Edge Functions not yet implemented
-- Design specifies "Clean-Tech Hacker" aesthetic with glitch animations
-- CP (Computing Power) system: time-based refill, 1/min, max 50
-- All docs are in Korean except AGENT_GUIDELINES.md
+- **MVP Status**: Focus on core loop (Generate Block -> Crack -> Refill CP).
+- **Rate Limit**: Hard limit of 2 req/sec per user for `check-answer` to prevent brute-force scripts.
+- **Anonymous**: Supports session-based anonymous cracking before signup.
