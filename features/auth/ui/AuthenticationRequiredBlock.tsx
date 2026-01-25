@@ -1,13 +1,11 @@
 import { Lock } from "lucide-react";
 
 interface AuthenticationRequiredBlockProps {
-    onGuestLogin: () => void;
     onJoin: () => void;
     onSignIn: () => void;
 }
 
 export function AuthenticationRequiredBlock({
-    onGuestLogin,
     onJoin,
     onSignIn,
 }: AuthenticationRequiredBlockProps) {
@@ -33,17 +31,17 @@ export function AuthenticationRequiredBlock({
 
                 <div className="flex flex-col w-full gap-3 sm:flex-row sm:gap-4 justify-center">
                     <button
-                        onClick={onGuestLogin}
+                        onClick={onSignIn}
                         className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-all shadow-lg shadow-blue-900/20 active:scale-[0.98] w-full sm:w-auto min-w-[160px]"
                     >
-                        Play as Guest
+                        Sign In
                     </button>
-                    
+
                     <button
-                        onClick={onSignIn}
+                        onClick={onJoin}
                         className="px-8 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium transition-all border border-slate-700 active:scale-[0.98] w-full sm:w-auto min-w-[140px]"
                     >
-                        Sign In
+                        Join the Game
                     </button>
                 </div>
 
