@@ -13,6 +13,8 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "baseUrl": ".",
+    "types": ["node", "react", "react-dom", "@react-three/fiber"],
     "plugins": [
       {
         "name": "next"

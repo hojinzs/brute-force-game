@@ -174,6 +174,7 @@ const MatrixStarField = ({ speed, density, chars, direction = 'backward' }: { sp
     }
   });
 
+  // @ts-ignore
   return <points ref={meshRef} geometry={geometry} material={material} />;
 };
 
