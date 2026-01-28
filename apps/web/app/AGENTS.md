@@ -9,20 +9,23 @@ Next.js App Router layer with route groups for server components, layouts, and a
 
 ```
 app/
-├── (game)/              # Main game route group (hidden from URL)
-│   ├── layout.tsx       # Game-specific layout
-│   ├── page.tsx         # Main game entry (SERVER COMPONENT)
-│   └── _components/     # Client components for game UI
-├── auth/
-│   ├── signup/page.tsx  # User registration
-│   └── callback/page.tsx # OAuth/callback handler
-├── history/
-│   ├── layout.tsx       # History page layout
-│   └── page.tsx         # User attempt history
-├── ranking/
-│   ├── layout.tsx       # Ranking page layout
-│   └── _components/     # Ranking client components
-│   └── page.tsx         # Leaderboard display
+├── [locale]/            # Locale segment (internal, rewritten from /)
+│   ├── (game)/          # Main game route group (hidden from URL)
+│   │   ├── layout.tsx   # Game-specific layout
+│   │   ├── page.tsx     # Main game entry (SERVER COMPONENT)
+│   │   └── _components/ # Client components for game UI
+│   ├── auth/
+│   │   ├── signup/page.tsx  # User registration
+│   │   └── callback/page.tsx # OAuth/callback handler
+│   ├── history/
+│   │   ├── layout.tsx   # History page layout
+│   │   └── page.tsx     # User attempt history
+│   ├── ranking/
+│   │   ├── layout.tsx   # Ranking page layout
+│   │   └── _components/ # Ranking client components
+│   │   └── page.tsx     # Leaderboard display
+│   └── settings/
+│       └── page.tsx     # User settings
 ├── layout.tsx           # Root layout (global providers, fonts)
 ├── providers.tsx        # React Query & global providers
 └── globals.css          # Global styles & Tailwind v4 config
@@ -32,11 +35,11 @@ app/
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Main Game Entry | `(game)/page.tsx` | Server component, NOT app/page.tsx |
-| Server-side Data Fetch | `(game)/page.tsx` | `createServerSupabaseClient()` pattern |
-| Auth Callback | `auth/callback/page.tsx` | OAuth session handling, redirect logic |
+| Main Game Entry | `[locale]/(game)/page.tsx` | Server component, NOT app/page.tsx |
+| Server-side Data Fetch | `[locale]/(game)/page.tsx` | `createServerSupabaseClient()` pattern |
+| Auth Callback | `[locale]/auth/callback/page.tsx` | OAuth session handling, redirect logic |
 | Query Client Config | `providers.tsx` | TanStack Query defaults (60s staleTime) |
-| Game Layout | `(game)/layout.tsx` | Game-specific providers, styles |
+| Game Layout | `[locale]/(game)/layout.tsx` | Game-specific providers, styles |
 | Global Layout | `layout.tsx` | Root-level providers, fonts, HTML structure |
 
 ## CONVENTIONS
