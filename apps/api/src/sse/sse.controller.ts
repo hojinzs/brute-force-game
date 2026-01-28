@@ -6,6 +6,7 @@ import { SseRateLimitService } from '../shared/services/sse-rate-limit.service';
 import { SseEventFilterService } from '../shared/services/sse-event-filter.service';
 import { Observable, interval } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Controller('api/sse')
 export class SseController {
@@ -14,6 +15,7 @@ export class SseController {
     private readonly connectionManager: ConnectionManagerService,
     private readonly rateLimitService: SseRateLimitService,
     private readonly eventFilterService: SseEventFilterService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Get('feed')
@@ -66,8 +68,39 @@ export class SseController {
       this.connectionManager.updateActivity(connectionId);
     }, 30000);
 
+    // Setup event listeners for this connection
+    const eventListeners: Array<{ event: string; handler: (data: any) => void }> = [
+      {
+        event: 'sse.attempt',
+        handler: (data) => {
+          if (filter.shouldIncludeEvent(data)) {
+            res.write(`event: attempt\ndata: ${JSON.stringify(data)}\n\n`);
+          }
+        },
+      },
+      {
+        event: 'sse.presence',
+        handler: (data) => {
+          if (filter.shouldIncludeEvent(data)) {
+            res.write(`event: presence\ndata: ${JSON.stringify(data)}\n\n`);
+          }
+        },
+      },
+    ];
+
+    // Register event listeners
+    eventListeners.forEach(({ event, handler }) => {
+      this.eventEmitter.on(event, handler);
+    });
+
     res.on('close', () => {
       clearInterval(heartbeat);
+      
+      // Unregister event listeners
+      eventListeners.forEach(({ event, handler }) => {
+        this.eventEmitter.off(event, handler);
+      });
+      
       this.connectionManager.removeConnection(connectionId);
       this.rateLimitService.recordDisconnection(ip, userId);
     });
@@ -94,8 +127,15 @@ export class SseController {
       this.connectionManager.updateActivity(connectionId);
     }, 30000);
 
+    // Setup event listener for ranking updates
+    const rankingHandler = (data: any) => {
+      res.write(`event: ranking\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+    this.eventEmitter.on('sse.ranking', rankingHandler);
+
     res.on('close', () => {
       clearInterval(heartbeat);
+      this.eventEmitter.off('sse.ranking', rankingHandler);
       this.connectionManager.removeConnection(connectionId);
     });
   }
@@ -121,8 +161,15 @@ export class SseController {
       this.connectionManager.updateActivity(connectionId);
     }, 30000);
 
+    // Setup event listener for block status updates
+    const blockStatusHandler = (data: any) => {
+      res.write(`event: block-status\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+    this.eventEmitter.on('sse.block-status', blockStatusHandler);
+
     res.on('close', () => {
       clearInterval(heartbeat);
+      this.eventEmitter.off('sse.block-status', blockStatusHandler);
       this.connectionManager.removeConnection(connectionId);
     });
   }
@@ -148,8 +195,15 @@ export class SseController {
       this.connectionManager.updateActivity(connectionId);
     }, 30000);
 
+    // Setup event listener for presence updates
+    const presenceHandler = (data: any) => {
+      res.write(`event: presence\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+    this.eventEmitter.on('sse.presence', presenceHandler);
+
     res.on('close', () => {
       clearInterval(heartbeat);
+      this.eventEmitter.off('sse.presence', presenceHandler);
       this.connectionManager.removeConnection(connectionId);
     });
   }

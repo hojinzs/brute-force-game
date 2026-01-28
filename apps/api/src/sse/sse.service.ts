@@ -55,8 +55,8 @@ export class SseService {
       timestamp: new Date(),
     };
     
+    // Only emit via EventEmitter - SseGateway will handle the broadcasting
     this.eventEmitter.emit('sse.attempt', eventData);
-    this.sseGateway.broadcastToFeed('attempt', event);
   }
 
   emitBlockStatusChange(event: BlockStatusEvent) {
@@ -66,8 +66,8 @@ export class SseService {
       timestamp: new Date(),
     };
     
+    // Only emit via EventEmitter - SseGateway will handle the broadcasting
     this.eventEmitter.emit('sse.block-status', eventData);
-    this.sseGateway.broadcastToBlocks('block-status', event);
   }
 
   emitRankingUpdate(event: RankingEvent) {
@@ -77,8 +77,8 @@ export class SseService {
       timestamp: new Date(),
     };
     
+    // Only emit via EventEmitter - SseGateway will handle the broadcasting
     this.eventEmitter.emit('sse.ranking', eventData);
-    this.sseGateway.broadcastToRankings('ranking', event);
   }
 
   emitPresenceUpdate(event: PresenceEvent) {
@@ -88,7 +88,7 @@ export class SseService {
       timestamp: new Date(),
     };
     
+    // Only emit via EventEmitter - SseGateway will handle the broadcasting
     this.eventEmitter.emit('sse.presence', eventData);
-    this.sseGateway.broadcastToPresence('presence', event);
   }
 }

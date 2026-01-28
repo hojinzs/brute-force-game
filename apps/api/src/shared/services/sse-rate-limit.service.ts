@@ -65,18 +65,19 @@ export class SseRateLimitService {
   }
 
   recordConnection(ip: string, userId?: string): void {
-    const key = userId ? `user:${userId}` : `ip:${ip}`;
     const now = new Date();
 
-    const existing = this.connectionData.get(key);
-    if (existing) {
-      existing.connectionCount++;
-      existing.connectionTimestamps.push(now);
-      existing.lastConnectionTime = now;
+    // Always record IP-based connection for IP limit enforcement
+    const ipKey = `ip:${ip}`;
+    const ipExisting = this.connectionData.get(ipKey);
+    if (ipExisting) {
+      ipExisting.connectionCount++;
+      ipExisting.connectionTimestamps.push(now);
+      ipExisting.lastConnectionTime = now;
     } else {
-      this.connectionData.set(key, {
+      this.connectionData.set(ipKey, {
         ip,
-        userId,
+        userId: undefined, // IP entries don't have userId
         connectionCount: 1,
         connectionTimestamps: [now],
         lastConnectionTime: now,
@@ -84,17 +85,50 @@ export class SseRateLimitService {
       });
     }
 
+    // Also record user-based connection if userId is provided
+    if (userId) {
+      const userKey = `user:${userId}`;
+      const userExisting = this.connectionData.get(userKey);
+      if (userExisting) {
+        userExisting.connectionCount++;
+        userExisting.connectionTimestamps.push(now);
+        userExisting.lastConnectionTime = now;
+      } else {
+        this.connectionData.set(userKey, {
+          ip,
+          userId,
+          connectionCount: 1,
+          connectionTimestamps: [now],
+          lastConnectionTime: now,
+          isBlocked: false,
+        });
+      }
+    }
+
     // Cleanup is now handled by background process
   }
 
   recordDisconnection(ip: string, userId?: string): void {
-    const key = userId ? `user:${userId}` : `ip:${ip}`;
-    const connection = this.connectionData.get(key);
+    // Always handle IP-based disconnection
+    const ipKey = `ip:${ip}`;
+    const ipConnection = this.connectionData.get(ipKey);
     
-    if (connection && connection.connectionCount > 1) {
-      connection.connectionCount--;
+    if (ipConnection && ipConnection.connectionCount > 1) {
+      ipConnection.connectionCount--;
     } else {
-      this.connectionData.delete(key);
+      this.connectionData.delete(ipKey);
+    }
+
+    // Also handle user-based disconnection if userId is provided
+    if (userId) {
+      const userKey = `user:${userId}`;
+      const userConnection = this.connectionData.get(userKey);
+      
+      if (userConnection && userConnection.connectionCount > 1) {
+        userConnection.connectionCount--;
+      } else {
+        this.connectionData.delete(userKey);
+      }
     }
   }
 
