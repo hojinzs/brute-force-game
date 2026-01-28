@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useTopRanking, useMyRank } from "@/entities/ranking";
 import { useAuth } from "@/features/auth";
 
@@ -22,6 +23,7 @@ function formatPoints(points: number): string {
 }
 
 export function RankingWidget() {
+  const t = useTranslations();
   const { user } = useAuth();
   const { data: topRanking, isLoading } = useTopRanking(50);
   const { data: myRank } = useMyRank(user?.id);
@@ -34,13 +36,13 @@ export function RankingWidget() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
         <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
           <span>🏆</span>
-          TOP PLAYERS
+          {t('ranking.topPlayers')}
         </h3>
         <Link
           href="/ranking"
           className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
         >
-          View All →
+          {t('ranking.viewAll')} →
         </Link>
       </div>
 
@@ -52,7 +54,7 @@ export function RankingWidget() {
           </div>
         ) : !topRanking || topRanking.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-slate-500 text-sm">
-            No rankings yet
+            {t('ranking.noRankings')}
           </div>
         ) : (
           <ul className="divide-y divide-slate-700/50">
@@ -91,13 +93,13 @@ export function RankingWidget() {
         <div className="border-t border-slate-700 px-4 py-3 bg-slate-800/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Your Rank:</span>
+              <span className="text-xs text-slate-400">{t('ranking.yourRank')}:</span>
               <span className="font-mono text-sm font-semibold text-blue-400">
                 #{myRank.rank}
               </span>
             </div>
             <span className="font-mono text-sm text-emerald-400">
-              {formatPoints(myRank.total_points)} pts
+              {formatPoints(myRank.total_points)} {t('ranking.pts')}
             </span>
           </div>
         </div>

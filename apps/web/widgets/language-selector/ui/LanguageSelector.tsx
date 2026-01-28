@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 const languages = [
   { code: "en", name: "English", flag: "🇺🇸" },
@@ -10,6 +10,7 @@ const languages = [
 ];
 
 export function LanguageSelector() {
+  const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -25,7 +26,7 @@ export function LanguageSelector() {
 
   return (
     <div className="bg-[#1e293b]/40 backdrop-blur-md border border-slate-700/50 rounded-xl p-6">
-      <h3 className="text-slate-200 text-lg font-bold mb-4">Language Settings</h3>
+      <h3 className="text-slate-200 text-lg font-bold mb-4">{t('settings.languageSettings')}</h3>
       <div className="space-y-2">
         {languages.map((language) => (
           <button

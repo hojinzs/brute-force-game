@@ -51,7 +51,7 @@ export function Header() {
                   onClick={signOut}
                   className="text-slate-400 hover:text-slate-200 text-sm font-medium transition-colors"
                 >
-                  Sign Out
+                  {t('auth.signOut')}
                 </button>
               )
             ) : (

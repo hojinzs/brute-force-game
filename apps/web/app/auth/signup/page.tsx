@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/features/auth";
 
 const COUNTRIES = [
@@ -19,6 +20,7 @@ const COUNTRIES = [
 ];
 
 export default function SignupPage() {
+  const t = useTranslations();
   const { signUpWithEmail, user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,12 +39,12 @@ export default function SignupPage() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t('auth.signup.passwordMismatch'));
       return;
     }
 
     if (!country) {
-      setError("Please select your country");
+      setError(t('auth.signup.selectCountry'));
       return;
     }
 
@@ -58,8 +60,8 @@ export default function SignupPage() {
         redirectTo: "/",
       });
       setError(isAnonymousUpgrade 
-        ? "Account upgraded! Please check your email to verify your permanent access." 
-        : "Signup complete. Please check your email to verify your account.");
+        ? t('auth.signup.upgradeSuccess') 
+        : t('auth.signup.signupSuccess'));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to sign up";
       setError(message);
@@ -69,7 +71,7 @@ export default function SignupPage() {
   };
 
   if (authLoading) {
-    return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-slate-500">Loading secure link...</div>;
+    return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-slate-500">{t('common.secureLink')}</div>;
   }
 
   return (
@@ -81,14 +83,39 @@ export default function SignupPage() {
             BRUTE FORCE
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-50 mb-6 leading-tight">
-            {isAnonymousUpgrade ? "Secure Your Guest Session" : "Join Brute Force"}
+            {isAnonymousUpgrade ? t('auth.signup.secureGuest') : t('auth.signup.title')}
           </h1>
           <div className="space-y-6 text-slate-400 leading-relaxed">
             <p>
               {isAnonymousUpgrade 
-                ? "You are currently operating on a temporary guest frequency. Converting to a permanent agent account will preserve your accumulated history, rank, and computing power."
-                : "Brute Force is a massive multiplayer social hacking simulation. To participate in the global effort to decrypt the blocks, authentication is required to maintain the integrity of the ledger."
+                ? t('auth.signup.secureGuestDesc')
+                : t('auth.signup.joinBruteForce')
               }
+            </p>
+            
+            <div className="bg-[#0f172a]/50 p-6 rounded-xl border border-[#334155]/50">
+              <h3 className="text-slate-200 font-semibold mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                {t('auth.signup.whyEmail')}
+              </h3>
+              <ul className="space-y-3 text-sm">
+                <li className="flex gap-3">
+                  <span className="text-slate-500">01</span>
+                  <span>
+                    {t('auth.signup.emailReason1')}
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-slate-500">02</span>
+                  <span>
+                    {t('auth.signup.emailReason2')}
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <p className="text-sm text-slate-500">
+              {t('auth.signup.countryDisclaimer')}
             </p>
             
             <div className="bg-[#0f172a]/50 p-6 rounded-xl border border-[#334155]/50">
@@ -124,12 +151,12 @@ export default function SignupPage() {
         <div className="w-full max-w-md">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-50 mb-2">
-              {isAnonymousUpgrade ? "Upgrade Access" : "Create Account"}
+              {isAnonymousUpgrade ? t('auth.signup.upgradeAccess') : t('auth.signup.createAccount')}
             </h2>
             <p className="text-slate-400">
               {isAnonymousUpgrade 
-                ? "Enter your details to finalize your permanent agent profile." 
-                : "Enter your details to generate your access key."
+                ? t('auth.signup.upgradeAccessDesc') 
+                : t('auth.signup.createAccountDesc')
               }
             </p>
           </div>
@@ -137,7 +164,7 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">{t('auth.email')}</label>
               <input
                 type="email"
                 value={email}
@@ -151,7 +178,7 @@ export default function SignupPage() {
             {/* Nickname & Country Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Nickname</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">{t('auth.signup.nickname')}</label>
                 <input
                   type="text"
                   value={nickname}
@@ -164,14 +191,14 @@ export default function SignupPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Country</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">{t('auth.signup.country')}</label>
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
                   required
                   className="w-full bg-[#1e293b] border border-[#334155] rounded-lg px-4 py-3 text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none"
                 >
-                  <option value="" disabled>Select</option>
+                  <option value="" disabled>{t('auth.signup.selectCountry')}</option>
                   {COUNTRIES.map((c) => (
                     <option key={c.code} value={c.code}>{c.name}</option>
                   ))}
@@ -181,7 +208,7 @@ export default function SignupPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Password</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">{t('auth.password')}</label>
               <input
                 type="password"
                 value={password}
@@ -195,7 +222,7 @@ export default function SignupPage() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Confirm Password</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">{t('auth.signup.confirmPassword')}</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -217,7 +244,7 @@ export default function SignupPage() {
                 className="mt-1 w-4 h-4 rounded border-slate-600 bg-[#1e293b] text-blue-500 focus:ring-blue-500/50"
               />
               <label htmlFor="emailConsent" className="text-sm text-slate-400 leading-snug cursor-pointer select-none">
-                [Optional] I agree to receive emails about game updates, major events, and reward opportunities.
+                {t('auth.signup.emailConsent')}
               </label>
             </div>
 
@@ -234,14 +261,14 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-lg transition-all shadow-lg shadow-blue-900/20"
             >
-              {loading ? "Establishing Link..." : (isAnonymousUpgrade ? "Confirm Upgrade" : "Initialize Account")}
+              {loading ? t('auth.signup.establishingLink') : (isAnonymousUpgrade ? t('auth.signup.confirmUpgrade') : t('auth.signup.initializeAccount'))}
             </button>
           </form>
 
           <p className="mt-8 text-center text-slate-500 text-sm">
-            Already have an active ledger?{" "}
+            {t('auth.signup.haveAccount')}{" "}
             <Link href="/?signin=true" className="text-blue-400 hover:text-blue-300 transition-colors">
-              Access Terminal
+              {t('auth.signup.accessTerminal')}
             </Link>
           </p>
         </div>

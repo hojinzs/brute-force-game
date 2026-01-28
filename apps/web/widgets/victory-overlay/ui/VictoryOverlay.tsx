@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useTranslations } from "next-intl";
 
 type VictoryOverlayProps = {
   blockId: number;
@@ -13,6 +14,7 @@ export function VictoryOverlay({
   winnerNickname,
   show,
 }: VictoryOverlayProps) {
+  const t = useTranslations();
   if (!show) return null;
 
   return (
@@ -42,25 +44,25 @@ export function VictoryOverlay({
           }}
           transition={{ duration: 0.5, repeat: Infinity }}
         >
-          BLOCK SOLVED!
+          {t('victory.blockSolved')}
         </motion.h1>
 
-        <div className="space-y-4 text-slate-300">
-          <p className="text-2xl">
-            Block <span className="text-blue-400 font-mono">#{blockId}</span>
-          </p>
-          <p className="text-xl">
-            Winner:{" "}
-            <span className="text-emerald-400 font-bold">{winnerNickname}</span>
-          </p>
-          <motion.p
-            className="text-slate-500 text-sm mt-8"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            Waiting for the next block to be created...
-          </motion.p>
-        </div>
+         <div className="space-y-4 text-slate-300">
+           <p className="text-2xl">
+             {t('victory.block')} <span className="text-blue-400 font-mono">#{blockId}</span>
+           </p>
+           <p className="text-xl">
+             {t('victory.winner')}{" "}
+             <span className="text-emerald-400 font-bold">{winnerNickname}</span>
+           </p>
+           <motion.p
+             className="text-slate-500 text-sm mt-8"
+             animate={{ opacity: [0.5, 1, 0.5] }}
+             transition={{ duration: 2, repeat: Infinity }}
+           >
+             {t('victory.waitingNextBlock')}
+           </motion.p>
+         </div>
       </motion.div>
     </motion.div>
   );

@@ -4,7 +4,8 @@
     "error": "Error",
     "crack": "CRACK",
     "cracking": "CRACKING...",
-    "errorButton": "ERROR"
+    "errorButton": "ERROR",
+    "secureLink": "Loading secure link..."
   },
   "game": {
     "length": "Length",
@@ -23,14 +24,59 @@
     "signIn": "Sign In",
     "signUp": "Sign Up",
     "email": "Email",
-    "password": "Password"
+    "password": "Password",
+    "signOut": "Sign Out",
+    "signup": {
+      "title": "Join Brute Force",
+      "secureGuest": "Secure Your Guest Session",
+      "nickname": "Nickname",
+      "country": "Country",
+      "confirmPassword": "Confirm Password",
+      "emailConsent": "[Optional] I agree to receive emails about game updates, major events, and reward opportunities.",
+      "whyEmail": "Why do we need your email?",
+      "emailReason1": "To notify you of important game events, such as when a Block is solved or when your similarity score beats top record.",
+      "emailReason2": "To serve as a secure channel for future rewards distribution (Phase 2 Economy).",
+      "countryDisclaimer": "* Country information is collected solely for purpose of global/regional ranking aggregation.",
+      "passwordMismatch": "Passwords do not match",
+      "selectCountry": "Please select your country",
+      "upgradeSuccess": "Account upgraded! Please check your email to verify your permanent access.",
+      "signupSuccess": "Signup complete. Please check your email to verify your account.",
+      "upgradeAccess": "Upgrade Access",
+      "createAccount": "Create Account",
+      "secureGuestDesc": "You are currently operating on a temporary guest frequency. Converting to a permanent agent account will preserve your accumulated history, rank, and computing power.",
+      "joinBruteForce": "Brute Force is a massive multiplayer social hacking simulation. To participate in global effort to decrypt blocks, authentication is required to maintain integrity of the ledger.",
+      "upgradeAccessDesc": "Enter your details to finalize your permanent agent profile.",
+      "createAccountDesc": "Enter your details to generate your access key.",
+      "establishingLink": "Establishing Link...",
+      "confirmUpgrade": "Confirm Upgrade",
+      "initializeAccount": "Initialize Account",
+      "haveAccount": "Already have an active ledger?",
+      "accessTerminal": "Access Terminal"
+    }
   },
   "ranking": {
     "topPlayers": "TOP PLAYERS",
     "viewAll": "View All",
-    "yourRank": "Your Rank"
+    "yourRank": "Your Rank",
+    "noRankings": "No rankings yet",
+    "pts": "pts",
+    "title": "Global Leaderboard",
+    "description": "See top hackers in Brute Force AI"
   },
   "victory": {
+    "blockSolved": "BLOCK SOLVED!",
+    "winner": "Winner:",
+    "waitingNextBlock": "Waiting for the next block to be created...",
+    "block": "Block",
     "youWin": "YOU WIN!"
+  },
+  "topAttempts": {
+    "title": "TOP ATTEMPTS",
+    "top": "Top {count}",
+    "noAttempts": "No attempts with similarity yet"
+  },
+  "settings": {
+    "title": "Settings",
+    "languageSettings": "Language Settings"
   }
 }

@@ -4,7 +4,8 @@
     "error": "오류",
     "crack": "크랙",
     "cracking": "크랙 중...",
-    "errorButton": "오류"
+    "errorButton": "오류",
+    "secureLink": "보안 링크 로딩 중..."
   },
   "game": {
     "length": "길이",
@@ -23,14 +24,59 @@
     "signIn": "로그인",
     "signUp": "회원가입",
     "email": "이메일",
-    "password": "비밀번호"
+    "password": "비밀번호",
+    "signOut": "로그아웃",
+    "signup": {
+      "title": "Brute Force 참여",
+      "secureGuest": "게스트 세션 보안",
+      "nickname": "닉네임",
+      "country": "국가",
+      "confirmPassword": "비밀번호 확인",
+      "emailConsent": "[선택] 게임 업데이트, 주요 이벤트, 보상 기회 관련 이메일 수신에 동의합니다.",
+      "whyEmail": "이메일이 필요한 이유는?",
+      "emailReason1": "블록 해제, 최고 기록 경신 등 중요한 게임 이벤트를 알리기 위해 필요합니다.",
+      "emailReason2": "향후 보상 분배를 위한 보안 채널 역할을 합니다 (Phase 2 경제 시스템).",
+      "countryDisclaimer": "* 국가 정보는 전역/지역 랭킹 집계 목적으로만 수집됩니다.",
+      "passwordMismatch": "비밀번호가 일치하지 않습니다",
+      "selectCountry": "국가를 선택해주세요",
+      "upgradeSuccess": "계정 업그레이드 완료! 영구 접근 권한 확인을 위해 이메일을 확인하세요.",
+      "signupSuccess": "가입 완료. 계정 확인을 위해 이메일을 확인하세요.",
+      "upgradeAccess": "접근 권한 업그레이드",
+      "createAccount": "계정 생성",
+      "secureGuestDesc": "현재 임시 게스트 주파수로 운영 중입니다. 영구 에이전트 계정으로 전환하면 누적된 기록, 순위, 컴퓨팅 파워가 보존됩니다.",
+      "joinBruteForce": "Brute Force는 대규모 멀티플레이어 소셜 해킹 시뮬레이션입니다. 블록 복호화 글로벌 노력에 참여하려면, 원장 무결성 유지를 위해 인증이 필요합니다.",
+      "upgradeAccessDesc": "영구 에이전트 프로필을 완성하기 위해 상세 정보를 입력하세요.",
+      "createAccountDesc": "접근 키를 생성하기 위해 상세 정보를 입력하세요.",
+      "establishingLink": "링크 설정 중...",
+      "confirmUpgrade": "업그레이드 확인",
+      "initializeAccount": "계정 초기화",
+      "haveAccount": "이미 활성 원장이 있으신가요?",
+      "accessTerminal": "터미널 접속"
+    }
   },
   "ranking": {
     "topPlayers": "최고 플레이어",
     "viewAll": "전체 보기",
-    "yourRank": "내 순위"
+    "yourRank": "내 순위",
+    "noRankings": "아직 랭킹이 없습니다",
+    "pts": "점",
+    "title": "글로벌 리더보드",
+    "description": "Brute Force AI 최고 해커들 보기"
   },
   "victory": {
+    "blockSolved": "블록 해제!",
+    "winner": "승자:",
+    "waitingNextBlock": "다음 블록이 생성되기를 기다리는 중...",
+    "block": "블록",
     "youWin": "승리!"
+  },
+  "topAttempts": {
+    "title": "최고 시도",
+    "top": "상위 {count}",
+    "noAttempts": "아직 유사도 시도가 없습니다"
+  },
+  "settings": {
+    "title": "설정",
+    "languageSettings": "언어 설정"
   }
 }

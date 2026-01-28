@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import type { AttemptWithNickname } from "@/entities/attempt";
 
 type TopAttemptsProps = {
@@ -8,6 +9,7 @@ type TopAttemptsProps = {
 };
 
 export function TopAttempts({ attempts }: TopAttemptsProps) {
+  const t = useTranslations();
   const sortedAttempts = [...attempts]
     .filter((a) => a.similarity > 0 && a.is_first_submission)
     .sort((a, b) => b.similarity - a.similarity)
@@ -18,17 +20,17 @@ export function TopAttempts({ attempts }: TopAttemptsProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#334155]">
         <h2 className="text-slate-50 font-medium flex items-center gap-2">
           <span>🎯</span>
-          TOP ATTEMPTS
+          {t('topAttempts.title')}
         </h2>
         <span className="text-slate-500 text-xs">
-          Top {sortedAttempts.length}
+          {t('topAttempts.top', { count: sortedAttempts.length })}
         </span>
       </div>
 
       <div className="max-h-[400px] overflow-y-auto">
         {sortedAttempts.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-sm">
-            No attempts with similarity yet
+            {t('topAttempts.noAttempts')}
           </div>
         ) : (
           sortedAttempts.map((attempt, index) => (
