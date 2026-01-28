@@ -1,10 +1,9 @@
-import { PrismaService } from './src/shared/database/prisma.service';
+import { PrismaService } from '../src/shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 
 // Migration script to transfer data from Supabase to new PostgreSQL database
 async function runMigration() {
-  const configService = new ConfigService();
-  const prismaService = new PrismaService(configService);
+  const prismaService = new PrismaService();
 
   try {
     await prismaService.onModuleInit();

@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { SseService } from '../../sse/sse.service';
 
 @Injectable()
 export class RankingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sseService: SseService,
+  ) {}
 
   async getUserRank(userId: string): Promise<{ rank: number; totalPoints: bigint }> {
     const user = await this.prisma.user.findUnique({
@@ -46,10 +50,31 @@ export class RankingService {
   }
 
   async updateUserPoints(userId: string, points: bigint): Promise<void> {
+    // Get user info before update
+    const userBefore = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { nickname: true, totalPoints: true },
+    });
+
+    // Update points
     await this.prisma.user.update({
       where: { id: userId },
       data: { totalPoints: { increment: points } },
     });
+
+    // Get new rank after update
+    const { rank } = await this.getUserRank(userId);
+
+    // Emit ranking update event
+    if (userBefore) {
+      this.sseService.emitRankingUpdate({
+        userId,
+        nickname: userBefore.nickname,
+        rank,
+        points: Number(userBefore.totalPoints + points),
+        change: Number(points),
+      });
+    }
   }
 
   async getLeaderboardAroundUser(
