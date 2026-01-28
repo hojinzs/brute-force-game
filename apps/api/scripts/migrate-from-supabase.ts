@@ -1,21 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 // Configuration
 const SUPABASE_URL = process.env.SUPABASE_URL || 'your-supabase-url';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'your-supabase-anon-key';
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/brute_force';
+const DATABASE_URL =
+  process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/brute_force';
 
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Initialize Prisma client
+const pool = new Pool({ connectionString: DATABASE_URL });
 const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: DATABASE_URL,
-    },
-  },
+  adapter: new PrismaPg(pool),
 });
 
 interface SupabaseProfile {
@@ -214,6 +214,7 @@ async function runMigration() {
     process.exit(1);
   } finally {
     await prisma.$disconnect();
+    await pool.end();
   }
 }
 
