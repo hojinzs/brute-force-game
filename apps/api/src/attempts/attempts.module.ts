@@ -5,9 +5,10 @@ import { DatabaseModule } from '../shared/database/database.module';
 import { CpService } from '../shared/services/cp.service';
 import { PasswordService } from '../shared/services/password.service';
 import { BlocksModule } from '../blocks/blocks.module';
+import { SseModule } from '../sse/sse.module';
 
 @Module({
-  imports: [DatabaseModule, BlocksModule],
+  imports: [DatabaseModule, BlocksModule, SseModule],
   controllers: [AttemptsController],
   providers: [AttemptsService, CpService, PasswordService],
   exports: [AttemptsService],

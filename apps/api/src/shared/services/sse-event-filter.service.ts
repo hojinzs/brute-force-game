@@ -7,6 +7,7 @@ export interface EventFilter {
   includeSelf?: boolean;
   maxSimilarity?: number;
   minSimilarity?: number;
+  shouldIncludeEvent(data: any): boolean;
 }
 
 export interface FilteredAttemptEvent {
@@ -173,6 +174,16 @@ export class SseEventFilterService {
           includeSelf: preferences?.includeSelf ?? true,
           maxSimilarity: preferences?.showSimilarityAbove ? 100 - preferences.showSimilarityAbove : undefined,
           minSimilarity: preferences?.hideSimilarityBelow,
+          shouldIncludeEvent: (data: any) => {
+            // Basic filtering logic - can be extended
+            if (data.userId === userId && preferences?.includeSelf === false) {
+              return false;
+            }
+            if (preferences?.hideSimilarityBelow && data.similarity < preferences.hideSimilarityBelow) {
+              return false;
+            }
+            return true;
+          },
         });
       });
     });
