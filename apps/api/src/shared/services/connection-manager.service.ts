@@ -1,6 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+export interface PooledConnection {
+  connection: ConnectionInfo;
+  lastUsed: Date;
+  isActive: boolean;
+}
+
+export interface ConnectionPoolStats {
+  totalConnections: number;
+  activeConnections: number;
+  pooledConnections: number;
+  memoryUsage: number;
+}
+
 export interface ConnectionInfo {
   id: string;
   type: 'feed' | 'rankings' | 'blocks' | 'presence';
@@ -13,8 +26,15 @@ export interface ConnectionInfo {
 @Injectable()
 export class ConnectionManagerService {
   private connections = new Map<string, ConnectionInfo>();
+  private connectionPool = new Map<string, PooledConnection>();
+  private readonly MAX_POOL_SIZE = 1000;
+  private readonly POOL_TTL_MINUTES = 10;
+  private cleanupInterval: any;
 
-  constructor(private readonly eventEmitter: EventEmitter2) {}
+  constructor(private readonly eventEmitter: EventEmitter2) {
+    // Start background pool cleanup
+    this.startPoolCleanup();
+  }
 
   addConnection(id: string, type: ConnectionInfo['type'], userId?: string, nickname?: string) {
     const connection: ConnectionInfo = {
@@ -38,9 +58,39 @@ export class ConnectionManagerService {
     const connection = this.connections.get(id);
     if (connection) {
       this.connections.delete(id);
+      this.poolConnection(connection);
       this.eventEmitter.emit('connection.closed', connection);
     }
     return connection;
+  }
+
+  private poolConnection(connection: ConnectionInfo) {
+    // Only pool if we haven't reached max capacity
+    if (this.connectionPool.size < this.MAX_POOL_SIZE) {
+      const pooledConnection: PooledConnection = {
+        connection,
+        lastUsed: new Date(),
+        isActive: false,
+      };
+      this.connectionPool.set(connection.id, pooledConnection);
+    }
+  }
+
+  private startPoolCleanup() {
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupPool();
+    }, this.POOL_TTL_MINUTES * 60 * 1000);
+  }
+
+  private cleanupPool() {
+    const now = new Date();
+    const cutoffTime = new Date(now.getTime() - this.POOL_TTL_MINUTES * 60 * 1000);
+
+    for (const [id, pooled] of this.connectionPool.entries()) {
+      if (pooled.lastUsed < cutoffTime) {
+        this.connectionPool.delete(id);
+      }
+    }
   }
 
   updateActivity(id: string) {
@@ -81,7 +131,34 @@ export class ConnectionManagerService {
     return {
       total: this.connections.size,
       byType,
+      pool: this.getPoolStats(),
     };
+  }
+
+  getPoolStats(): ConnectionPoolStats {
+    const activePooled = Array.from(this.connectionPool.values()).filter(p => p.isActive).length;
+    
+    return {
+      totalConnections: this.connections.size + this.connectionPool.size,
+      activeConnections: this.connections.size,
+      pooledConnections: this.connectionPool.size,
+      memoryUsage: this.estimateMemoryUsage(),
+    };
+  }
+
+  private estimateMemoryUsage(): number {
+    // Rough estimation in bytes
+    const connectionSize = 200; // Estimated bytes per connection
+    const pooledSize = 150; // Slightly smaller for pooled connections
+    
+    return (this.connections.size * connectionSize) + (this.connectionPool.size * pooledSize);
+  }
+
+  onModuleDestroy() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+    this.connectionPool.clear();
   }
 
   // Cleanup stale connections (older than 5 minutes with no activity)

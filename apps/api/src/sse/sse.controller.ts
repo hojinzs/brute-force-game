@@ -1,7 +1,9 @@
-import { Controller, Get, Param, Res, Query } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Get, Param, Res, Query, Req, ForbiddenException, Headers } from '@nestjs/common';
+import type { Response, Request } from 'express';
 import { SseService } from './sse.service';
 import { ConnectionManagerService } from '../shared/services/connection-manager.service';
+import { SseRateLimitService } from '../shared/services/sse-rate-limit.service';
+import { SseEventFilterService } from '../shared/services/sse-event-filter.service';
 import { Observable, interval } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -10,13 +12,44 @@ export class SseController {
   constructor(
     private readonly sseService: SseService,
     private readonly connectionManager: ConnectionManagerService,
+    private readonly rateLimitService: SseRateLimitService,
+    private readonly eventFilterService: SseEventFilterService,
   ) {}
 
   @Get('feed')
-  feedSse(@Res() res: Response, @Query('userId') userId?: string): void {
-    const connectionId = `feed_${Date.now()}_${Math.random()}`;
+  async feedSse(
+    @Res() res: Response, 
+    @Req() req: Request,
+    @Query('userId') userId?: string,
+    @Query('anonymous') anonymous?: string,
+    @Query('includeSelf') includeSelf?: string,
+  ): Promise<void> {
+    const ip = req.ip || req.connection.remoteAddress || 'unknown';
     
+    // Check rate limits
+    const rateCheck = this.rateLimitService.checkConnectionLimit(ip, userId);
+    if (!rateCheck.allowed) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: rateCheck.reason }));
+      return;
+    }
+
+    // Check if blocked
+    if (this.rateLimitService.isBlocked(ip, userId)) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Connection blocked' }));
+      return;
+    }
+
+    const connectionId = `feed_${Date.now()}_${Math.random()}`;
     this.connectionManager.addConnection(connectionId, 'feed', userId);
+    this.rateLimitService.recordConnection(ip, userId);
+
+    // Create user filter asynchronously
+    const filter = await this.eventFilterService.createUserFilter(userId, {
+      anonymous: anonymous === 'true',
+      includeSelf: includeSelf !== 'false',
+    });
 
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -26,19 +59,17 @@ export class SseController {
       'Access-Control-Allow-Headers': 'Cache-Control',
     });
 
-    // Send initial connection event
     res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
 
-    // Keep connection alive with heartbeat
     const heartbeat = setInterval(() => {
       res.write(': heartbeat\n\n');
       this.connectionManager.updateActivity(connectionId);
     }, 30000);
 
-    // Cleanup on connection close
     res.on('close', () => {
       clearInterval(heartbeat);
       this.connectionManager.removeConnection(connectionId);
+      this.rateLimitService.recordDisconnection(ip, userId);
     });
   }
 

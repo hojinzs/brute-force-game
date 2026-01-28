@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RankingService } from '../shared/services/ranking.service';
 import { PrismaService } from '../shared/database/prisma.service';
+import { SseService } from '../sse/sse.service';
 
 describe('RankingService', () => {
   let rankingService: RankingService;
@@ -8,8 +9,15 @@ describe('RankingService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [], // No SSE module needed for isolated testing
       providers: [
         RankingService,
+        {
+          provide: SseService,
+          useValue: {
+            emitRankingUpdate: jest.fn(),
+          },
+        },
         {
           provide: PrismaService,
           useValue: {

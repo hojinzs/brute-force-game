@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { User } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcrypt';
 
 export interface JwtPayload {
@@ -21,6 +22,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -50,6 +52,13 @@ export class AuthService {
       expiresIn: this.configService.get<string>('jwt.refreshExpiration') || '7d' as any,
     });
 
+    // Update user presence when tokens are generated (login)
+    this.eventEmitter.emit('auth.login', {
+      userId: user.id,
+      nickname: user.nickname,
+      timestamp: new Date(),
+    });
+
     return { accessToken, refreshToken };
   }
 
@@ -62,6 +71,14 @@ export class AuthService {
   verifyRefreshToken(token: string): JwtPayload {
     return this.jwtService.verify(token, {
       secret: this.configService.get<string>('jwt.refreshSecret'),
+    });
+  }
+
+  logout(userId: string): void {
+    // Update user presence when user logs out
+    this.eventEmitter.emit('auth.logout', {
+      userId,
+      timestamp: new Date(),
     });
   }
 }

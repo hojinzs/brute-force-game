@@ -1,11 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { SseService } from '../../sse/sse.service';
+import { OnEvent } from '@nestjs/event-emitter';
 
 @Injectable()
 export class PresenceService {
   private onlineUsers = new Map<string, { nickname: string; joinedAt: Date }>();
 
   constructor(private readonly sseService: SseService) {}
+
+  @OnEvent('auth.login')
+  handleUserLogin(data: { userId: string; nickname: string; timestamp: Date }) {
+    this.userJoined(data.userId, data.nickname);
+  }
+
+  @OnEvent('auth.logout')
+  handleUserLogout(data: { userId: string; timestamp: Date }) {
+    this.userLeft(data.userId);
+  }
 
   userJoined(userId: string, nickname: string) {
     this.onlineUsers.set(userId, { nickname, joinedAt: new Date() });
