@@ -2,11 +2,11 @@
   "name": "brute-force-monorepo",
   "private": true,
   "scripts": {
-    "dev": "pnpm dev",
-    "build": "pnpm build",
-    "start": "pnpm start",
-    "lint": "pnpm lint",
-    "test": "pnpm test"
+    "dev": "pnpm --stream -r dev",
+    "build": "pnpm --stream -r build",
+    "start": "pnpm --stream -r start",
+    "lint": "pnpm --stream -r lint",
+    "test": "pnpm --stream -r test"
   },
   "devDependencies": {
     "typescript": "^5"
