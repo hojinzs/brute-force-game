@@ -1,0 +1,36 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "crack": "CRACK",
+    "cracking": "CRACKING...",
+    "errorButton": "ERROR"
+  },
+  "game": {
+    "length": "Length",
+    "previousAttempt": "Previous Attempt",
+    "notEnoughCP": "Not enough CP",
+    "cpRefillRate": "Recovers 1 CP per minute"
+  },
+  "block": {
+    "currentBlock": "CURRENT BLOCK",
+    "prizePool": "Prize Pool",
+    "passwordHint": "Password Hint",
+    "blockMaster": "Block Master",
+    "crackToClaim": "Crack the password to <span>claim the reward</span>"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password"
+  },
+  "ranking": {
+    "topPlayers": "TOP PLAYERS",
+    "viewAll": "View All",
+    "yourRank": "Your Rank"
+  },
+  "victory": {
+    "youWin": "YOU WIN!"
+  }
+}

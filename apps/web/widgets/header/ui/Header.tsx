@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuth, SignInModal } from "@/features/auth";
 
 type ModalType = "signin" | null;
@@ -9,6 +10,7 @@ type ModalType = "signin" | null;
 export function Header() {
   const { user, loading, signOut } = useAuth();
   const [modalOpen, setModalOpen] = useState<ModalType>(null);
+  const t = useTranslations();
 
   const closeModal = () => setModalOpen(null);
 
@@ -21,6 +23,13 @@ export function Header() {
 
         {!loading && (
           <nav className="flex items-center gap-2">
+            <Link
+              href="/settings"
+              className="px-3 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium transition-colors"
+              title="Settings"
+            >
+              ⚙️
+            </Link>
             {user ? (
               user.is_anonymous ? (
                 <>
@@ -28,13 +37,13 @@ export function Header() {
                     onClick={() => setModalOpen("signin")}
                     className="px-4 py-2 text-slate-300 hover:text-slate-100 text-sm font-medium transition-colors"
                   >
-                    Sign In
+                    {t('auth.signIn')}
                   </button>
                   <Link
                     href="/auth/signup"
                     className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-semibold rounded-lg transition-colors"
                   >
-                    Sign Up
+                    {t('auth.signUp')}
                   </Link>
                 </>
               ) : (
@@ -51,13 +60,13 @@ export function Header() {
                   onClick={() => setModalOpen("signin")}
                   className="px-4 py-2 text-slate-300 hover:text-slate-100 text-sm font-medium transition-colors"
                 >
-                  Sign In
+                  {t('auth.signIn')}
                 </button>
                 <Link
                   href="/auth/signup"
                   className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-semibold rounded-lg transition-colors"
                 >
-                  Sign Up
+                  {t('auth.signUp')}
                 </Link>
               </>
             )}

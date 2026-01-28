@@ -1,0 +1,36 @@
+{
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "crack": "크랙",
+    "cracking": "크랙 중...",
+    "errorButton": "오류"
+  },
+  "game": {
+    "length": "길이",
+    "previousAttempt": "이전 시도",
+    "notEnoughCP": "CP 부족",
+    "cpRefillRate": "분당 1 CP 회복"
+  },
+  "block": {
+    "currentBlock": "현재 블록",
+    "prizePool": "상금 풀",
+    "passwordHint": "비밀번호 힌트",
+    "blockMaster": "블록 마스터",
+    "crackToClaim": "비밀번호를 깨서 <span>보상을 획득하세요</span>"
+  },
+  "auth": {
+    "signIn": "로그인",
+    "signUp": "회원가입",
+    "email": "이메일",
+    "password": "비밀번호"
+  },
+  "ranking": {
+    "topPlayers": "최고 플레이어",
+    "viewAll": "전체 보기",
+    "yourRank": "내 순위"
+  },
+  "victory": {
+    "youWin": "승리!"
+  }
+}
