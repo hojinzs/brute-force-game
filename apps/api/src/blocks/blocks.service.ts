@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '../shared/database/prisma.service';
 import { PasswordService } from '../shared/services/password.service';
 import { RankingService } from '../shared/services/ranking.service';
+import { SseService } from '../sse/sse.service';
 import { CreateBlockDto, UpdateBlockDto } from './dto/block.dto';
 import { DifficultyConfig } from '../shared/utils/types';
 
@@ -11,6 +12,7 @@ export class BlocksService {
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly rankingService: RankingService,
+    private readonly sseService: SseService,
   ) {}
 
   async createBlock(createBlockDto: CreateBlockDto, userId?: string) {
@@ -63,6 +65,12 @@ export class BlocksService {
         previousBlockId: lastBlock?.id,
         accumulatedPoints: BigInt(100), // Starting prize pool
       },
+    });
+
+    // Emit block status change event for new block
+    this.sseService.emitBlockStatusChange({
+      blockId: block.id.toString(),
+      status: 'ACTIVE',
     });
 
     return {
@@ -201,6 +209,14 @@ export class BlocksService {
   async markBlockAsSolved(blockId: bigint, winnerId: string, solvedAttemptId: string) {
     const block = await this.prisma.block.findUnique({
       where: { id: blockId },
+      include: {
+        winner: {
+          select: {
+            id: true,
+            nickname: true,
+          },
+        },
+      },
     });
 
     if (!block) {
@@ -220,10 +236,27 @@ export class BlocksService {
         solvedAttemptId,
         solvedAt: new Date(),
       },
+      include: {
+        winner: {
+          select: {
+            id: true,
+            nickname: true,
+          },
+        },
+      },
     });
 
     // Award points to winner
     await this.rankingService.updateUserPoints(winnerId, block.accumulatedPoints);
+
+    // Emit block status change event
+    this.sseService.emitBlockStatusChange({
+      blockId: blockId.toString(),
+      status: 'SOLVED',
+      winnerId,
+      winnerNickname: updatedBlock.winner?.nickname,
+      solvedAt: updatedBlock.solvedAt || new Date(),
+    });
 
     return updatedBlock;
   }

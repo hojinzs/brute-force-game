@@ -4,6 +4,7 @@ import { CpService } from '../shared/services/cp.service';
 import { SimilarityCalculator } from '../shared/utils/similarity-calculator';
 import { PasswordService } from '../shared/services/password.service';
 import { BlocksService } from '../blocks/blocks.service';
+import { SseService } from '../sse/sse.service';
 import { CreateAttemptDto, AttemptResponseDto } from './dto/attempt.dto';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class AttemptsService {
     private readonly cpService: CpService,
     private readonly passwordService: PasswordService,
     private readonly blocksService: BlocksService,
+    private readonly sseService: SseService,
   ) {}
 
   async submitAttempt(
@@ -73,6 +75,14 @@ export class AttemptsService {
         similarity,
         isFirstSubmission,
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+          },
+        },
+      },
     });
 
     // Increment block points (prize pool)
@@ -81,9 +91,29 @@ export class AttemptsService {
     // Check if answer is correct (100% similarity)
     const isCorrect = similarity === 100;
 
+    // Emit SSE event for new attempt
+    this.sseService.emitNewAttempt({
+      blockId: blockId.toString(),
+      userId: attempt.userId,
+      nickname: attempt.user.nickname,
+      inputValue: attempt.inputValue,
+      similarity: attempt.similarity,
+      isFirstSubmission: attempt.isFirstSubmission,
+      createdAt: attempt.createdAt,
+    });
+
     if (isCorrect) {
       // Mark block as solved
       await this.blocksService.markBlockAsSolved(blockId, userId, attempt.id);
+      
+      // Emit block status change event
+      this.sseService.emitBlockStatusChange({
+        blockId: blockId.toString(),
+        status: 'SOLVED',
+        winnerId: userId,
+        winnerNickname: attempt.user.nickname,
+        solvedAt: new Date(),
+      });
     }
 
     // Get remaining CP
