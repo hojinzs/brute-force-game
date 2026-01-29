@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
 import { Providers } from "./providers";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,46 +14,47 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Brute Force AI - Global Social Hacking Simulation",
-  description:
-    "Crack the password and take the prize. A global social hacking simulation where everyone targets the same block.",
-  openGraph: {
+export async function generateMetadata() {
+  const t = await getTranslations();
+  
+  return {
     title: "Brute Force AI - Global Social Hacking Simulation",
-    description:
-      "Crack the password and take the prize. A global social hacking simulation where everyone targets the same block.",
-    siteName: "Brute Force AI",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Brute Force AI Game Interface",
-      },
-    ],
-    type: "website",
-  },
-  icons: {
-    icon: "/favicon.png",
-  },
-};
+    description: "Crack password and take the prize. A global social hacking simulation where everyone targets the same block.",
+    openGraph: {
+      title: "Brute Force AI - Global Social Hacking Simulation",
+      description: "Crack the password and take the prize. A global social hacking simulation where everyone targets the same block.",
+      siteName: "Brute Force AI",
+      images: [
+        {
+          url: "/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: "Brute Force AI Game Interface",
+        },
+      ],
+      type: "website",
+    },
+    icons: {
+      icon: "/favicon.png",
+    },
+  };
+}
 
-export const viewport = {
-  themeColor: "#0f172a",
-  // themeColor: "#000000",
-};
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const messages = await getMessages();
+
   return (
-    <html lang="ko">
+    <html>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <NextIntlClientProvider messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

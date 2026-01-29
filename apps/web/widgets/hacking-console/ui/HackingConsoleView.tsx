@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { CPGaugeBar } from "@/features/cp-gauge";
 import { type CharsetType } from "@/shared/lib/charset";
 import { CharsetBadge } from "@/shared/ui/CharsetBadge";
@@ -46,6 +47,7 @@ export function HackingConsoleView({
   onChange,
   onSubmit,
 }: HackingConsoleViewProps) {
+  const t = useTranslations();
   const cpEmpty = cpCurrent <= 0;
   const isErrorState = !!error || showErrorBorder;
 
@@ -59,7 +61,7 @@ export function HackingConsoleView({
       <CPGaugeBar 
         current={cpCurrent} 
         max={cpMax} 
-        refillRateText="Recovers 1 CP per minute" 
+        refillRateText={t('game.cpRefillRate')} 
       />
 
       {/* Input Area */}
@@ -75,7 +77,7 @@ export function HackingConsoleView({
         <div className="flex justify-start mt-2">
           {/* Rules Area */}
           <div className="flex items-center gap-3">
-            <span className="font-mono text-slate-400 text-xs">Length: <span className="text-slate-200">{value.length}</span>/<span className="text-slate-200 font-medium">{length}</span></span>
+            <span className="font-mono text-slate-400 text-xs">{t('game.length')}: <span className="text-slate-200">{value.length}</span>/<span className="text-slate-200 font-medium">{length}</span></span>
             <div className="w-px h-3 bg-slate-700 mx-1" />
             <div className="flex gap-1.5">
               {charset.map((type) => (
@@ -89,7 +91,7 @@ export function HackingConsoleView({
               <span className="text-red-400 text-[10px] font-medium animate-pulse">{error}</span>
             )}
             {cpEmpty && !error && (
-                <span className="text-red-400 text-[10px] font-medium">Not enough CP</span>
+                <span className="text-red-400 text-[10px] font-medium">{t('game.notEnoughCP')}</span>
             )}
           </div>
         </div>
@@ -144,10 +146,10 @@ export function HackingConsoleView({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              CRACKING...
+              {t('common.cracking')}
             </>
           ) : (
-            isErrorState ? "ERROR" : "CRACK"
+            isErrorState ? t('common.errorButton') : t('common.crack')
           )}
         </span>
       </button>
@@ -155,7 +157,7 @@ export function HackingConsoleView({
       {/* Previous Attempt */}
       {lastAttempt && (
         <div className="border border-slate-700 bg-slate-800/50 rounded-lg p-2.5">
-          <p className="text-slate-500 text-[10px] font-bold mb-1 uppercase tracking-wider">Previous Attempt</p>
+          <p className="text-slate-500 text-[10px] font-bold mb-1 uppercase tracking-wider">{t('game.previousAttempt')}</p>
           <div className="flex justify-between items-center">
              <span className="font-mono text-base text-slate-200 tracking-wider">{lastAttempt.input}</span>
              <div className={`

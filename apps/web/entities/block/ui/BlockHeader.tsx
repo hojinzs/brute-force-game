@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "motion/react";
+import { useTranslations } from "next-intl";
 import type { BlockStatus } from "../model/types";
 
 type BlockHeaderProps = {
@@ -22,11 +23,12 @@ export function BlockHeader({
   creatorNickname,
   accumulatedPoints = 0,
 }: BlockHeaderProps) {
+  const t = useTranslations();
   return (
     <div className="mb-6 flex flex-col items-center text-center">
       {/* Block Title */}
       <div className="flex flex-col items-center mb-6">
-        <span className="text-blue-500 text-[10px] font-bold tracking-[0.2em] uppercase mb-1">CURRENT BLOCK</span>
+        <span className="text-blue-500 text-[10px] font-bold tracking-[0.2em] uppercase mb-1">{t('block.currentBlock')}</span>
         <motion.span
           key={blockId}
           initial={{ opacity: 0, y: -10 }}
@@ -39,7 +41,7 @@ export function BlockHeader({
 
       {/* Prize Pool */}
       <div className="mb-6 flex flex-col items-center">
-         <span className="text-slate-500 text-[10px] font-bold tracking-widest uppercase mb-1">Prize Pool</span>
+         <span className="text-slate-500 text-[10px] font-bold tracking-widest uppercase mb-1">{t('block.prizePool')}</span>
          <AnimatePresence mode="popLayout">
           <motion.div
             key={accumulatedPoints}
@@ -52,9 +54,7 @@ export function BlockHeader({
             {formatPoints(accumulatedPoints)}
           </motion.div>
         </AnimatePresence>
-        <p className="text-slate-400 text-xs font-medium">
-          Crack the password to <span className="text-emerald-400">claim the reward</span>
-        </p>
+         <p className="text-slate-400 text-xs font-medium" dangerouslySetInnerHTML={{ __html: t('block.crackToClaim') }} />
       </div>
 
       {/* Hint & Master Card */}
@@ -62,7 +62,7 @@ export function BlockHeader({
         {/* Hint Section */}
         {seedHint && (
           <div className="mb-6 text-left">
-            <span className="text-slate-500 text-[10px] font-bold tracking-widest uppercase block mb-1.5 pl-1">Password Hint</span>
+            <span className="text-slate-500 text-[10px] font-bold tracking-widest uppercase block mb-1.5 pl-1">{t('block.passwordHint')}</span>
             <p className="text-base font-medium text-slate-200 font-serif italic bg-slate-800/50 rounded-lg">
               "{seedHint}"
             </p>
@@ -72,7 +72,7 @@ export function BlockHeader({
         {/* Master Section (Right Aligned Inline) */}
         {creatorNickname && (
           <div className="flex justify-end items-center gap-2">
-            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Block Master</span>
+            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">{t('block.blockMaster')}</span>
             <span className="text-blue-400 text-sm font-bold">
               {creatorNickname}
             </span>
