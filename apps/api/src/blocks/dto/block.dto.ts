@@ -3,9 +3,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CharsetType } from '../../shared/utils/types';
 
 enum BlockStatus {
+  WAITING_HINT = 'WAITING_HINT',
+  WAITING_PASSWORD = 'WAITING_PASSWORD',
   ACTIVE = 'ACTIVE',
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
   SOLVED = 'SOLVED',
 }
 
@@ -80,4 +80,13 @@ export class UpdateBlockDto {
   @Min(1)
   @Max(20)
   length?: number;
+}
+export class SubmitHintDto {
+  @ApiProperty({
+    description: 'Hint for password generation',
+    example: 'A common English word',
+    maxLength: 200,
+  })
+  @IsString()
+  hint: string;
 }
