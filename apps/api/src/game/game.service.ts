@@ -1,9 +1,10 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../shared/database/prisma.service';
 import { PasswordService } from '../shared/services/password.service';
 import { CpService } from '../shared/services/cp.service';
 import { RankingService } from '../shared/services/ranking.service';
+import { BlocksService } from '../blocks/blocks.service';
 import { SimilarityCalculator } from '../shared/utils/similarity-calculator';
 import { GenerateBlockDto, CheckAnswerDto } from './dto/game.dto';
 import { DifficultyConfig } from '../shared/utils/types';
@@ -16,6 +17,7 @@ export class GameService {
     private readonly passwordService: PasswordService,
     private readonly cpService: CpService,
     private readonly rankingService: RankingService,
+    private readonly blocksService: BlocksService,
   ) {}
 
   async generateBlock(generateBlockDto: GenerateBlockDto, userId?: string) {
@@ -159,19 +161,8 @@ export class GameService {
     const isCorrect = similarity === 100;
 
     if (isCorrect) {
-      // Mark block as solved
-      await this.prisma.block.update({
-        where: { id: blockId },
-        data: {
-          status: 'SOLVED',
-          winnerId: userId,
-          solvedAttemptId: attempt.id,
-          solvedAt: new Date(),
-        },
-      });
-
-      // Award points to winner
-      await this.rankingService.updateUserPoints(userId, block.accumulatedPoints);
+      // Mark block as solved (delegates to BlocksService)
+      await this.blocksService.markBlockAsSolved(blockId, userId, attempt.id);
     }
 
     // Get remaining CP
@@ -200,7 +191,7 @@ export class GameService {
     });
 
     if (!block) {
-      throw new BadRequestException('No active block found');
+      throw new NotFoundException('No active block found');
     }
 
     return {

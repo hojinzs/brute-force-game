@@ -23,19 +23,6 @@ export class GameController {
   constructor(private readonly gameService: GameService) {}
 
   @Public()
-  @Post('generate-block')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Generate a new password block' })
-  @ApiResponse({ status: 201, description: 'Block successfully generated' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async generateBlock(
-    @CurrentUser() user: JwtPayload | undefined,
-    @Body() generateBlockDto: GenerateBlockDto,
-  ) {
-    return this.gameService.generateBlock(generateBlockDto, user?.sub);
-  }
-
-  @Public()
   @Post('check-answer')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Check password answer for current block' })
