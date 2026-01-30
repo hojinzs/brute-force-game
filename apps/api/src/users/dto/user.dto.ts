@@ -96,3 +96,32 @@ export class UpdateProfileDto {
   @IsBoolean()
   emailConsent?: boolean;
 }
+
+export class UpgradeAnonymousUserDto {
+  @ApiProperty({
+    description: 'User email address',
+    example: 'user@example.com',
+  })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({
+    description: 'User password',
+    example: 'password123',
+    minLength: 8,
+  })
+  @IsString()
+  @MinLength(8)
+  password: string;
+
+  @ApiProperty({
+    description: 'User nickname',
+    example: 'hacker123',
+    minLength: 2,
+    maxLength: 20,
+  })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(20)
+  nickname: string;
+}

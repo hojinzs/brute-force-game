@@ -246,24 +246,20 @@ export class BlocksService {
 
       await this.rankingService.updateUserPoints(winnerId, currentBlock.accumulatedPoints);
 
-      const isAnonymous = winner.isAnonymous;
       const nextDifficulty = this.passwordService.generateNextDifficulty(
         currentBlock.difficultyConfig as any
       );
-      const defaultHint = isAnonymous
-        ? this.passwordService.generateHint(nextDifficulty)
-        : null;
 
       const nextBlock = await tx.block.create({
         data: {
-          status: isAnonymous ? 'WAITING_PASSWORD' : 'WAITING_HINT',
-          blockMasterId: isAnonymous ? null : winnerId,
+          status: 'WAITING_HINT',
+          blockMasterId: winnerId,
           previousBlockId: blockId,
           difficultyConfig: nextDifficulty as any,
           accumulatedPoints: BigInt(100),
           waitingStartedAt: new Date(),
           passwordRetryCount: 0,
-          seedHint: defaultHint,
+          seedHint: null,
         },
       });
 
@@ -277,8 +273,8 @@ export class BlocksService {
 
       this.sseService.emitBlockStatusChange({
         blockId: nextBlock.id.toString(),
-        status: isAnonymous ? 'WAITING_PASSWORD' : 'WAITING_HINT',
-        blockMasterId: isAnonymous ? undefined : winnerId,
+        status: 'WAITING_HINT',
+        blockMasterId: winnerId,
         waitingStartedAt: new Date(),
       });
 
