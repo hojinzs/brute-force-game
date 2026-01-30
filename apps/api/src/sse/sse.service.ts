@@ -20,9 +20,11 @@ export interface AttemptEvent {
 
 export interface BlockStatusEvent {
   blockId: string;
-  status: 'ACTIVE' | 'PENDING' | 'PROCESSING' | 'SOLVED';
+  status: 'WAITING_HINT' | 'WAITING_PASSWORD' | 'ACTIVE' | 'SOLVED';
   winnerId?: string;
   winnerNickname?: string;
+  blockMasterId?: string;
+  waitingStartedAt?: Date;
   solvedAt?: Date;
 }
 

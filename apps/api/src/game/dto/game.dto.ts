@@ -1,33 +1,5 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-export class GenerateBlockDto {
-  @ApiPropertyOptional({
-    description: 'Previous block ID for continuity',
-    example: '12345',
-  })
-  @IsOptional()
-  @IsString()
-  previousBlockId?: string;
-
-  @ApiPropertyOptional({
-    description: 'Character set for password generation',
-    example: ['lowercase', 'uppercase', 'numbers'],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  charset?: string[];
-
-  @ApiPropertyOptional({
-    description: 'Password length',
-    example: '8',
-  })
-  @IsOptional()
-  @IsString()
-  length?: string;
-}
+import { IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CheckAnswerDto {
   @ApiProperty({

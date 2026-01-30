@@ -52,19 +52,6 @@ export class BlocksController {
     return this.blocksService.getBlockHistory(limitNum);
   }
 
-  @Post()
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Create a new block' })
-  @ApiResponse({ status: 201, description: 'Block created successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async createBlock(
-    @CurrentUser() user: JwtPayload,
-    @Body() createBlockDto: CreateBlockDto,
-  ) {
-    return this.blocksService.createBlock(createBlockDto, user.sub);
-  }
-
   @Put(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update a block' })
@@ -80,14 +67,21 @@ export class BlocksController {
     return this.blocksService.updateBlock(BigInt(id), updateBlockDto, user.sub);
   }
 
-  @Public()
-  @Post(':id/process')
+  @Post(':id/hint')
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Process a block' })
-  @ApiResponse({ status: 200, description: 'Block processed successfully' })
+  @ApiOperation({ summary: 'Submit hint for block as blockMaster' })
+  @ApiResponse({ status: 200, description: 'Hint submitted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Not the block master' })
   @ApiResponse({ status: 404, description: 'Block not found' })
   @ApiParam({ name: 'id', description: 'Block ID' })
-  async processBlock(@Param('id') id: string) {
-    return this.blocksService.updateBlock(BigInt(id), { status: 'PROCESSING' as any }, '');
+  async submitHint(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() body: { hint: string },
+  ) {
+    return this.blocksService.submitHint(BigInt(id), user.sub, body.hint);
   }
+
 }

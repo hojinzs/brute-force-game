@@ -207,58 +207,83 @@ export class BlocksService {
   }
 
   async markBlockAsSolved(blockId: bigint, winnerId: string, solvedAttemptId: string) {
-    const block = await this.prisma.block.findUnique({
-      where: { id: blockId },
-      include: {
-        winner: {
-          select: {
-            id: true,
-            nickname: true,
-          },
+    return await this.prisma.$transaction(async (tx) => {
+      const winner = await tx.user.findUnique({
+        where: { id: winnerId },
+        select: { id: true, isAnonymous: true, nickname: true },
+      });
+
+      if (!winner) {
+        throw new NotFoundException('Winner not found');
+      }
+
+      const updated = await tx.block.updateMany({
+        where: { id: blockId, status: 'ACTIVE' },
+        data: {
+          status: 'SOLVED',
+          winnerId,
+          solvedAttemptId,
+          solvedAt: new Date(),
         },
-      },
-    });
+      });
 
-    if (!block) {
-      throw new NotFoundException('Block not found');
-    }
+      if (updated.count === 0) {
+        throw new BadRequestException('Block already solved or not active');
+      }
 
-    if (block.status !== 'ACTIVE') {
-      throw new BadRequestException('Block is not active');
-    }
+      const currentBlock = await tx.block.findUnique({
+        where: { id: blockId },
+        select: {
+          id: true,
+          difficultyConfig: true,
+          accumulatedPoints: true,
+        },
+      });
 
-    // Update block with winner info
-    const updatedBlock = await this.prisma.block.update({
-      where: { id: blockId },
-      data: {
+      if (!currentBlock) {
+        throw new NotFoundException('Block not found after update');
+      }
+
+      await this.rankingService.updateUserPoints(winnerId, currentBlock.accumulatedPoints);
+
+      const isAnonymous = winner.isAnonymous;
+      const nextDifficulty = this.passwordService.generateNextDifficulty(
+        currentBlock.difficultyConfig as any
+      );
+      const defaultHint = isAnonymous
+        ? this.passwordService.generateHint(nextDifficulty)
+        : null;
+
+      const nextBlock = await tx.block.create({
+        data: {
+          status: isAnonymous ? 'WAITING_PASSWORD' : 'WAITING_HINT',
+          blockMasterId: isAnonymous ? null : winnerId,
+          previousBlockId: blockId,
+          difficultyConfig: nextDifficulty as any,
+          accumulatedPoints: BigInt(100),
+          waitingStartedAt: new Date(),
+          passwordRetryCount: 0,
+          seedHint: defaultHint,
+        },
+      });
+
+      this.sseService.emitBlockStatusChange({
+        blockId: blockId.toString(),
         status: 'SOLVED',
         winnerId,
-        solvedAttemptId,
+        winnerNickname: winner.nickname,
         solvedAt: new Date(),
-      },
-      include: {
-        winner: {
-          select: {
-            id: true,
-            nickname: true,
-          },
-        },
-      },
+      });
+
+      this.sseService.emitBlockStatusChange({
+        blockId: nextBlock.id.toString(),
+        status: isAnonymous ? 'WAITING_PASSWORD' : 'WAITING_HINT',
+        blockMasterId: isAnonymous ? undefined : winnerId,
+        waitingStartedAt: new Date(),
+      });
+
+      return { solvedBlock: currentBlock, nextBlock, winner };
     });
-
-    // Award points to winner
-    await this.rankingService.updateUserPoints(winnerId, block.accumulatedPoints);
-
-    // Emit block status change event
-    this.sseService.emitBlockStatusChange({
-      blockId: blockId.toString(),
-      status: 'SOLVED',
-      winnerId,
-      winnerNickname: updatedBlock.winner?.nickname,
-      solvedAt: updatedBlock.solvedAt || new Date(),
-    });
-
-    return updatedBlock;
   }
 
   async incrementBlockPoints(blockId: bigint, points: bigint = BigInt(10)) {
@@ -270,5 +295,113 @@ export class BlocksService {
         },
       },
     });
+  }
+
+  async submitHint(blockId: bigint, userId: string, hint: string) {
+    const block = await this.prisma.block.findUnique({
+      where: { id: blockId },
+      select: {
+        id: true,
+        status: true,
+        blockMasterId: true,
+      },
+    });
+
+    if (!block) {
+      throw new NotFoundException('Block not found');
+    }
+
+    if (block.status !== 'WAITING_HINT') {
+      throw new BadRequestException('Block is not waiting for hint');
+    }
+
+    if (block.blockMasterId !== userId) {
+      throw new ForbiddenException('Only the block master can submit hint');
+    }
+
+    const updatedBlock = await this.prisma.block.update({
+      where: { id: blockId },
+      data: {
+        seedHint: hint,
+        status: 'WAITING_PASSWORD',
+      },
+    });
+
+    this.sseService.emitBlockStatusChange({
+      blockId: blockId.toString(),
+      status: 'WAITING_PASSWORD',
+      blockMasterId: block.blockMasterId,
+    });
+
+    return updatedBlock;
+  }
+
+  async setSystemHint(blockId: bigint, hint: string) {
+    const block = await this.prisma.block.findUnique({
+      where: { id: blockId },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!block) {
+      throw new NotFoundException('Block not found');
+    }
+
+    if (block.status !== 'WAITING_HINT') {
+      throw new BadRequestException('Block is not waiting for hint');
+    }
+
+    const updatedBlock = await this.prisma.block.update({
+      where: { id: blockId },
+      data: {
+        seedHint: hint,
+        status: 'WAITING_PASSWORD',
+      },
+    });
+
+    this.sseService.emitBlockStatusChange({
+      blockId: blockId.toString(),
+      status: 'WAITING_PASSWORD',
+    });
+
+    return updatedBlock;
+  }
+
+  async setPassword(blockId: bigint, password: string) {
+    const block = await this.prisma.block.findUnique({
+      where: { id: blockId },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!block) {
+      throw new NotFoundException('Block not found');
+    }
+
+    if (block.status !== 'WAITING_PASSWORD') {
+      throw new BadRequestException('Block is not waiting for password');
+    }
+
+    const answerHash = await this.passwordService.hashPassword(password);
+
+    const updatedBlock = await this.prisma.block.update({
+      where: { id: blockId },
+      data: {
+        answerHash,
+        answerPlaintext: password,
+        status: 'ACTIVE',
+      },
+    });
+
+    this.sseService.emitBlockStatusChange({
+      blockId: blockId.toString(),
+      status: 'ACTIVE',
+    });
+
+    return updatedBlock;
   }
 }

@@ -44,7 +44,7 @@ describe('SseService', () => {
   });
 
   describe('emitNewAttempt', () => {
-    it('should emit attempt event via gateway and event emitter', () => {
+    it('should emit attempt event via event emitter', () => {
       const attemptEvent = {
         blockId: '123',
         userId: 'user1',
@@ -57,7 +57,6 @@ describe('SseService', () => {
 
       service.emitNewAttempt(attemptEvent);
 
-      expect(gateway.broadcastToFeed).toHaveBeenCalledWith('attempt', attemptEvent);
       expect(eventEmitter.emit).toHaveBeenCalledWith('sse.attempt', {
         type: 'attempt',
         data: attemptEvent,
@@ -67,7 +66,7 @@ describe('SseService', () => {
   });
 
   describe('emitBlockStatusChange', () => {
-    it('should emit block status event via gateway and event emitter', () => {
+    it('should emit block status event via event emitter', () => {
       const blockEvent = {
         blockId: '123',
         status: 'SOLVED' as const,
@@ -78,7 +77,40 @@ describe('SseService', () => {
 
       service.emitBlockStatusChange(blockEvent);
 
-      expect(gateway.broadcastToBlocks).toHaveBeenCalledWith('block-status', blockEvent);
+      expect(eventEmitter.emit).toHaveBeenCalledWith('sse.block-status', {
+        type: 'block-status',
+        data: blockEvent,
+        timestamp: expect.any(Date),
+      });
+    });
+
+    it('should emit WAITING_HINT status with blockMasterId', () => {
+      const blockEvent = {
+        blockId: '456',
+        status: 'WAITING_HINT' as const,
+        blockMasterId: 'user1',
+        waitingStartedAt: new Date(),
+      };
+
+      service.emitBlockStatusChange(blockEvent);
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith('sse.block-status', {
+        type: 'block-status',
+        data: blockEvent,
+        timestamp: expect.any(Date),
+      });
+    });
+
+    it('should emit WAITING_PASSWORD status', () => {
+      const blockEvent = {
+        blockId: '789',
+        status: 'WAITING_PASSWORD' as const,
+        blockMasterId: 'user1',
+        waitingStartedAt: new Date(),
+      };
+
+      service.emitBlockStatusChange(blockEvent);
+
       expect(eventEmitter.emit).toHaveBeenCalledWith('sse.block-status', {
         type: 'block-status',
         data: blockEvent,
@@ -88,7 +120,7 @@ describe('SseService', () => {
   });
 
   describe('emitRankingUpdate', () => {
-    it('should emit ranking event via gateway and event emitter', () => {
+    it('should emit ranking event via event emitter', () => {
       const rankingEvent = {
         userId: 'user1',
         nickname: 'testuser',
@@ -99,7 +131,6 @@ describe('SseService', () => {
 
       service.emitRankingUpdate(rankingEvent);
 
-      expect(gateway.broadcastToRankings).toHaveBeenCalledWith('ranking', rankingEvent);
       expect(eventEmitter.emit).toHaveBeenCalledWith('sse.ranking', {
         type: 'ranking',
         data: rankingEvent,
@@ -109,7 +140,7 @@ describe('SseService', () => {
   });
 
   describe('emitPresenceUpdate', () => {
-    it('should emit presence event via gateway and event emitter', () => {
+    it('should emit presence event via event emitter', () => {
       const presenceEvent = {
         userId: 'user1',
         nickname: 'testuser',
@@ -119,7 +150,6 @@ describe('SseService', () => {
 
       service.emitPresenceUpdate(presenceEvent);
 
-      expect(gateway.broadcastToPresence).toHaveBeenCalledWith('presence', presenceEvent);
       expect(eventEmitter.emit).toHaveBeenCalledWith('sse.presence', {
         type: 'presence',
         data: presenceEvent,

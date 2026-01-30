@@ -26,6 +26,7 @@ model User {
   
   // Relations
   wonBlocks         Block[]   @relation("BlockWinner")
+  masteredBlocks    Block[]   @relation("BlockMaster")
   attempts          Attempt[]
   sessions          Session[]
 
@@ -45,23 +46,27 @@ model Session {
 }
 
 model Block {
-  id                BigInt       @id @default(autoincrement())
-  status            BlockStatus  @default(ACTIVE)
-  seedHint          String?       @map("seed_hint")
-  difficultyConfig  Json         @map("difficulty_config") // { length: number, charset: CharsetType[] }
-  answerHash        String        @map("answer_hash")
-  answerPlaintext   String?       @map("answer_plaintext") // Admin only
-  winnerId          String?       @map("winner_id")
-  winner            User?         @relation("BlockWinner", fields: [winnerId], references: [id])
-  accumulatedPoints BigInt        @default(0) @map("accumulated_points")
-  previousBlockId   BigInt?       @unique @map("previous_block_id")
-  previousBlock     Block?        @relation("BlockChain", fields: [previousBlockId], references: [id])
-  nextBlock         Block?        @relation("BlockChain")
-  solvedAttemptId   String?       @unique @map("solved_attempt_id")
-  solvedAttempt     Attempt?      @relation("SolvedAttempt", fields: [solvedAttemptId], references: [id])
-  attempts          Attempt[]
-  createdAt         DateTime      @default(now()) @map("created_at")
-  solvedAt          DateTime?     @map("solved_at")
+  id                 BigInt       @id @default(autoincrement())
+  status             BlockStatus  @default(ACTIVE)
+  seedHint           String?      @map("seed_hint")
+  difficultyConfig   Json         @map("difficulty_config") // { length: number, charset: CharsetType[] }
+  answerHash         String?      @map("answer_hash")
+  answerPlaintext    String?      @map("answer_plaintext") // Admin only
+  winnerId           String?      @map("winner_id")
+  winner             User?        @relation("BlockWinner", fields: [winnerId], references: [id])
+  blockMasterId      String?      @map("block_master_id")
+  blockMaster        User?        @relation("BlockMaster", fields: [blockMasterId], references: [id])
+  waitingStartedAt   DateTime?    @map("waiting_started_at")
+  passwordRetryCount Int          @default(0) @map("password_retry_count")
+  accumulatedPoints  BigInt       @default(0) @map("accumulated_points")
+  previousBlockId    BigInt?      @unique @map("previous_block_id")
+  previousBlock      Block?       @relation("BlockChain", fields: [previousBlockId], references: [id])
+  nextBlock          Block?       @relation("BlockChain")
+  solvedAttemptId    String?      @unique @map("solved_attempt_id")
+  solvedAttempt      Attempt?     @relation("SolvedAttempt", fields: [solvedAttemptId], references: [id])
+  attempts           Attempt[]
+  createdAt          DateTime     @default(now()) @map("created_at")
+  solvedAt           DateTime?    @map("solved_at")
 
   @@map("blocks")
 }
@@ -83,8 +88,8 @@ model Attempt {
 }
 
 enum BlockStatus {
+  WAITING_HINT
+  WAITING_PASSWORD
   ACTIVE
-  PENDING
-  PROCESSING
   SOLVED
 }

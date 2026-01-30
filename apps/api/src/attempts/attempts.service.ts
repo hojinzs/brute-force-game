@@ -103,17 +103,8 @@ export class AttemptsService {
     });
 
     if (isCorrect) {
-      // Mark block as solved
+      // Mark block as solved (SSE emission handled by BlocksService)
       await this.blocksService.markBlockAsSolved(blockId, userId, attempt.id);
-      
-      // Emit block status change event
-      this.sseService.emitBlockStatusChange({
-        blockId: blockId.toString(),
-        status: 'SOLVED',
-        winnerId: userId,
-        winnerNickname: attempt.user.nickname,
-        solvedAt: new Date(),
-      });
     }
 
     // Get remaining CP

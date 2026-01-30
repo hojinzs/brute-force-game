@@ -14,26 +14,13 @@ import { Public } from '../decorators/public.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/auth.service';
 import { GameService } from './game.service';
-import { GenerateBlockDto, CheckAnswerDto } from './dto/game.dto';
+import { CheckAnswerDto } from './dto/game.dto';
 
 @ApiTags('game')
 @Controller('game')
 @UseGuards(ThrottlerGuard)
 export class GameController {
   constructor(private readonly gameService: GameService) {}
-
-  @Public()
-  @Post('generate-block')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Generate a new password block' })
-  @ApiResponse({ status: 201, description: 'Block successfully generated' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async generateBlock(
-    @CurrentUser() user: JwtPayload | undefined,
-    @Body() generateBlockDto: GenerateBlockDto,
-  ) {
-    return this.gameService.generateBlock(generateBlockDto, user?.sub);
-  }
 
   @Public()
   @Post('check-answer')
