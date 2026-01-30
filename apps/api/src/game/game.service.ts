@@ -6,7 +6,7 @@ import { CpService } from '../shared/services/cp.service';
 import { RankingService } from '../shared/services/ranking.service';
 import { BlocksService } from '../blocks/blocks.service';
 import { SimilarityCalculator } from '../shared/utils/similarity-calculator';
-import { GenerateBlockDto, CheckAnswerDto } from './dto/game.dto';
+import { CheckAnswerDto } from './dto/game.dto';
 import { DifficultyConfig } from '../shared/utils/types';
 
 @Injectable()
@@ -19,70 +19,6 @@ export class GameService {
     private readonly rankingService: RankingService,
     private readonly blocksService: BlocksService,
   ) {}
-
-  async generateBlock(generateBlockDto: GenerateBlockDto, userId?: string) {
-    // Get the last block to determine if user can create a new one
-    const lastBlock = await this.prisma.block.findFirst({
-      orderBy: { id: 'desc' },
-      select: {
-        id: true,
-        status: true,
-        winnerId: true,
-        difficultyConfig: true,
-      },
-    });
-
-    // If there's an active block, only the winner of the previous block can create a new one
-    if (lastBlock && lastBlock.status === 'ACTIVE') {
-      throw new BadRequestException('Current block is still active');
-    }
-
-    if (lastBlock && lastBlock.status === 'SOLVED' && lastBlock.winnerId !== userId) {
-      throw new ForbiddenException('Only the winner of the previous block can create a new block');
-    }
-
-    // Parse difficulty from request or generate next difficulty
-    let difficulty: DifficultyConfig;
-    if (generateBlockDto.charset && generateBlockDto.length) {
-      difficulty = {
-        length: parseInt(generateBlockDto.length, 10),
-        charset: generateBlockDto.charset as any[],
-      };
-    } else {
-      difficulty = this.passwordService.generateNextDifficulty(
-        lastBlock?.difficultyConfig as any,
-      );
-    }
-
-    // For demo purposes, use simple password generation instead of AI
-    // In production, you would integrate with OpenAI API here
-    const password = this.passwordService.generatePassword(difficulty);
-    const answerHash = await this.passwordService.hashPassword(password);
-    const hint = this.passwordService.generateHint(difficulty);
-
-    // Create the block
-    const block = await this.prisma.block.create({
-      data: {
-        status: 'ACTIVE',
-        seedHint: hint,
-        difficultyConfig: difficulty as any,
-        answerHash,
-        answerPlaintext: password, // Store for admin purposes
-        previousBlockId: lastBlock?.id,
-        accumulatedPoints: BigInt(100), // Starting prize pool
-      },
-    });
-
-    return {
-      id: block.id.toString(),
-      status: block.status,
-      seedHint: block.seedHint,
-      difficultyConfig: block.difficultyConfig,
-      accumulatedPoints: block.accumulatedPoints.toString(),
-      previousBlockId: block.previousBlockId?.toString(),
-      createdAt: block.createdAt,
-    };
-  }
 
   async checkAnswer(userId: string, checkAnswerDto: CheckAnswerDto) {
     const blockId = BigInt(checkAnswerDto.blockId);

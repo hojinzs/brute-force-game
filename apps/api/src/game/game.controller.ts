@@ -14,7 +14,7 @@ import { Public } from '../decorators/public.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/auth.service';
 import { GameService } from './game.service';
-import { GenerateBlockDto, CheckAnswerDto } from './dto/game.dto';
+import { CheckAnswerDto } from './dto/game.dto';
 
 @ApiTags('game')
 @Controller('game')
