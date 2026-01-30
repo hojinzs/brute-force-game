@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from './shared/config/config.module';
 import { DatabaseModule } from './shared/database/database.module';
@@ -16,6 +17,7 @@ import { AppService } from './app.service';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule,
     DatabaseModule,
     AuthModule,
