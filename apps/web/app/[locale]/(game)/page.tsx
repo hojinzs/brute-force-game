@@ -1,7 +1,7 @@
 "use client";
 
 import { useCurrentBlock } from "@/entities/block";
-import { GenesisBlockView } from "@/views";
+import { WaitingGenesisView } from "@/views";
 import { GameClient } from "./_components/GameClient";
 
 export default function GamePage() {
@@ -12,7 +12,7 @@ export default function GamePage() {
   }
 
   if (!currentBlock) {
-    return <GenesisBlockView />;
+    return <WaitingGenesisView />;
   }
 
   return <GameClient initialBlock={currentBlock} />;
