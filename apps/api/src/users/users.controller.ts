@@ -15,6 +15,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { Public } from '../decorators/public.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UsersService } from './users.service';
+import { CpService } from '../shared/services/cp.service';
 import { RegisterDto, LoginDto, CreateAnonymousUserDto, UpdateProfileDto, UpgradeAnonymousUserDto } from './dto/user.dto';
 import type { JwtPayload } from '../auth/auth.service';
 
@@ -22,7 +23,10 @@ import type { JwtPayload } from '../auth/auth.service';
 @Controller('users')
 @UseGuards(ThrottlerGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly cpService: CpService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -72,6 +76,21 @@ export class UsersController {
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.usersService.updateProfile(user.sub, updateProfileDto);
+  }
+
+  @Get('cp')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get current user Computing Power (CP)' })
+  @ApiResponse({ status: 200, description: 'CP retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getCurrentCP(@CurrentUser() user: JwtPayload) {
+    const current = await this.cpService.getCurrentCP(user.sub);
+    const max = await this.cpService.getMaxCP(user.sub);
+    
+    return {
+      current,
+      max,
+    };
   }
 
   @Post('logout')
