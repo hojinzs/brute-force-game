@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/shared/api";
+import { apiClient } from "@/shared/api/api-client";
+import { adaptCheckAnswerResponse, type ApiCheckAnswerResponse } from "@/shared/api/adapters";
 
 type CheckAnswerParams = {
   inputValue: string;
@@ -18,19 +19,17 @@ export function useCheckAnswer() {
 
   return useMutation({
     mutationFn: async ({ inputValue, blockId }: CheckAnswerParams): Promise<CheckAnswerResult> => {
-      const { data, error } = await supabase.functions.invoke("check-answer", {
-        body: {
-          inputValue,
-          blockId,
-        },
+      const response = await apiClient.post<ApiCheckAnswerResponse>('/game/check-answer', {
+        blockId: blockId.toString(),
+        answer: inputValue,
       });
 
-      if (error) {
-        console.error("Edge Function error:", error);
-        throw error;
-      }
-
-      return data;
+      const adapted = adaptCheckAnswerResponse(response.data);
+      
+      return {
+        correct: adapted.correct,
+        similarity: adapted.similarity,
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["currentCP"] });

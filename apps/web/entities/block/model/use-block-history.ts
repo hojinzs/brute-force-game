@@ -1,5 +1,5 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { supabase } from "@/shared/api";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/shared/api/api-client";
 
 export type BlockHistoryEntry = {
   block_id: number;
@@ -16,55 +16,32 @@ export type BlockHistoryEntry = {
   unique_participants: number;
 };
 
-const PAGE_SIZE = 50;
 const HISTORY_STALE_TIME_MS = 10000;
-const RECENT_HISTORY_LIMIT = 20;
+const DEFAULT_LIMIT = 50;
 
-export function useBlockHistory() {
-  return useInfiniteQuery({
-    queryKey: ["blockHistory"],
-    queryFn: async ({ pageParam = 0 }): Promise<BlockHistoryEntry[]> => {
-      const from = pageParam * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+export function useBlockHistory(limit: number = DEFAULT_LIMIT) {
+  return useQuery({
+    queryKey: ["blockHistory", limit],
+    queryFn: async (): Promise<BlockHistoryEntry[]> => {
+      const response = await apiClient.get<BlockHistoryEntry[]>('/blocks', {
+        params: { limit },
+      });
 
-      const { data, error } = await supabase
-        .from("block_history_view")
-        .select("*")
-        .order("block_id", { ascending: false })
-        .range(from, to);
-
-      if (error) {
-        throw error;
-      }
-
-      return (data || []) as BlockHistoryEntry[];
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < PAGE_SIZE) {
-        return undefined;
-      }
-      return allPages.length;
+      return response.data || [];
     },
     staleTime: HISTORY_STALE_TIME_MS,
   });
 }
 
-export function useRecentBlockHistory(limit: number = RECENT_HISTORY_LIMIT) {
+export function useRecentBlockHistory(limit: number = 20) {
   return useQuery({
     queryKey: ["blockHistory", "recent", limit],
     queryFn: async (): Promise<BlockHistoryEntry[]> => {
-      const { data, error } = await supabase
-        .from("block_history_view")
-        .select("*")
-        .order("block_id", { ascending: false })
-        .limit(limit);
+      const response = await apiClient.get<BlockHistoryEntry[]>('/blocks', {
+        params: { limit },
+      });
 
-      if (error) {
-        throw error;
-      }
-
-      return (data || []) as BlockHistoryEntry[];
+      return response.data || [];
     },
     staleTime: HISTORY_STALE_TIME_MS,
   });

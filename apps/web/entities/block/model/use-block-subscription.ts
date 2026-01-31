@@ -1,28 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
-import { supabase } from "@/shared/api";
+import { createSSEConnection } from "@/shared/api/sse-client";
+import { adaptBlock, type ApiBlock } from "@/shared/api/adapters";
 import type { Block } from "./types";
 
 export function useBlockSubscription(onBlockChange: (block: Block) => void) {
   useEffect(() => {
-    const channel = supabase
-      .channel("blocks:status")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "blocks",
+    const connection = createSSEConnection('/api/sse/blocks', {
+      eventHandlers: {
+        'block-status': (data) => {
+          const apiBlock = data as ApiBlock;
+          const block = adaptBlock(apiBlock);
+          onBlockChange(block);
         },
-        (payload) => {
-          onBlockChange(payload.new as Block);
-        }
-      )
-      .subscribe();
+      },
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      connection.close();
     };
   }, [onBlockChange]);
 }

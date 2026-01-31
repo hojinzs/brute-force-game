@@ -1,33 +1,22 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/shared/api";
+import { apiClient } from "@/shared/api/api-client";
 import type { RankingEntry } from "./types";
 
-const RANKING_REFETCH_INTERVAL = 30000; // 30 seconds
+const RANKING_REFETCH_INTERVAL = 30000;
 
 export function useTopRanking(limit: number = 50) {
   return useQuery({
     queryKey: ["topRanking", limit],
     queryFn: async (): Promise<RankingEntry[]> => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, nickname, total_points")
-        .order("total_points", { ascending: false })
-        .limit(limit);
+      const response = await apiClient.get<RankingEntry[]>('/game/rankings', {
+        params: { limit },
+      });
 
-      if (error) {
-        throw error;
-      }
-
-      return (data || []).map((entry, index) => ({
-        id: entry.id,
-        nickname: entry.nickname,
-        total_points: entry.total_points,
-        rank: index + 1,
-      }));
+      return response.data || [];
     },
     refetchInterval: RANKING_REFETCH_INTERVAL,
-    staleTime: 10000, // 10 seconds
+    staleTime: 10000,
   });
 }
