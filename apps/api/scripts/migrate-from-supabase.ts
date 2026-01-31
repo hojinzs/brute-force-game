@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { PrismaClient } from '../prisma/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
