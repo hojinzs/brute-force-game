@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/shared/api";
+import { apiClient } from "@/shared/api/api-client";
+import { useAuthStore } from "@/shared/store/auth-store";
+import { adaptUser } from "@/shared/api/adapters";
 
 export type AuthUser = {
   id: string;
@@ -19,163 +21,114 @@ export type SignUpParams = {
 };
 
 export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const { user: storeUser, isAuthenticated, setTokens, setUser, clearTokens } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
+  const user: AuthUser | null = storeUser ? {
+    id: storeUser.id,
+    email: storeUser.email,
+    is_anonymous: storeUser.isAnonymous,
+  } : null;
+
   useEffect(() => {
-    const initSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      setUser(
-        session?.user
-          ? {
-            id: session.user.id,
-            email: session.user.email,
-            is_anonymous: session.user.is_anonymous,
-          }
-          : null
-      );
-      setLoading(false);
-    };
-
-    initSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(
-        session?.user
-          ? {
-            id: session.user.id,
-            email: session.user.email,
-            is_anonymous: session.user.is_anonymous,
-          }
-          : null
-      );
-    });
-
-    return () => subscription.unsubscribe();
+    setLoading(false);
   }, []);
 
   const signInWithPassword = useCallback(
     async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const response = await apiClient.post('/users/login', {
         email,
         password,
       });
-      if (error) throw error;
 
-      // 정식 로그인 이력 저장
+      const { accessToken, refreshToken, user: apiUser } = response.data;
+      
+      setTokens({ accessToken, refreshToken });
+      setUser(adaptUser(apiUser));
+
       if (typeof window !== "undefined") {
         localStorage.setItem("has-logged-in", "true");
       }
 
-      return data;
+      return { user: apiUser };
     },
-    []
+    [setTokens, setUser]
   );
 
   const signUpWithEmail = useCallback(
     async (params: SignUpParams) => {
-      const { email, password, nickname, country, emailConsent, redirectTo = "/" } = params;
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const normalizedCountry = country && country.trim().length > 0 ? country : null;
-      const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
+      const { email, password, nickname, country, emailConsent } = params;
+      const normalizedCountry = country && country.trim().length > 0 ? country : undefined;
 
-      // Check current session state specifically for this operation
-      const { data: { session } } = await supabase.auth.getSession();
-      const isAnonymous = session?.user?.is_anonymous;
-
-      if (isAnonymous) {
-        // 익명 사용자 -> 정식 사용자 전환 (Update)
-        const { data: { user: updatedUser }, error: updateError } = await supabase.auth.updateUser(
-          {
-            email,
-            password,
-            data: {
-              nickname,
-              country: normalizedCountry,
-              email_consent: emailConsent,
-            },
-          }, 
-          { 
-            emailRedirectTo 
-          }
-        );
-
-        if (updateError) throw updateError;
-        if (!updatedUser) throw new Error("Failed to update user");
-
-        const { error: profileUpdateError } = await supabase
-          .from("profiles")
-          .update({
-            is_anonymous: false,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", updatedUser.id);
-
-        if (profileUpdateError) throw profileUpdateError;
-
-        // 정식 로그인 이력 저장
-        if (typeof window !== "undefined") {
-          localStorage.setItem("has-logged-in", "true");
-        }
-
-        return { user: updatedUser };
-      } else {
-        // 신규 가입 (Create)
-        const {
-          data: { user: authUser },
-          error: signUpError,
-        } = await supabase.auth.signUp({
+      if (storeUser?.isAnonymous) {
+        const response = await apiClient.put('/users/upgrade', {
           email,
           password,
-          options: {
-            data: {
-              nickname,
-              country: normalizedCountry,
-              email_consent: emailConsent,
-            },
-            emailRedirectTo,
-          },
+          nickname,
         });
 
-        if (signUpError) throw signUpError;
-        if (!authUser) throw new Error("Failed to create user");
+        const { accessToken, refreshToken, user: apiUser } = response.data;
+        
+        setTokens({ accessToken, refreshToken });
+        setUser(adaptUser(apiUser));
 
-        // 정식 로그인 이력 저장
         if (typeof window !== "undefined") {
           localStorage.setItem("has-logged-in", "true");
         }
 
-        return { user: authUser };
+        return { user: apiUser };
+      } else {
+        const response = await apiClient.post('/users/register', {
+          email,
+          password,
+          nickname,
+          country: normalizedCountry,
+          emailConsent,
+        });
+
+        const { accessToken, refreshToken, user: apiUser } = response.data;
+        
+        setTokens({ accessToken, refreshToken });
+        setUser(adaptUser(apiUser));
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem("has-logged-in", "true");
+        }
+
+        return { user: apiUser };
       }
     },
-    []
+    [storeUser, setTokens, setUser]
   );
 
   const updatePassword = useCallback(async (password: string) => {
-    const { data, error } = await supabase.auth.updateUser({
-      password,
-    });
-    if (error) throw error;
-    return data;
-  }, []);
+    await apiClient.put('/users/profile', { password });
+    return { user: storeUser };
+  }, [storeUser]);
 
   const updateNickname = useCallback(async (userId: string, nickname: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ nickname })
-      .eq("id", userId);
-
-    if (error) throw error;
+    await apiClient.put('/users/profile', { nickname });
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-  }, []);
+    await apiClient.post('/users/logout');
+    clearTokens();
+  }, [clearTokens]);
+
+  const signInAnonymously = useCallback(async (visitorId?: string) => {
+    const nickname = visitorId ? `Guest_${visitorId.slice(0, 8)}` : `Guest_${Date.now()}`;
+    
+    const response = await apiClient.post('/users/anonymous', {
+      nickname,
+    });
+
+    const { accessToken, refreshToken, user: apiUser } = response.data;
+    
+    setTokens({ accessToken, refreshToken });
+    setUser(adaptUser(apiUser));
+
+    return { user: apiUser };
+  }, [setTokens, setUser]);
 
   return {
     user,
@@ -185,18 +138,7 @@ export function useAuth() {
     updatePassword,
     updateNickname,
     signOut,
-    signInAnonymously: useCallback(async (visitorId?: string) => {
-      const { data, error } = await supabase.auth.signInAnonymously({
-        options: {
-          data: {
-            is_anonymous: true, // Tag as anonymous in metadata
-            visitor_id: visitorId, // Setup Fingerprint
-          },
-        },
-      });
-      if (error) throw error;
-      return data;
-    }, []),
+    signInAnonymously,
   };
 }
 
