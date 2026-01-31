@@ -1,9 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { getCorsOrigin } from './shared/utils/cors.util';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // CORS configuration
+  app.enableCors({
+    origin: (origin, callback) => {
+      const allowedOrigin = getCorsOrigin(origin);
+      if (allowedOrigin === '*') {
+        callback(null, true);
+      } else if (allowedOrigin) {
+        callback(null, allowedOrigin);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  });
 
   // Swagger configuration
   const config = new DocumentBuilder()

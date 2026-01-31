@@ -7,6 +7,7 @@ import { SseEventFilterService } from '../shared/services/sse-event-filter.servi
 import { Observable, interval } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { getCorsOrigin } from '../shared/utils/cors.util';
 
 @Controller('api/sse')
 export class SseController {
@@ -107,18 +108,22 @@ export class SseController {
   }
 
   @Get('rankings')
-  rankingsSse(@Res() res: Response, @Query('userId') userId?: string): void {
+  rankingsSse(@Res() res: Response, @Req() req: Request, @Query('userId') userId?: string): void {
     const connectionId = `rankings_${Date.now()}_${Math.random()}`;
     
     this.connectionManager.addConnection(connectionId, 'rankings', userId);
 
-    res.writeHead(200, {
+    const corsOrigin = getCorsOrigin(req.headers.origin);
+    const headers: Record<string, string> = {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
       'Access-Control-Allow-Headers': 'Cache-Control',
-    });
+    };
+    if (corsOrigin) {
+      headers['Access-Control-Allow-Origin'] = corsOrigin;
+    }
+    res.writeHead(200, headers);
 
     res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
 
@@ -141,18 +146,22 @@ export class SseController {
   }
 
   @Get('blocks')
-  blocksSse(@Res() res: Response, @Query('userId') userId?: string): void {
+  blocksSse(@Res() res: Response, @Req() req: Request, @Query('userId') userId?: string): void {
     const connectionId = `blocks_${Date.now()}_${Math.random()}`;
     
     this.connectionManager.addConnection(connectionId, 'blocks', userId);
 
-    res.writeHead(200, {
+    const corsOrigin = getCorsOrigin(req.headers.origin);
+    const headers: Record<string, string> = {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
       'Access-Control-Allow-Headers': 'Cache-Control',
-    });
+    };
+    if (corsOrigin) {
+      headers['Access-Control-Allow-Origin'] = corsOrigin;
+    }
+    res.writeHead(200, headers);
 
     res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
 
@@ -175,18 +184,22 @@ export class SseController {
   }
 
   @Get('presence')
-  presenceSse(@Res() res: Response, @Query('userId') userId?: string): void {
+  presenceSse(@Res() res: Response, @Req() req: Request, @Query('userId') userId?: string): void {
     const connectionId = `presence_${Date.now()}_${Math.random()}`;
     
     this.connectionManager.addConnection(connectionId, 'presence', userId);
 
-    res.writeHead(200, {
+    const corsOrigin = getCorsOrigin(req.headers.origin);
+    const headers: Record<string, string> = {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
       'Access-Control-Allow-Headers': 'Cache-Control',
-    });
+    };
+    if (corsOrigin) {
+      headers['Access-Control-Allow-Origin'] = corsOrigin;
+    }
+    res.writeHead(200, headers);
 
     res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
 
