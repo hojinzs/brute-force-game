@@ -78,5 +78,10 @@
   "settings": {
     "title": "Settings",
     "languageSettings": "Language Settings"
+  },
+  "waiting": {
+    "title": "Welcome to Brute Force Game!",
+    "description": "The Genesis Block has not been created yet. The game will start on this server once the host creates the first block.",
+    "standby": "Standing by..."
   }
 }
