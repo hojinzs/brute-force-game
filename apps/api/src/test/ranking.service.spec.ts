@@ -104,11 +104,38 @@ describe('RankingService', () => {
         rank: 3,
         nickname: 'user3',
         totalPoints: BigInt(3000),
-        country: null,
+        country: undefined,
       });
 
       expect(prismaService.user.findMany).toHaveBeenCalledWith({
-        where: { isAnonymous: false },
+        select: {
+          nickname: true,
+          totalPoints: true,
+          country: true,
+        },
+        orderBy: { totalPoints: 'desc' },
+        take: limit,
+      });
+    });
+
+    it('should include anonymous users in rankings', async () => {
+      const limit = 10;
+      const mockUsers = [
+        { nickname: 'regularUser', totalPoints: BigInt(5000), country: 'KR' },
+        { nickname: 'Anonymous#123', totalPoints: BigInt(4000), country: null },
+        { nickname: 'Anonymous#456', totalPoints: BigInt(3000), country: null },
+      ];
+
+      jest.spyOn(prismaService.user, 'findMany').mockResolvedValue(mockUsers as any);
+
+      const result = await rankingService.getTopRanking(limit);
+
+      expect(result).toHaveLength(3);
+      expect(result[0].nickname).toBe('regularUser');
+      expect(result[1].nickname).toBe('Anonymous#123');
+      expect(result[2].nickname).toBe('Anonymous#456');
+      
+      expect(prismaService.user.findMany).toHaveBeenCalledWith({
         select: {
           nickname: true,
           totalPoints: true,
@@ -124,7 +151,13 @@ describe('RankingService', () => {
     it('should update user points', async () => {
       const userId = 'user1';
       const points = BigInt(500);
+      const mockUser = {
+        nickname: 'user1',
+        totalPoints: BigInt(1000),
+      };
 
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser as any);
+      jest.spyOn(prismaService.user, 'count').mockResolvedValue(0);
       jest.spyOn(prismaService.user, 'update').mockResolvedValue({} as any);
 
       await rankingService.updateUserPoints(userId, points);

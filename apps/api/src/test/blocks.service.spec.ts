@@ -145,7 +145,7 @@ describe('BlocksService', () => {
       expect(createdBlockData.blockMasterId).toBe('user-1');
     });
 
-    it('should create WAITING_PASSWORD block with anonymous winner', async () => {
+    it('should create WAITING_HINT block with anonymous winner', async () => {
       const mockWinner = { id: 'user-anon', isAnonymous: true };
       const mockCurrentBlock = {
         id: BigInt(1),
@@ -173,13 +173,11 @@ describe('BlocksService', () => {
 
       jest.spyOn(prismaService, '$transaction').mockImplementation(mockTransaction);
       jest.spyOn(passwordService, 'generateNextDifficulty').mockReturnValue({ length: 5, charset: ['lowercase'] });
-      jest.spyOn(passwordService, 'generateHint').mockReturnValue('System generated hint');
 
       await service.markBlockAsSolved(BigInt(1), 'user-anon', 'attempt-1');
 
-      expect(createdBlockData.status).toBe('WAITING_PASSWORD');
-      expect(createdBlockData.blockMasterId).toBeNull();
-      expect(createdBlockData.seedHint).toBe('System generated hint');
+      expect(createdBlockData.status).toBe('WAITING_HINT');
+      expect(createdBlockData.blockMasterId).toBe('user-anon');
     });
 
     it('should throw ConflictException if block already solved', async () => {
