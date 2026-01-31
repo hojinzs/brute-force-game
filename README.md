@@ -93,6 +93,33 @@ pnpm test:watch            # Watch mode
 pnpm test:coverage         # Coverage report
 ```
 
+### Admin CLI
+
+The API includes administrative CLI commands for game management.
+
+#### Create Genesis Block
+
+Creates the first block to start the game. Can only be run once when no blocks exist.
+
+```bash
+# From project root
+pnpm --filter api cli create-genesis --password "your-secret-password" --hint "A hint for players"
+
+# Options:
+#   --password <string>  Required. The password to crack.
+#   --hint <string>      Required. A hint for players.
+#   --length <number>    Optional. Override password length in difficulty config.
+#   --charset <string>   Optional. Override charset (e.g., "lowercase,alphanumeric").
+#                        If not specified, auto-detected from password.
+
+# Example with explicit difficulty:
+pnpm --filter api cli create-genesis \
+  --password "Secret123!" \
+  --hint "A mixed case secret" \
+  --length 10 \
+  --charset "lowercase,uppercase,alphanumeric,symbols"
+```
+
 ### CLI Tools
 
 Test similarity algorithm:
