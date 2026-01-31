@@ -22,7 +22,6 @@ export class RankingService {
     const rank = await this.prisma.user.count({
       where: {
         totalPoints: { gt: user.totalPoints },
-        isAnonymous: false,
       },
     });
 
@@ -31,7 +30,6 @@ export class RankingService {
 
   async getTopRanking(limit: number = 10): Promise<Array<{ rank: number; nickname: string; totalPoints: bigint; country?: string }>> {
     const topUsers = await this.prisma.user.findMany({
-      where: { isAnonymous: false },
       select: {
         nickname: true,
         totalPoints: true,
@@ -91,7 +89,6 @@ export class RankingService {
     const above = await this.prisma.user.findMany({
       where: {
         totalPoints: { gt: userRank.totalPoints },
-        isAnonymous: false,
       },
       select: {
         nickname: true,
@@ -104,7 +101,6 @@ export class RankingService {
     const below = await this.prisma.user.findMany({
       where: {
         totalPoints: { lt: userRank.totalPoints },
-        isAnonymous: false,
       },
       select: {
         nickname: true,

@@ -15,7 +15,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { Public } from '../decorators/public.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UsersService } from './users.service';
-import { RegisterDto, LoginDto, CreateAnonymousUserDto, UpdateProfileDto } from './dto/user.dto';
+import { RegisterDto, LoginDto, CreateAnonymousUserDto, UpdateProfileDto, UpgradeAnonymousUserDto } from './dto/user.dto';
 import type { JwtPayload } from '../auth/auth.service';
 
 @ApiTags('users')
@@ -93,5 +93,28 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refresh(@Body('refreshToken') refreshToken: string) {
     return this.usersService.refreshTokens(refreshToken);
+  }
+
+  @Put('upgrade')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Upgrade anonymous user to registered user' })
+  @ApiResponse({ status: 200, description: 'User upgraded successfully' })
+  @ApiResponse({ status: 400, description: 'User is not anonymous' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 409, description: 'Email or nickname already exists' })
+  async upgradeAnonymousUser(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpgradeAnonymousUserDto,
+  ) {
+    const upgraded = await this.usersService.upgradeAnonymousUser(user.sub, dto);
+    return {
+      id: upgraded.id,
+      email: upgraded.email,
+      nickname: upgraded.nickname,
+      isAnonymous: upgraded.isAnonymous,
+      cpCount: upgraded.cpCount,
+      totalPoints: upgraded.totalPoints,
+      country: upgraded.country,
+    };
   }
 }

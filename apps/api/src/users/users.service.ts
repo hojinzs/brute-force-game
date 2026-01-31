@@ -2,7 +2,8 @@ import { Injectable, ConflictException, NotFoundException, BadRequestException }
 import { PrismaService } from '../shared/database/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { CpService } from '../shared/services/cp.service';
-import { RegisterDto, LoginDto, CreateAnonymousUserDto, UpdateProfileDto } from './dto/user.dto';
+import { RegisterDto, LoginDto, CreateAnonymousUserDto, UpdateProfileDto, UpgradeAnonymousUserDto } from './dto/user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -253,10 +254,41 @@ export class UsersService {
       data: {
         token: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 1000), // 7 days
       },
     });
 
     return { tokens };
+  }
+
+  async upgradeAnonymousUser(userId: string, dto: UpgradeAnonymousUserDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.isAnonymous) throw new BadRequestException('User is not anonymous');
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    try {
+      const updated = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          email: dto.email,
+          passwordHash: hashedPassword,
+          nickname: dto.nickname,
+          isAnonymous: false,
+          cpCount: 50,
+        },
+      });
+
+      await this.prisma.session.deleteMany({ where: { userId } });
+
+      return updated;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0];
+        throw new ConflictException(`${field} already exists`);
+      }
+      throw error;
+    }
   }
 }
