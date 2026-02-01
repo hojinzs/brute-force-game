@@ -12,6 +12,18 @@ export interface SSEConnection {
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [1000, 2000, 4000, 8000, 16000];
 
+type SseEnvelope = {
+  type: string;
+  data: unknown;
+  timestamp?: string;
+};
+
+function isSseEnvelope(value: unknown): value is SseEnvelope {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.type === "string" && "data" in record;
+}
+
 export function createSSEConnection(
   endpoint: string,
   options: SSEOptions = {}
@@ -48,11 +60,9 @@ export function createSSEConnection(
       options.onMessage?.(event);
 
       try {
-        const message = JSON.parse(event.data);
-        const { type, data } = message;
-
-        if (type && options.eventHandlers?.[type]) {
-          options.eventHandlers[type](data);
+        const message: unknown = JSON.parse(event.data);
+        if (isSseEnvelope(message) && options.eventHandlers?.[message.type]) {
+          options.eventHandlers[message.type](message.data);
         }
       } catch (error) {
         console.error('Failed to parse SSE message:', error);
@@ -63,8 +73,9 @@ export function createSSEConnection(
       Object.keys(options.eventHandlers).forEach((eventType) => {
         eventSource?.addEventListener(eventType, (event) => {
           try {
-            const data = JSON.parse((event as MessageEvent).data);
-            options.eventHandlers?.[eventType](data);
+            const message: unknown = JSON.parse((event as MessageEvent).data);
+            const payload = isSseEnvelope(message) ? message.data : message;
+            options.eventHandlers?.[eventType](payload);
           } catch (error) {
             console.error(`Failed to parse ${eventType} event:`, error);
           }
