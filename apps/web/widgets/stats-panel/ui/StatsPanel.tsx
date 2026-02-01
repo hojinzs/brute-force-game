@@ -107,7 +107,7 @@ export function StatsPanel() {
       </div>
 
       <div className="border border-[#334155] rounded-xl bg-[#1e293b] overflow-hidden">
-        <TopAttempts attempts={attempts} />
+        <TopAttempts />
       </div>
 
       <div className="border border-[#334155] rounded-xl bg-[#1e293b] min-h-[200px] flex items-center justify-center md:col-span-2 lg:col-span-1">

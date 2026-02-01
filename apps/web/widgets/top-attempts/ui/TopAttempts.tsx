@@ -2,18 +2,13 @@
 
 import { motion } from "motion/react";
 import { useTranslations } from "next-intl";
-import type { AttemptWithNickname } from "@/entities/attempt";
+import { useCurrentBlock } from "@/entities/block";
+import { useTopAttemptsSse } from "../model/use-top-attempts-sse";
 
-type TopAttemptsProps = {
-  attempts: AttemptWithNickname[];
-};
-
-export function TopAttempts({ attempts }: TopAttemptsProps) {
+export function TopAttempts() {
   const t = useTranslations();
-  const sortedAttempts = [...attempts]
-    .filter((a) => a.similarity > 0 && a.is_first_submission)
-    .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, 20);
+  const { data: currentBlock } = useCurrentBlock();
+  const { topAttempts } = useTopAttemptsSse(currentBlock?.id);
 
   return (
     <div className="bg-[#1e293b]/40 backdrop-blur-md border border-[#334155]/50 rounded-xl overflow-hidden h-full">
@@ -23,17 +18,17 @@ export function TopAttempts({ attempts }: TopAttemptsProps) {
           {t('topAttempts.title')}
         </h2>
         <span className="text-slate-500 text-xs">
-          {t('topAttempts.top', { count: sortedAttempts.length })}
+          {t('topAttempts.top', { count: topAttempts.length })}
         </span>
       </div>
 
       <div className="max-h-[400px] overflow-y-auto">
-        {sortedAttempts.length === 0 ? (
+        {topAttempts.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-sm">
             {t('topAttempts.noAttempts')}
           </div>
         ) : (
-          sortedAttempts.map((attempt, index) => (
+          topAttempts.map((attempt, index) => (
             <motion.div
               key={attempt.id}
               initial={{ opacity: 0, x: 20 }}
