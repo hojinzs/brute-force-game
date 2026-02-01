@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../shared/database/prisma.service';
 import { CpService } from '../shared/services/cp.service';
 import { SimilarityCalculator } from '../shared/utils/similarity-calculator';
@@ -33,19 +33,6 @@ export class AttemptsService {
 
     if (block.status !== 'ACTIVE') {
       throw new BadRequestException('Block is not active');
-    }
-
-    // Check if user already submitted this exact input
-    const existingAttempt = await this.prisma.attempt.findFirst({
-      where: {
-        blockId,
-        userId,
-        inputValue: createAttemptDto.inputValue,
-      },
-    });
-
-    if (existingAttempt) {
-      throw new ConflictException('You have already submitted this answer');
     }
 
     // Consume CP
