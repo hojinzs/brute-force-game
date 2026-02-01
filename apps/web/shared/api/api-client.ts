@@ -3,6 +3,27 @@ import { useAuthStore } from '../store/auth-store';
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// Wait for Zustand persist hydration before making API calls
+const waitForHydration = (): Promise<void> => {
+  return new Promise((resolve) => {
+    if (useAuthStore.persist.hasHydrated()) {
+      resolve();
+      return;
+    }
+
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      unsub();
+      resolve();
+    });
+
+    // 5 second timeout for graceful degradation
+    setTimeout(() => {
+      unsub();
+      resolve();
+    }, 5000);
+  });
+};
+
 export const apiClient = axios.create({
   baseURL,
   headers: {
@@ -10,9 +31,10 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor: Add authorization header
+// Request interceptor: Wait for hydration then add authorization header
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    await waitForHydration();
     const { accessToken } = useAuthStore.getState();
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
