@@ -57,6 +57,8 @@ export class SseService {
       timestamp: new Date(),
     };
     
+    console.log('[SSE] emitNewAttempt:', { blockId: event.blockId, userId: event.userId });
+    
     // Only emit via EventEmitter - SseGateway will handle the broadcasting
     this.eventEmitter.emit('sse.attempt', eventData);
   }

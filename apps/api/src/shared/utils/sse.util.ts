@@ -154,7 +154,9 @@ export function createEventHandler(
   filter?: (data: any) => boolean,
 ): EventSubscription {
   const handler = (data: any) => {
+    console.log(`[SSE] handler received event: ${eventName}`, { type: data?.type });
     if (!filter || filter(data)) {
+      console.log(`[SSE] writing event to client: ${eventName}`);
       writeSseEvent(res, eventName, data);
     }
   };

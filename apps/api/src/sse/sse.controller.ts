@@ -53,6 +53,9 @@ export class SseController {
 
     // Setup connection
     const connectionId = generateConnectionId('feed');
+    console.log(`[SseController] New SSE connection: ${connectionId}, userId: ${userId}`);
+    console.log(`[SseController] EventEmitter2 instance:`, !!this.eventEmitter);
+    
     this.connectionManager.addConnection(connectionId, 'feed', userId);
     this.rateLimitService.recordConnection(ip, userId);
 
@@ -73,10 +76,13 @@ export class SseController {
     }, 30000);
 
     // Setup event listeners with filter
+    console.log(`[SseController] Setting up event listeners for connection: ${connectionId}`);
     const attemptSubscription = createEventHandler(res, 'attempt', this.eventEmitter, (data) => filter.shouldIncludeEvent(data));
     const presenceSubscription = createEventHandler(res, 'presence', this.eventEmitter, (data) => filter.shouldIncludeEvent(data));
+    console.log(`[SseController] Event listeners registered for: ${connectionId}`);
 
     res.on('close', () => {
+      console.log(`[SseController] Connection closed: ${connectionId}`);
       clearInterval(heartbeat);
       attemptSubscription.unsubscribe();
       presenceSubscription.unsubscribe();
