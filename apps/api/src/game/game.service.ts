@@ -38,19 +38,6 @@ export class GameService {
       throw new BadRequestException('Block is not active');
     }
 
-    // Check for duplicate submission
-    const existingAttempt = await this.prisma.attempt.findFirst({
-      where: {
-        blockId,
-        userId,
-        inputValue: checkAnswerDto.answer,
-      },
-    });
-
-    if (existingAttempt) {
-      throw new BadRequestException('You have already submitted this answer');
-    }
-
     // Consume CP
     const cpConsumed = await this.cpService.consumeCP(userId);
     if (!cpConsumed) {
