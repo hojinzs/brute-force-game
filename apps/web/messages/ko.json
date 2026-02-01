@@ -78,5 +78,10 @@
   "settings": {
     "title": "설정",
     "languageSettings": "언어 설정"
+  },
+  "waiting": {
+    "title": "Brute Force Game에 오신 것을 환영합니다!",
+    "description": "아직 Genesis Block이 생성되지 않았습니다. 게임 호스트가 최초의 블록을 생성하면 이 서버에서 게임이 시작됩니다.",
+    "standby": "대기 중..."
   }
 }

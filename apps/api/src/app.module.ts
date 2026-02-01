@@ -1,12 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
-import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from './shared/config/config.module';
 import { DatabaseModule } from './shared/database/database.module';
 import { AuthModule } from './auth/auth.module';
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { PublicGuard } from './auth/public.guard';
 import { UsersModule } from './users/users.module';
 import { BlocksModule } from './blocks/blocks.module';
 import { AttemptsModule } from './attempts/attempts.module';
@@ -14,6 +11,7 @@ import { GameModule } from './game/game.module';
 import { SseModule } from './sse/sse.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -34,14 +32,7 @@ import { AppService } from './app.service';
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: PublicGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
+    ThrottlerGuard,
   ],
 })
 export class AppModule {}

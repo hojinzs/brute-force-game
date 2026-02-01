@@ -54,7 +54,11 @@ export function BlockHeader({
             {formatPoints(accumulatedPoints)}
           </motion.div>
         </AnimatePresence>
-         <p className="text-slate-400 text-xs font-medium" dangerouslySetInnerHTML={{ __html: t('block.crackToClaim') }} />
+         <p className="text-slate-400 text-xs font-medium">
+          {t.rich('block.crackToClaim', {
+            span: (chunks) => <span className="text-emerald-400 font-semibold">{chunks}</span>
+          })}
+         </p>
       </div>
 
       {/* Hint & Master Card */}

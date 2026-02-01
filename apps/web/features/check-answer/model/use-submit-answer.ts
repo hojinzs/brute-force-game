@@ -5,7 +5,7 @@ import { useBlock } from "@/entities/block";
 import { useAuth } from "@/features/auth";
 import { useCPGauge } from "@/features/cp-gauge";
 import { useVictory } from "@/shared/context";
-import { supabase } from "@/shared/api";
+import { apiClient } from "@/shared/api/api-client";
 import { useCheckAnswer } from "./use-check-answer";
 
 type SubmitAnswerResult = {
@@ -31,11 +31,8 @@ export function useSubmitAnswer() {
         });
 
         if (result.correct && user?.id) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("nickname")
-            .eq("id", user.id)
-            .single();
+          const response = await apiClient.get('/users/profile');
+          const profile = response.data;
 
           showVictory({
             blockId: block.id,

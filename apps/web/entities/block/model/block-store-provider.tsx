@@ -6,7 +6,7 @@ import { useCurrentBlock } from "./use-current-block";
 import { useBlockSubscription } from "./use-block-subscription";
 import { useGameStore } from "@/shared/store";
 import { useVictory } from "@/shared/context";
-import { supabase } from "@/shared/api";
+import { apiClient } from "@/shared/api/api-client";
 import type { Block } from "./types";
 
 type BlockStoreProviderProps = {
@@ -36,11 +36,8 @@ export function BlockStoreProvider({ initialBlock, children }: BlockStoreProvide
         refreshLedger();
 
         if (updatedBlock.status === "pending" && updatedBlock.winner_id) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("nickname")
-            .eq("id", updatedBlock.winner_id)
-            .single();
+          const response = await apiClient.get('/users/profile');
+          const profile = response.data;
 
           showVictory({
             blockId: updatedBlock.id,

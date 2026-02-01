@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/shared/api";
+import { apiClient } from "@/shared/api/api-client";
+import { createSSEConnection } from "@/shared/api/sse-client";
+import { adaptAttemptWithNickname, type ApiAttemptWithNickname } from "@/shared/api/adapters";
 import { ATTEMPTS_DISPLAY_LIMIT } from "@/shared/config";
-import type { Attempt, AttemptWithNickname } from "./types";
+import type { AttemptWithNickname } from "./types";
 
 export function useAttempts(blockId: number | undefined) {
   const [attempts, setAttempts] = useState<AttemptWithNickname[]>([]);
@@ -13,53 +15,37 @@ export function useAttempts(blockId: number | undefined) {
     if (!blockId) return;
 
     const fetchInitial = async () => {
-      const { data } = await supabase
-        .from("attempts_with_nickname")
-        .select("*")
-        .eq("block_id", blockId)
-        .order("created_at", { ascending: false })
-        .limit(ATTEMPTS_DISPLAY_LIMIT);
+      const response = await apiClient.get<ApiAttemptWithNickname[]>(`/attempts/${blockId}`, {
+        params: { limit: ATTEMPTS_DISPLAY_LIMIT },
+      });
 
-      if (data) setAttempts(data);
+      if (response.data) {
+        setAttempts(response.data.map(adaptAttemptWithNickname));
+      }
     };
 
     fetchInitial();
 
-    const channel = supabase
-      .channel(`attempts:${blockId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "attempts",
-          filter: `block_id=eq.${blockId}`,
+    const connection = createSSEConnection('/api/sse/feed', {
+      eventHandlers: {
+        'attempt': (data) => {
+          const apiAttempt = data as ApiAttemptWithNickname;
+          
+          if (apiAttempt.blockId === blockId) {
+            const attemptWithNickname = adaptAttemptWithNickname(apiAttempt);
+
+            setAttempts((prev) =>
+              [attemptWithNickname, ...prev.slice(0, ATTEMPTS_DISPLAY_LIMIT - 1)]
+            );
+            setNewAttemptId(attemptWithNickname.id);
+            setTimeout(() => setNewAttemptId(undefined), 500);
+          }
         },
-        async (payload) => {
-          const newAttempt = payload.new as Attempt;
-
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("nickname")
-            .eq("id", newAttempt.user_id)
-            .single();
-
-          const attemptWithNickname: AttemptWithNickname = {
-            ...newAttempt,
-            nickname: profile?.nickname || "Anonymous",
-          };
-
-          setAttempts((prev) =>
-            [attemptWithNickname, ...prev.slice(0, ATTEMPTS_DISPLAY_LIMIT - 1)]
-          );
-          setNewAttemptId(newAttempt.id);
-          setTimeout(() => setNewAttemptId(undefined), 500);
-        }
-      )
-      .subscribe();
+      },
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      connection.close();
     };
   }, [blockId]);
 

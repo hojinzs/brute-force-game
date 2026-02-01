@@ -12,6 +12,7 @@ describe('UsersService', () => {
   let service: UsersService;
   let prismaService: PrismaService;
   let cpService: CpService;
+  let authService: AuthService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -52,6 +53,7 @@ describe('UsersService', () => {
     service = module.get<UsersService>(UsersService);
     prismaService = module.get<PrismaService>(PrismaService);
     cpService = module.get<CpService>(CpService);
+    authService = module.get<AuthService>(AuthService);
   });
 
   it('should be defined', () => {
@@ -80,11 +82,19 @@ describe('UsersService', () => {
         nickname: mockDto.nickname,
         isAnonymous: false,
         cpCount: 50,
+        totalPoints: BigInt(0),
+        country: null,
+      };
+      const mockTokens = {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
       };
 
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAnonymousUser as any);
       jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUpdatedUser as any);
       jest.spyOn(prismaService.session, 'deleteMany').mockResolvedValue({ count: 1 } as any);
+      jest.spyOn(prismaService.session, 'create').mockResolvedValue({ id: 'session-1' } as any);
+      (authService.generateTokens as jest.Mock).mockReturnValue(mockTokens);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
 
       const result = await service.upgradeAnonymousUser(userId, mockDto);
@@ -102,7 +112,26 @@ describe('UsersService', () => {
         },
       });
       expect(prismaService.session.deleteMany).toHaveBeenCalledWith({ where: { userId } });
-      expect(result).toEqual(mockUpdatedUser);
+      expect(prismaService.session.create).toHaveBeenCalledWith({
+        data: {
+          userId: mockUpdatedUser.id,
+          token: mockTokens.accessToken,
+          refreshToken: mockTokens.refreshToken,
+          expiresAt: expect.any(Date),
+        },
+      });
+      expect(result).toEqual({
+        user: {
+          id: mockUpdatedUser.id,
+          email: mockUpdatedUser.email,
+          nickname: mockUpdatedUser.nickname,
+          isAnonymous: mockUpdatedUser.isAnonymous,
+          cpCount: mockUpdatedUser.cpCount,
+          totalPoints: mockUpdatedUser.totalPoints.toString(),
+          country: mockUpdatedUser.country,
+        },
+        tokens: mockTokens,
+      });
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
@@ -187,10 +216,25 @@ describe('UsersService', () => {
         isAnonymous: true,
         cpCount: 5,
       };
+      const mockUpdatedUser = {
+        id: userId,
+        email: mockDto.email,
+        nickname: mockDto.nickname,
+        isAnonymous: false,
+        cpCount: 50,
+        totalPoints: BigInt(0),
+        country: null,
+      };
+      const mockTokens = {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      };
 
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAnonymousUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue({} as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUpdatedUser as any);
       jest.spyOn(prismaService.session, 'deleteMany').mockResolvedValue({ count: 0 } as any);
+      jest.spyOn(prismaService.session, 'create').mockResolvedValue({ id: 'session-1' } as any);
+      (authService.generateTokens as jest.Mock).mockReturnValue(mockTokens);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
 
       await service.upgradeAnonymousUser(userId, mockDto);

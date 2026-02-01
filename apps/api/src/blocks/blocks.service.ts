@@ -400,4 +400,42 @@ export class BlocksService {
 
     return updatedBlock;
   }
+
+  async createGenesisBlock(
+    password: string,
+    hint: string,
+    difficultyConfig: DifficultyConfig,
+  ) {
+    const existingBlock = await this.prisma.block.findFirst();
+    if (existingBlock) {
+      throw new BadRequestException('Block already exists. Genesis block can only be created once.');
+    }
+
+    const answerHash = await this.passwordService.hashPassword(password);
+
+    const block = await this.prisma.block.create({
+      data: {
+        status: 'ACTIVE',
+        seedHint: hint,
+        answerHash,
+        answerPlaintext: password,
+        difficultyConfig: difficultyConfig as any,
+        accumulatedPoints: BigInt(100),
+      },
+    });
+
+    this.sseService.emitBlockStatusChange({
+      blockId: block.id.toString(),
+      status: 'ACTIVE',
+    });
+
+    return {
+      id: block.id,
+      status: block.status,
+      seedHint: block.seedHint,
+      difficultyConfig: block.difficultyConfig,
+      accumulatedPoints: block.accumulatedPoints,
+      createdAt: block.createdAt,
+    };
+  }
 }

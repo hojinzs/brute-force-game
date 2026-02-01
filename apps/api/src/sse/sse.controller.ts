@@ -7,6 +7,7 @@ import { SseEventFilterService } from '../shared/services/sse-event-filter.servi
 import { Observable, interval } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { setupSseConnection, createEventHandler, getSseHeaders, generateConnectionId, writeConnectedEvent } from '../shared/utils/sse.util';
 
 @Controller('api/sse')
 export class SseController {
@@ -28,7 +29,7 @@ export class SseController {
   ): Promise<void> {
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
     
-    // Check rate limits
+    // Check rate limits (feed-specific logic, kept in controller)
     const rateCheck = this.rateLimitService.checkConnectionLimit(ip, userId);
     if (!rateCheck.allowed) {
       res.writeHead(429, { 'Content-Type': 'application/json' });
@@ -43,7 +44,15 @@ export class SseController {
       return;
     }
 
-    const connectionId = `feed_${Date.now()}_${Math.random()}`;
+    // Validate CORS before creating connection
+    const headers = getSseHeaders(req.headers.origin);
+    if (!headers) {
+      res.status(403).send('Forbidden');
+      return;
+    }
+
+    // Setup connection
+    const connectionId = generateConnectionId('feed');
     this.connectionManager.addConnection(connectionId, 'feed', userId);
     this.rateLimitService.recordConnection(ip, userId);
 
@@ -53,158 +62,65 @@ export class SseController {
       includeSelf: includeSelf !== 'false',
     });
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-      'Access-Control-Allow-Headers': 'Cache-Control',
-    });
+    // Write headers and connected event
+    res.writeHead(200, headers);
+    writeConnectedEvent(res, connectionId);
 
-    res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
-
+    // Setup heartbeat
     const heartbeat = setInterval(() => {
       res.write(': heartbeat\n\n');
       this.connectionManager.updateActivity(connectionId);
     }, 30000);
 
-    // Setup event listeners for this connection
-    const eventListeners: Array<{ event: string; handler: (data: any) => void }> = [
-      {
-        event: 'sse.attempt',
-        handler: (data) => {
-          if (filter.shouldIncludeEvent(data)) {
-            res.write(`event: attempt\ndata: ${JSON.stringify(data)}\n\n`);
-          }
-        },
-      },
-      {
-        event: 'sse.presence',
-        handler: (data) => {
-          if (filter.shouldIncludeEvent(data)) {
-            res.write(`event: presence\ndata: ${JSON.stringify(data)}\n\n`);
-          }
-        },
-      },
-    ];
-
-    // Register event listeners
-    eventListeners.forEach(({ event, handler }) => {
-      this.eventEmitter.on(event, handler);
-    });
+    // Setup event listeners with filter
+    const attemptSubscription = createEventHandler(res, 'attempt', this.eventEmitter, (data) => filter.shouldIncludeEvent(data));
+    const presenceSubscription = createEventHandler(res, 'presence', this.eventEmitter, (data) => filter.shouldIncludeEvent(data));
 
     res.on('close', () => {
       clearInterval(heartbeat);
-      
-      // Unregister event listeners
-      eventListeners.forEach(({ event, handler }) => {
-        this.eventEmitter.off(event, handler);
-      });
-      
+      attemptSubscription.unsubscribe();
+      presenceSubscription.unsubscribe();
       this.connectionManager.removeConnection(connectionId);
       this.rateLimitService.recordDisconnection(ip, userId);
     });
   }
 
   @Get('rankings')
-  rankingsSse(@Res() res: Response, @Query('userId') userId?: string): void {
-    const connectionId = `rankings_${Date.now()}_${Math.random()}`;
-    
-    this.connectionManager.addConnection(connectionId, 'rankings', userId);
+  rankingsSse(@Res() res: Response, @Req() req: Request, @Query('userId') userId?: string): void {
+    const connection = setupSseConnection(res, req, { type: 'rankings' }, this.connectionManager, userId);
+    if (!connection) return;
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-      'Access-Control-Allow-Headers': 'Cache-Control',
-    });
-
-    res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
-
-    const heartbeat = setInterval(() => {
-      res.write(': heartbeat\n\n');
-      this.connectionManager.updateActivity(connectionId);
-    }, 30000);
-
-    // Setup event listener for ranking updates
-    const rankingHandler = (data: any) => {
-      res.write(`event: ranking\ndata: ${JSON.stringify(data)}\n\n`);
-    };
-    this.eventEmitter.on('sse.ranking', rankingHandler);
+    const subscription = createEventHandler(res, 'ranking', this.eventEmitter);
 
     res.on('close', () => {
-      clearInterval(heartbeat);
-      this.eventEmitter.off('sse.ranking', rankingHandler);
-      this.connectionManager.removeConnection(connectionId);
+      connection.cleanup();
+      subscription.unsubscribe();
     });
   }
 
   @Get('blocks')
-  blocksSse(@Res() res: Response, @Query('userId') userId?: string): void {
-    const connectionId = `blocks_${Date.now()}_${Math.random()}`;
-    
-    this.connectionManager.addConnection(connectionId, 'blocks', userId);
+  blocksSse(@Res() res: Response, @Req() req: Request, @Query('userId') userId?: string): void {
+    const connection = setupSseConnection(res, req, { type: 'blocks' }, this.connectionManager, userId);
+    if (!connection) return;
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-      'Access-Control-Allow-Headers': 'Cache-Control',
-    });
-
-    res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
-
-    const heartbeat = setInterval(() => {
-      res.write(': heartbeat\n\n');
-      this.connectionManager.updateActivity(connectionId);
-    }, 30000);
-
-    // Setup event listener for block status updates
-    const blockStatusHandler = (data: any) => {
-      res.write(`event: block-status\ndata: ${JSON.stringify(data)}\n\n`);
-    };
-    this.eventEmitter.on('sse.block-status', blockStatusHandler);
+    const subscription = createEventHandler(res, 'block-status', this.eventEmitter);
 
     res.on('close', () => {
-      clearInterval(heartbeat);
-      this.eventEmitter.off('sse.block-status', blockStatusHandler);
-      this.connectionManager.removeConnection(connectionId);
+      connection.cleanup();
+      subscription.unsubscribe();
     });
   }
 
   @Get('presence')
-  presenceSse(@Res() res: Response, @Query('userId') userId?: string): void {
-    const connectionId = `presence_${Date.now()}_${Math.random()}`;
-    
-    this.connectionManager.addConnection(connectionId, 'presence', userId);
+  presenceSse(@Res() res: Response, @Req() req: Request, @Query('userId') userId?: string): void {
+    const connection = setupSseConnection(res, req, { type: 'presence' }, this.connectionManager, userId);
+    if (!connection) return;
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-      'Access-Control-Allow-Headers': 'Cache-Control',
-    });
-
-    res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
-
-    const heartbeat = setInterval(() => {
-      res.write(': heartbeat\n\n');
-      this.connectionManager.updateActivity(connectionId);
-    }, 30000);
-
-    // Setup event listener for presence updates
-    const presenceHandler = (data: any) => {
-      res.write(`event: presence\ndata: ${JSON.stringify(data)}\n\n`);
-    };
-    this.eventEmitter.on('sse.presence', presenceHandler);
+    const subscription = createEventHandler(res, 'presence', this.eventEmitter);
 
     res.on('close', () => {
-      clearInterval(heartbeat);
-      this.eventEmitter.off('sse.presence', presenceHandler);
-      this.connectionManager.removeConnection(connectionId);
+      connection.cleanup();
+      subscription.unsubscribe();
     });
   }
 

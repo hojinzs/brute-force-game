@@ -47,7 +47,6 @@ export function GameSessionManager({
 
             if (!onboardingCompleted) {
                 setShowOnboarding(true);
-                // Mark as seen immediately so it doesn't reappear on refresh
                 localStorage.setItem("brute-force-onboarding-completed", "true");
                 setIsInitializing(false);
             } else {

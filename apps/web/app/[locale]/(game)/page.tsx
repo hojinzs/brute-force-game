@@ -1,27 +1,18 @@
-import { createServerSupabaseClient } from "@/shared/api/supabase-server";
-import { GenesisBlockView } from "@/views";
+"use client";
+
+import { useCurrentBlock } from "@/entities/block";
+import { WaitingGenesisView } from "@/views";
 import { GameClient } from "./_components/GameClient";
-import type { Block } from "@/entities/block";
 
-export const dynamic = "force-dynamic";
+export default function GamePage() {
+  const { data: currentBlock, isLoading } = useCurrentBlock();
 
-export default async function GamePage() {
-  const supabase = await createServerSupabaseClient();
-
-  const { data, error } = await supabase
-    .from("blocks_public")
-    .select("*")
-    .order("id", { ascending: false })
-    .limit(1);
-
-  if (error) {
-    console.error("Failed to fetch current block:", error);
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  const currentBlock = (data?.[0] as Block) ?? null;
-
   if (!currentBlock) {
-    return <GenesisBlockView />;
+    return <WaitingGenesisView />;
   }
 
   return <GameClient initialBlock={currentBlock} />;

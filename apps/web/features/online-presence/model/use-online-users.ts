@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/shared/api";
+import { createSSEConnection } from "@/shared/api/sse-client";
 
 export function useOnlineUsers(blockId: number | undefined) {
   const [onlineCount, setOnlineCount] = useState(0);
@@ -9,30 +9,17 @@ export function useOnlineUsers(blockId: number | undefined) {
   useEffect(() => {
     if (!blockId) return;
 
-    const channel = supabase.channel(`presence:block:${blockId}`, {
-      config: {
-        presence: {
-          key: `user_${Math.random().toString(36).substring(7)}`,
+    const connection = createSSEConnection('/api/sse/presence', {
+      eventHandlers: {
+        'presence': (data) => {
+          const presenceData = data as { count: number };
+          setOnlineCount(presenceData.count || 0);
         },
       },
     });
 
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState();
-        const count = Object.keys(state).length;
-        setOnlineCount(count);
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({
-            online_at: new Date().toISOString(),
-          });
-        }
-      });
-
     return () => {
-      supabase.removeChannel(channel);
+      connection.close();
     };
   }, [blockId]);
 

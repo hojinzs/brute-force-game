@@ -6,7 +6,7 @@ import { useAuth, AuthGuard } from "@/features/auth";
 import { usePendingTimeout } from "@/features/generate-block";
 import { useVictory } from "@/shared/context";
 import { useGameStore } from "@/shared/store";
-import { supabase } from "@/shared/api";
+import { apiClient } from "@/shared/api/api-client";
 import {
   LoadingGameView,
   WinnerBlockView,
@@ -40,11 +40,8 @@ function GameContent({ initialBlock }: GameClientProps) {
     useCallback(
       async (block) => {
         if (block.status === "pending" && block.winner_id) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("nickname")
-            .eq("id", block.winner_id)
-            .single();
+          const response = await apiClient.get('/users/profile');
+          const profile = response.data;
 
           showVictory({
             blockId: block.id,

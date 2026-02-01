@@ -9,21 +9,22 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CurrentUser } from '../decorators/current-user.decorator';
+import { Auth } from '../decorators/auth.decorator';
 import type { JwtPayload } from '../auth/auth.service';
 import { AttemptsService } from './attempts.service';
 import { CreateAttemptDto } from './dto/attempt.dto';
 
 @ApiTags('attempts')
 @Controller('attempts')
-@UseGuards(ThrottlerGuard)
+// @UseGuards(ThrottlerGuard)
 export class AttemptsController {
   constructor(private readonly attemptsService: AttemptsService) {}
 
   @Post(':blockId')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Submit an attempt for a block' })
   @ApiResponse({ status: 201, description: 'Attempt submitted successfully' })
@@ -66,7 +67,7 @@ export class AttemptsController {
   }
 
   @Get('user/my-attempts')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @ApiOperation({ summary: 'Get current user attempts' })
   @ApiResponse({ status: 200, description: 'User attempts retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

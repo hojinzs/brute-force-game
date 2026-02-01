@@ -13,6 +13,15 @@ export class UsersService {
     private readonly cpService: CpService,
   ) {}
 
+  private serializeUser<T extends { totalPoints: bigint }>(
+    user: T,
+  ): Omit<T, 'totalPoints'> & { totalPoints: string } {
+    return {
+      ...user,
+      totalPoints: user.totalPoints.toString(),
+    };
+  }
+
   async register(registerDto: RegisterDto) {
     const existingEmail = await this.prisma.user.findUnique({
       where: { email: registerDto.email },
@@ -57,7 +66,7 @@ export class UsersService {
     });
 
     return {
-      user: {
+      user: this.serializeUser({
         id: user.id,
         email: user.email,
         nickname: user.nickname,
@@ -65,7 +74,7 @@ export class UsersService {
         cpCount: user.cpCount,
         totalPoints: user.totalPoints,
         country: user.country,
-      },
+      }),
       tokens,
     };
   }
@@ -101,7 +110,7 @@ export class UsersService {
     });
 
     return {
-      user: {
+      user: this.serializeUser({
         id: user.id,
         email: user.email,
         nickname: user.nickname,
@@ -109,7 +118,7 @@ export class UsersService {
         cpCount: user.cpCount,
         totalPoints: user.totalPoints,
         country: user.country,
-      },
+      }),
       tokens,
     };
   }
@@ -144,7 +153,7 @@ export class UsersService {
     });
 
     return {
-      user: {
+      user: this.serializeUser({
         id: user.id,
         email: user.email,
         nickname: user.nickname,
@@ -152,7 +161,7 @@ export class UsersService {
         cpCount: user.cpCount,
         totalPoints: user.totalPoints,
         country: user.country,
-      },
+      }),
       tokens,
     };
   }
@@ -180,10 +189,10 @@ export class UsersService {
     // Get current CP with auto-refill
     const currentCP = await this.cpService.getCurrentCP(userId);
 
-    return {
+    return this.serializeUser({
       ...user,
       cpCount: currentCP,
-    };
+    });
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
@@ -223,7 +232,7 @@ export class UsersService {
       },
     });
 
-    return updatedUser;
+    return this.serializeUser(updatedUser);
   }
 
   async logout(userId: string, token: string) {
@@ -282,7 +291,20 @@ export class UsersService {
 
       await this.prisma.session.deleteMany({ where: { userId } });
 
-      return updated;
+      const tokens = this.authService.generateTokens(updated);
+      await this.prisma.session.create({
+        data: {
+          userId: updated.id,
+          token: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      return {
+        user: this.serializeUser(updated),
+        tokens,
+      };
     } catch (error) {
       if (error.code === 'P2002') {
         const field = error.meta?.target?.[0];
