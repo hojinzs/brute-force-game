@@ -102,14 +102,7 @@ export class GameService {
     console.log('[GameService] SSE event emitted');
 
     // Increment block points (prize pool)
-    await this.prisma.block.update({
-      where: { id: blockId },
-      data: {
-        accumulatedPoints: {
-          increment: BigInt(10),
-        },
-      },
-    });
+    await this.blocksService.incrementBlockPoints(blockId, BigInt(10));
 
     // Get updated block
     const updatedBlock = await this.prisma.block.findUnique({
