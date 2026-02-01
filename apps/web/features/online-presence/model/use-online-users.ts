@@ -12,8 +12,8 @@ export function useOnlineUsers(blockId: number | undefined) {
     const connection = createSSEConnection('/api/sse/presence', {
       eventHandlers: {
         'presence': (data) => {
-          const presenceData = data as { count: number };
-          setOnlineCount(presenceData.count || 0);
+          const presenceData = data as { onlineCount?: number };
+          setOnlineCount(presenceData.onlineCount ?? 0);
         },
       },
     });
