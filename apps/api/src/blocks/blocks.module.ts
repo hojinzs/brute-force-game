@@ -13,10 +13,10 @@ import { SseModule } from '../sse/sse.module';
   imports: [
     DatabaseModule,
     SseModule,
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 1 minute
-      limit: 2, // 2 requests per minute
-    }]),
+    // ThrottlerModule.forRoot([{
+    //   ttl: 60000, // 1 minute
+    //   limit: 2, // 2 requests per minute
+    // }]),
   ],
   controllers: [BlocksController],
   providers: [
