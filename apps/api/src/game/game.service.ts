@@ -122,9 +122,13 @@ export class GameService {
     // Increment block points (prize pool)
     await this.blocksService.incrementBlockPoints(blockId, BigInt(10));
 
-    // Get updated block
+    // Get updated block (select only needed fields to avoid BigInt serialization issues)
     const updatedBlock = await this.prisma.block.findUnique({
       where: { id: blockId },
+      select: {
+        status: true,
+        accumulatedPoints: true,
+      },
     });
 
     // Check if answer is correct (100% similarity)
