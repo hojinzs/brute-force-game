@@ -89,7 +89,6 @@ export class GameService {
     });
 
     // Emit SSE event for new attempt
-    console.log('[GameService] About to emit SSE event');
     this.sseService.emitNewAttempt({
       blockId: blockId.toString(),
       userId: attempt.userId,
@@ -99,7 +98,6 @@ export class GameService {
       isFirstSubmission: attempt.isFirstSubmission,
       createdAt: attempt.createdAt,
     });
-    console.log('[GameService] SSE event emitted');
 
     // Check if this attempt should be in top attempts (top 20 by similarity)
     if (similarity > 0) {
