@@ -105,6 +105,9 @@ Creates the first block to start the game. Can only be run once when no blocks e
 # From project root
 pnpm --filter api cli create-genesis --password "your-secret-password" --hint "A hint for players"
 
+
+pnpm --filter ./apps/api cli create-genesis --password "123456" --hint "this is the begin"
+
 # Options:
 #   --password <string>  Required. The password to crack.
 #   --hint <string>      Required. A hint for players.
