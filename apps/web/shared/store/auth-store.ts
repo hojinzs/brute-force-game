@@ -30,12 +30,17 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       _hasHydrated: false,
 
-      setTokens: (tokens) =>
+      setTokens: (tokens) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Auth Store] setTokens called');
+          console.log('[Auth Store] Access token:', tokens.accessToken?.substring(0, 20) + '...');
+        }
         set({
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           isAuthenticated: true,
-        }),
+        });
+      },
 
       clearTokens: () =>
         set({

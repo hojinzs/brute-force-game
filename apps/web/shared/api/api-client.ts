@@ -36,6 +36,13 @@ apiClient.interceptors.request.use(
   async (config) => {
     await waitForHydration();
     const { accessToken } = useAuthStore.getState();
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API Client] Request to:', config.url);
+      console.log('[API Client] Has token:', !!accessToken);
+      console.log('[API Client] Token preview:', accessToken?.substring(0, 20) + '...');
+    }
+    
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
