@@ -114,15 +114,18 @@ export class SseController {
     this.connectionManager.addConnection(connectionId, 'rankings', userId);
 
     const corsOrigin = getCorsOrigin(req.headers.origin);
+    if (!corsOrigin) {
+      res.status(403).send('Forbidden');
+      return;
+    }
+    
     const headers: Record<string, string> = {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
       'Access-Control-Allow-Headers': 'Cache-Control',
+      'Access-Control-Allow-Origin': corsOrigin,
     };
-    if (corsOrigin) {
-      headers['Access-Control-Allow-Origin'] = corsOrigin;
-    }
     res.writeHead(200, headers);
 
     res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
@@ -152,15 +155,18 @@ export class SseController {
     this.connectionManager.addConnection(connectionId, 'blocks', userId);
 
     const corsOrigin = getCorsOrigin(req.headers.origin);
+    if (!corsOrigin) {
+      res.status(403).send('Forbidden');
+      return;
+    }
+    
     const headers: Record<string, string> = {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
       'Access-Control-Allow-Headers': 'Cache-Control',
+      'Access-Control-Allow-Origin': corsOrigin,
     };
-    if (corsOrigin) {
-      headers['Access-Control-Allow-Origin'] = corsOrigin;
-    }
     res.writeHead(200, headers);
 
     res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);
@@ -190,15 +196,18 @@ export class SseController {
     this.connectionManager.addConnection(connectionId, 'presence', userId);
 
     const corsOrigin = getCorsOrigin(req.headers.origin);
+    if (!corsOrigin) {
+      res.status(403).send('Forbidden');
+      return;
+    }
+    
     const headers: Record<string, string> = {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
       'Access-Control-Allow-Headers': 'Cache-Control',
+      'Access-Control-Allow-Origin': corsOrigin,
     };
-    if (corsOrigin) {
-      headers['Access-Control-Allow-Origin'] = corsOrigin;
-    }
     res.writeHead(200, headers);
 
     res.write(`event: connected\ndata: ${JSON.stringify({ type: 'connected', connectionId, timestamp: new Date() })}\n\n`);

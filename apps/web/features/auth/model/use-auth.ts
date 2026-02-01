@@ -21,7 +21,7 @@ export type SignUpParams = {
 };
 
 export function useAuth() {
-  const { user: storeUser, isAuthenticated, setTokens, setUser, clearTokens } = useAuthStore();
+  const { user: storeUser, setTokens, setUser, clearTokens } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
   const user: AuthUser | null = storeUser ? {

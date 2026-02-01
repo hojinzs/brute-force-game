@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthStore } from "@/shared/store/auth-store";
 
 function LoadingState() {
   return (
@@ -17,12 +18,18 @@ function LoadingState() {
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { accessToken } = useAuthStore();
 
   useEffect(() => {
+    if (!accessToken) {
+      router.push("/auth/login");
+      return;
+    }
+    
     const next = searchParams.get("next");
     const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
     router.push(safeNext);
-  }, [router, searchParams]);
+  }, [router, searchParams, accessToken]);
 
   return <LoadingState />;
 }

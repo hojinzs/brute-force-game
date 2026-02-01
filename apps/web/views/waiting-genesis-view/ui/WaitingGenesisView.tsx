@@ -2,17 +2,16 @@
 
 import { useTranslations } from "next-intl";
 import { useBlockSubscription } from "@/entities/block/model/use-block-subscription";
-import { useEffect } from "react";
+import type { Block } from "@/entities/block/model/types";
 
 export function WaitingGenesisView() {
   const t = useTranslations("waiting");
-  const { data: blockEvent } = useBlockSubscription();
-
-  useEffect(() => {
-    if (blockEvent?.status === "ACTIVE") {
+  
+  useBlockSubscription((block: Block) => {
+    if (block.status === "active") {
       window.location.reload();
     }
-  }, [blockEvent]);
+  });
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center" data-testid="waiting-genesis">
