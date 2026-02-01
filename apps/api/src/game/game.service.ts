@@ -5,6 +5,7 @@ import { PasswordService } from '../shared/services/password.service';
 import { CpService } from '../shared/services/cp.service';
 import { RankingService } from '../shared/services/ranking.service';
 import { BlocksService } from '../blocks/blocks.service';
+import { SseService } from '../sse/sse.service';
 import { SimilarityCalculator } from '../shared/utils/similarity-calculator';
 import { CheckAnswerDto } from './dto/game.dto';
 import { DifficultyConfig } from '../shared/utils/types';
@@ -18,6 +19,7 @@ export class GameService {
     private readonly cpService: CpService,
     private readonly rankingService: RankingService,
     private readonly blocksService: BlocksService,
+    private readonly sseService: SseService,
   ) {}
 
   async checkAnswer(userId: string, checkAnswerDto: CheckAnswerDto) {
@@ -76,7 +78,28 @@ export class GameService {
         similarity,
         isFirstSubmission,
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+          },
+        },
+      },
     });
+
+    // Emit SSE event for new attempt
+    console.log('[GameService] About to emit SSE event');
+    this.sseService.emitNewAttempt({
+      blockId: blockId.toString(),
+      userId: attempt.userId,
+      nickname: attempt.user.nickname,
+      inputValue: attempt.inputValue,
+      similarity: attempt.similarity,
+      isFirstSubmission: attempt.isFirstSubmission,
+      createdAt: attempt.createdAt,
+    });
+    console.log('[GameService] SSE event emitted');
 
     // Increment block points (prize pool)
     await this.prisma.block.update({
