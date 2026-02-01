@@ -73,6 +73,16 @@ export class BlocksService {
       status: 'ACTIVE',
     });
 
+    this.sseService.emitCurrentBlockUpdate({
+      id: block.id.toString(),
+      status: block.status,
+      seedHint: block.seedHint || '',
+      difficultyConfig: block.difficultyConfig,
+      accumulatedPoints: block.accumulatedPoints.toString(),
+      attemptCount: 0,
+      createdAt: block.createdAt,
+    });
+
     return {
       id: block.id,
       status: block.status,

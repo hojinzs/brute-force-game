@@ -101,6 +101,39 @@ export class GameService {
     });
     console.log('[GameService] SSE event emitted');
 
+    // Check if this attempt should be in top attempts (top 20 by similarity)
+    if (similarity > 0) {
+      const topAttempts = await this.prisma.attempt.findMany({
+        where: { blockId, similarity: { gt: 0 } },
+        include: {
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+            },
+          },
+        },
+        orderBy: { similarity: 'desc' },
+        take: 20,
+      });
+
+      // Check if new attempt is in top 20
+      const isInTop20 = topAttempts.some(a => a.id === attempt.id);
+      if (isInTop20) {
+        this.sseService.emitTopAttemptsUpdate({
+          blockId: blockId.toString(),
+          attempts: topAttempts.map(a => ({
+            userId: a.userId,
+            nickname: a.user.nickname,
+            inputValue: a.inputValue,
+            similarity: a.similarity,
+            isFirstSubmission: a.isFirstSubmission,
+            createdAt: a.createdAt,
+          })),
+        });
+      }
+    }
+
     // Increment block points (prize pool)
     await this.blocksService.incrementBlockPoints(blockId, BigInt(10));
 
