@@ -36,13 +36,6 @@ apiClient.interceptors.request.use(
   async (config) => {
     await waitForHydration();
     const { accessToken } = useAuthStore.getState();
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[API Client] Request to:', config.url);
-      console.log('[API Client] Has token:', !!accessToken);
-      console.log('[API Client] Token preview:', accessToken?.substring(0, 20) + '...');
-    }
-    
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -104,17 +97,21 @@ apiClient.interceptors.response.use(
           refreshToken,
         });
 
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-          response.data;
+        const tokens = response.data.tokens ?? response.data;
+
+        if (!tokens?.accessToken || !tokens?.refreshToken) {
+          clearTokens();
+          return Promise.reject(new Error('Invalid refresh response'));
+        }
 
         setTokens({
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
         });
 
-        processQueue(null, newAccessToken);
+        processQueue(null, tokens.accessToken);
 
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as Error, null);

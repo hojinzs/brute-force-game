@@ -123,13 +123,8 @@ export class UsersController {
   ) {
     const upgraded = await this.usersService.upgradeAnonymousUser(user.sub, dto);
     return {
-      id: upgraded.id,
-      email: upgraded.email,
-      nickname: upgraded.nickname,
-      isAnonymous: upgraded.isAnonymous,
-      cpCount: upgraded.cpCount,
-      totalPoints: upgraded.totalPoints,
-      country: upgraded.country,
+      user: upgraded.user,
+      tokens: upgraded.tokens,
     };
   }
 }

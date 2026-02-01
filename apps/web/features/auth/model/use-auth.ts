@@ -24,6 +24,18 @@ export function useAuth() {
   const { user: storeUser, setTokens, setUser, clearTokens, _hasHydrated } = useAuthStore();
   const loading = !_hasHydrated;
 
+  const resolveTokens = (data: {
+    tokens?: { accessToken: string; refreshToken: string };
+    accessToken?: string;
+    refreshToken?: string;
+  }) => {
+    if (data.tokens) return data.tokens;
+    if (data.accessToken && data.refreshToken) {
+      return { accessToken: data.accessToken, refreshToken: data.refreshToken };
+    }
+    return null;
+  };
+
   const user: AuthUser | null = storeUser ? {
     id: storeUser.id,
     email: storeUser.email,
@@ -37,9 +49,12 @@ export function useAuth() {
         password,
       });
 
-      const { accessToken, refreshToken, user: apiUser } = response.data;
+      const { user: apiUser } = response.data;
+      const tokens = resolveTokens(response.data);
       
-      setTokens({ accessToken, refreshToken });
+      if (tokens) {
+        setTokens(tokens);
+      }
       setUser(adaptUser(apiUser));
 
       if (typeof window !== "undefined") {
@@ -63,9 +78,12 @@ export function useAuth() {
           nickname,
         });
 
-        const { accessToken, refreshToken, user: apiUser } = response.data;
+        const { user: apiUser } = response.data;
+        const tokens = resolveTokens(response.data);
         
-        setTokens({ accessToken, refreshToken });
+        if (tokens) {
+          setTokens(tokens);
+        }
         setUser(adaptUser(apiUser));
 
         if (typeof window !== "undefined") {
@@ -82,9 +100,12 @@ export function useAuth() {
           emailConsent,
         });
 
-        const { accessToken, refreshToken, user: apiUser } = response.data;
+        const { user: apiUser } = response.data;
+        const tokens = resolveTokens(response.data);
         
-        setTokens({ accessToken, refreshToken });
+        if (tokens) {
+          setTokens(tokens);
+        }
         setUser(adaptUser(apiUser));
 
         if (typeof window !== "undefined") {
@@ -118,9 +139,12 @@ export function useAuth() {
       nickname,
     });
 
-    const { accessToken, refreshToken, user: apiUser } = response.data;
+    const { user: apiUser } = response.data;
+    const tokens = resolveTokens(response.data);
     
-    setTokens({ accessToken, refreshToken });
+    if (tokens) {
+      setTokens(tokens);
+    }
     setUser(adaptUser(apiUser));
 
     return { user: apiUser };

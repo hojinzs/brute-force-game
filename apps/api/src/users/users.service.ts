@@ -291,7 +291,20 @@ export class UsersService {
 
       await this.prisma.session.deleteMany({ where: { userId } });
 
-      return this.serializeUser(updated);
+      const tokens = this.authService.generateTokens(updated);
+      await this.prisma.session.create({
+        data: {
+          userId: updated.id,
+          token: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      return {
+        user: this.serializeUser(updated),
+        tokens,
+      };
     } catch (error) {
       if (error.code === 'P2002') {
         const field = error.meta?.target?.[0];

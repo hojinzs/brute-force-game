@@ -51,14 +51,6 @@ export function GameSessionManager({
                 setIsInitializing(false);
             } else {
                 setIsInitializing(false);
-                
-                if (!user) {
-                    try {
-                        await signInAnonymously(visitorId || undefined);
-                    } catch (error) {
-                        console.error("Failed to sign in anonymously:", error);
-                    }
-                }
             }
         };
 
