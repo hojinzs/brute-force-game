@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback } from "react";
 import { apiClient } from "@/shared/api/api-client";
 import { useAuthStore } from "@/shared/store/auth-store";
 import { adaptUser } from "@/shared/api/adapters";
@@ -21,18 +21,14 @@ export type SignUpParams = {
 };
 
 export function useAuth() {
-  const { user: storeUser, setTokens, setUser, clearTokens } = useAuthStore();
-  const [loading, setLoading] = useState(true);
+  const { user: storeUser, setTokens, setUser, clearTokens, _hasHydrated } = useAuthStore();
+  const loading = !_hasHydrated;
 
   const user: AuthUser | null = storeUser ? {
     id: storeUser.id,
     email: storeUser.email,
     is_anonymous: storeUser.isAnonymous,
   } : null;
-
-  useEffect(() => {
-    setLoading(false);
-  }, []);
 
   const signInWithPassword = useCallback(
     async (email: string, password: string) => {
