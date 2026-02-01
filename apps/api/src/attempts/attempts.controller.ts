@@ -36,11 +36,19 @@ export class AttemptsController {
     @Param('blockId') blockId: string,
     @Body() createAttemptDto: CreateAttemptDto,
   ) {
-    return this.attemptsService.submitAttempt(
-      user.sub,
-      BigInt(blockId),
-      createAttemptDto,
-    );
+    console.log('[AttemptsController] submitAttempt called:', { userId: user.sub, blockId, input: createAttemptDto.inputValue });
+    try {
+      const result = await this.attemptsService.submitAttempt(
+        user.sub,
+        BigInt(blockId),
+        createAttemptDto,
+      );
+      console.log('[AttemptsController] submitAttempt success:', { attemptId: result.id, similarity: result.similarity });
+      return result;
+    } catch (error) {
+      console.error('[AttemptsController] submitAttempt error:', error);
+      throw error;
+    }
   }
 
   @Get(':blockId')

@@ -22,10 +22,13 @@ export class AttemptsService {
     blockId: bigint,
     createAttemptDto: CreateAttemptDto,
   ): Promise<AttemptResponseDto> {
+    console.log('[AttemptsService] submitAttempt START:', { userId, blockId: blockId.toString(), input: createAttemptDto.inputValue });
+    
     // Get current block
     const block = await this.prisma.block.findUnique({
       where: { id: blockId },
     });
+    console.log('[AttemptsService] Block found:', { blockId: block?.id.toString(), status: block?.status });
 
     if (!block) {
       throw new NotFoundException('Block not found');
@@ -92,6 +95,7 @@ export class AttemptsService {
     const isCorrect = similarity === 100;
 
     // Emit SSE event for new attempt
+    console.log('[AttemptsService] About to emit SSE event');
     this.sseService.emitNewAttempt({
       blockId: blockId.toString(),
       userId: attempt.userId,
@@ -101,6 +105,7 @@ export class AttemptsService {
       isFirstSubmission: attempt.isFirstSubmission,
       createdAt: attempt.createdAt,
     });
+    console.log('[AttemptsService] SSE event emitted');
 
     if (isCorrect) {
       // Mark block as solved (SSE emission handled by BlocksService)
