@@ -8,9 +8,9 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { Public } from '../decorators/public.decorator';
+import { Auth } from '../decorators/auth.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/auth.service';
 import { GameService } from './game.service';
@@ -22,8 +22,8 @@ import { CheckAnswerDto } from './dto/game.dto';
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
-  @Public()
   @Post('check-answer')
+  @Auth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Check password answer for current block' })
   @ApiResponse({ status: 200, description: 'Answer checked successfully' })
@@ -33,13 +33,9 @@ export class GameController {
     @CurrentUser() user: JwtPayload,
     @Body() checkAnswerDto: CheckAnswerDto,
   ) {
-    if (!user) {
-      throw new Error('Authentication required');
-    }
     return this.gameService.checkAnswer(user.sub, checkAnswerDto);
   }
 
-  @Public()
   @Get('current')
   @ApiOperation({ summary: 'Get current active block' })
   @ApiResponse({ status: 200, description: 'Current block retrieved successfully' })
@@ -47,7 +43,6 @@ export class GameController {
     return this.gameService.getCurrentBlock();
   }
 
-  @Public()
   @Get('rankings')
   @ApiOperation({ summary: 'Get player rankings' })
   @ApiResponse({ status: 200, description: 'Rankings retrieved successfully' })
@@ -58,7 +53,7 @@ export class GameController {
   }
 
   @Get('my-rank')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @ApiOperation({ summary: 'Get current user rank' })
   @ApiResponse({ status: 200, description: 'User rank retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

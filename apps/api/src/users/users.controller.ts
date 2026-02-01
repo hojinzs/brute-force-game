@@ -10,9 +10,9 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { Public } from '../decorators/public.decorator';
+import { Auth } from '../decorators/auth.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UsersService } from './users.service';
 import { CpService } from '../shared/services/cp.service';
@@ -28,7 +28,6 @@ export class UsersController {
     private readonly cpService: CpService,
   ) {}
 
-  @Public()
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
@@ -38,7 +37,6 @@ export class UsersController {
     return this.usersService.register(registerDto);
   }
 
-  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
@@ -48,7 +46,6 @@ export class UsersController {
     return this.usersService.login(loginDto);
   }
 
-  @Public()
   @Post('anonymous')
   @ApiOperation({ summary: 'Create anonymous user' })
   @ApiResponse({ status: 201, description: 'Anonymous user created successfully' })
@@ -58,7 +55,7 @@ export class UsersController {
   }
 
   @Get('profile')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @ApiOperation({ summary: 'Get user profile' })
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -67,7 +64,7 @@ export class UsersController {
   }
 
   @Put('profile')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @ApiOperation({ summary: 'Update user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -79,7 +76,7 @@ export class UsersController {
   }
 
   @Get('cp')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @ApiOperation({ summary: 'Get current user Computing Power (CP)' })
   @ApiResponse({ status: 200, description: 'CP retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -94,7 +91,7 @@ export class UsersController {
   }
 
   @Post('logout')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User logout' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
@@ -104,7 +101,6 @@ export class UsersController {
     return this.usersService.logout(user.sub, token);
   }
 
-  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh JWT tokens' })
@@ -115,7 +111,7 @@ export class UsersController {
   }
 
   @Put('upgrade')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @ApiOperation({ summary: 'Upgrade anonymous user to registered user' })
   @ApiResponse({ status: 200, description: 'User upgraded successfully' })
   @ApiResponse({ status: 400, description: 'User is not anonymous' })

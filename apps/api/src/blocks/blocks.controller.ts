@@ -10,9 +10,9 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { Public } from '../decorators/public.decorator';
+import { Auth } from '../decorators/auth.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/auth.service';
 import { BlocksService } from './blocks.service';
@@ -24,7 +24,6 @@ import { CreateBlockDto, UpdateBlockDto } from './dto/block.dto';
 export class BlocksController {
   constructor(private readonly blocksService: BlocksService) {}
 
-  @Public()
   @Get('current')
   @ApiOperation({ summary: 'Get current active block' })
   @ApiResponse({ status: 200, description: 'Current block retrieved successfully' })
@@ -32,7 +31,6 @@ export class BlocksController {
     return this.blocksService.getCurrentBlock();
   }
 
-  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get block by ID' })
   @ApiResponse({ status: 200, description: 'Block retrieved successfully' })
@@ -42,7 +40,6 @@ export class BlocksController {
     return this.blocksService.getBlockById(BigInt(id));
   }
 
-  @Public()
   @Get()
   @ApiOperation({ summary: 'Get block history' })
   @ApiResponse({ status: 200, description: 'Block history retrieved successfully' })
@@ -53,7 +50,7 @@ export class BlocksController {
   }
 
   @Put(':id')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @ApiOperation({ summary: 'Update a block' })
   @ApiResponse({ status: 200, description: 'Block updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -68,7 +65,7 @@ export class BlocksController {
   }
 
   @Post(':id/hint')
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Submit hint for block as blockMaster' })
   @ApiResponse({ status: 200, description: 'Hint submitted successfully' })

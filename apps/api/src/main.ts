@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ForbiddenException } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { getCorsOrigin } from './shared/utils/cors.util';
@@ -15,10 +16,10 @@ async function bootstrap() {
       } else if (allowedOrigin) {
         callback(null, allowedOrigin);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new ForbiddenException('Not allowed by CORS'));
       }
     },
-    credentials: true,
+    // credentials: true,
   });
 
   // Swagger configuration

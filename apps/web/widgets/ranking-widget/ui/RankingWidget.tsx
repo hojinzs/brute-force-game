@@ -52,15 +52,15 @@ export function RankingWidget() {
           <div className="flex items-center justify-center h-32">
             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : !topRanking || topRanking.length === 0 ? (
+        ) : !topRanking || topRanking.rankings.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-slate-500 text-sm">
             {t('ranking.noRankings')}
           </div>
         ) : (
           <ul className="divide-y divide-slate-700/50">
-            {topRanking.slice(0, 10).map((entry) => (
+            {topRanking.rankings.slice(0, 10).map((entry) => (
               <li
-                key={entry.id}
+                key={entry.rank}
                 className={`px-4 py-2 flex items-center justify-between hover:bg-slate-700/30 transition-colors ${
                   entry.id === user?.id ? "bg-blue-500/10" : ""
                 }`}
@@ -80,7 +80,7 @@ export function RankingWidget() {
                   </span>
                 </div>
                 <span className="font-mono text-sm text-emerald-400 ml-2">
-                  {formatPoints(entry.total_points)}
+                  {formatPoints(entry.total_points || 0)} {t('ranking.pts')}
                 </span>
               </li>
             ))}
