@@ -25,11 +25,13 @@ export class AttemptsService {
 
     return attempts.map(attempt => ({
       id: attempt.id,
+      blockId: Number(attempt.blockId),
+      userId: attempt.userId,
+      nickname: attempt.user.nickname,
       inputValue: attempt.inputValue,
       similarity: attempt.similarity,
       isFirstSubmission: attempt.isFirstSubmission,
       createdAt: attempt.createdAt,
-      user: attempt.user,
     }));
   }
 
