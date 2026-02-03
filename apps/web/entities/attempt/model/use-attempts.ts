@@ -14,37 +14,57 @@ export function useAttempts(blockId: number | undefined) {
   useEffect(() => {
     if (!blockId) return;
 
-    const fetchInitial = async () => {
+    let isActive = true;
+
+    const fetchAttempts = async (highlightLatest: boolean) => {
       const response = await apiClient.get<ApiAttemptWithNickname[]>(`/attempts/${blockId}`, {
         params: { limit: ATTEMPTS_DISPLAY_LIMIT },
       });
 
-      if (response.data) {
-        setAttempts(response.data.map(adaptAttemptWithNickname));
+      if (!isActive || !response.data) return;
+
+      const mappedAttempts = response.data.map(adaptAttemptWithNickname);
+      setAttempts(mappedAttempts);
+
+      if (highlightLatest && mappedAttempts.length > 0) {
+        const latestId = mappedAttempts[0].id;
+        setNewAttemptId(latestId);
+        setTimeout(() => setNewAttemptId(undefined), 500);
       }
     };
 
-    fetchInitial();
+    const getEventBlockId = (payload: unknown): number | null => {
+      if (typeof payload !== "object" || payload === null) return null;
+      const record = payload as Record<string, unknown>;
+      const blockIdValue = record.blockId;
+
+      if (typeof blockIdValue === "number") {
+        return Number.isFinite(blockIdValue) ? blockIdValue : null;
+      }
+
+      if (typeof blockIdValue === "string") {
+        const parsed = Number(blockIdValue);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+
+      return null;
+    };
+
+    fetchAttempts(false);
 
     const connection = createSSEConnection('/api/sse/feed', {
       eventHandlers: {
         'attempt': (data) => {
-          const apiAttempt = data as ApiAttemptWithNickname;
-          
-          if (apiAttempt.blockId === blockId) {
-            const attemptWithNickname = adaptAttemptWithNickname(apiAttempt);
-
-            setAttempts((prev) =>
-              [attemptWithNickname, ...prev.slice(0, ATTEMPTS_DISPLAY_LIMIT - 1)]
-            );
-            setNewAttemptId(attemptWithNickname.id);
-            setTimeout(() => setNewAttemptId(undefined), 500);
+          const eventBlockId = getEventBlockId(data);
+          if (eventBlockId === blockId) {
+            void fetchAttempts(true);
           }
         },
       },
     });
 
     return () => {
+      isActive = false;
       connection.close();
     };
   }, [blockId]);

@@ -5,6 +5,7 @@ import { PasswordService } from '../shared/services/password.service';
 import { CpService } from '../shared/services/cp.service';
 import { RankingService } from '../shared/services/ranking.service';
 import { BlocksService } from '../blocks/blocks.service';
+import { SseService } from '../sse/sse.service';
 import { SimilarityCalculator } from '../shared/utils/similarity-calculator';
 import { CheckAnswerDto } from './dto/game.dto';
 import { DifficultyConfig } from '../shared/utils/types';
@@ -18,6 +19,7 @@ export class GameService {
     private readonly cpService: CpService,
     private readonly rankingService: RankingService,
     private readonly blocksService: BlocksService,
+    private readonly sseService: SseService,
   ) {}
 
   async checkAnswer(userId: string, checkAnswerDto: CheckAnswerDto) {
@@ -63,21 +65,70 @@ export class GameService {
         similarity,
         isFirstSubmission,
       },
-    });
-
-    // Increment block points (prize pool)
-    await this.prisma.block.update({
-      where: { id: blockId },
-      data: {
-        accumulatedPoints: {
-          increment: BigInt(10),
+      include: {
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+          },
         },
       },
     });
 
-    // Get updated block
+    // Emit SSE event for new attempt
+    this.sseService.emitNewAttempt({
+      blockId: blockId.toString(),
+      userId: attempt.userId,
+      nickname: attempt.user.nickname,
+      inputValue: attempt.inputValue,
+      similarity: attempt.similarity,
+      isFirstSubmission: attempt.isFirstSubmission,
+      createdAt: attempt.createdAt,
+    });
+
+    // Check if this attempt should be in top attempts (top 20 by similarity)
+    if (similarity > 0) {
+      const topAttempts = await this.prisma.attempt.findMany({
+        where: { blockId, similarity: { gt: 0 } },
+        include: {
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+            },
+          },
+        },
+        orderBy: { similarity: 'desc' },
+        take: 20,
+      });
+
+      // Check if new attempt is in top 20
+      const isInTop20 = topAttempts.some(a => a.id === attempt.id);
+      if (isInTop20) {
+        this.sseService.emitTopAttemptsUpdate({
+          blockId: blockId.toString(),
+          attempts: topAttempts.map(a => ({
+            userId: a.userId,
+            nickname: a.user.nickname,
+            inputValue: a.inputValue,
+            similarity: a.similarity,
+            isFirstSubmission: a.isFirstSubmission,
+            createdAt: a.createdAt,
+          })),
+        });
+      }
+    }
+
+    // Increment block points (prize pool)
+    await this.blocksService.incrementBlockPoints(blockId, BigInt(10));
+
+    // Get updated block (select only needed fields to avoid BigInt serialization issues)
     const updatedBlock = await this.prisma.block.findUnique({
       where: { id: blockId },
+      select: {
+        status: true,
+        accumulatedPoints: true,
+      },
     });
 
     // Check if answer is correct (100% similarity)

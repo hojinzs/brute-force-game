@@ -73,13 +73,23 @@ export class BlocksService {
       status: 'ACTIVE',
     });
 
+    this.sseService.emitCurrentBlockUpdate({
+      id: block.id.toString(),
+      status: block.status,
+      seedHint: block.seedHint || '',
+      difficultyConfig: block.difficultyConfig,
+      accumulatedPoints: block.accumulatedPoints.toString(),
+      attemptCount: 0,
+      createdAt: block.createdAt,
+    });
+
     return {
-      id: block.id,
+      id: Number(block.id),
       status: block.status,
       seedHint: block.seedHint,
       difficultyConfig: block.difficultyConfig,
-      accumulatedPoints: block.accumulatedPoints,
-      previousBlockId: block.previousBlockId,
+      accumulatedPoints: Number(block.accumulatedPoints),
+      previousBlockId: block.previousBlockId ? Number(block.previousBlockId) : null,
       createdAt: block.createdAt,
     };
   }
@@ -106,7 +116,13 @@ export class BlocksService {
     }
 
     return {
-      ...block,
+      id: Number(block.id),
+      status: block.status,
+      seedHint: block.seedHint,
+      difficultyConfig: block.difficultyConfig,
+      accumulatedPoints: Number(block.accumulatedPoints),
+      previousBlockId: block.previousBlockId ? Number(block.previousBlockId) : null,
+      createdAt: block.createdAt,
       attemptCount: block._count.attempts,
     };
   }
@@ -140,10 +156,25 @@ export class BlocksService {
     }
 
     // Don't expose answer plaintext
-    const { answerPlaintext, ...blockData } = block;
+    const { answerPlaintext, answerHash, ...blockData } = block;
 
     return {
-      ...blockData,
+      id: Number(block.id),
+      status: block.status,
+      seedHint: block.seedHint,
+      difficultyConfig: block.difficultyConfig,
+      accumulatedPoints: Number(block.accumulatedPoints),
+      previousBlockId: block.previousBlockId ? Number(block.previousBlockId) : null,
+      winnerId: block.winnerId,
+      winner: block.winner,
+      previousBlock: block.previousBlock ? {
+        id: Number(block.previousBlock.id),
+        status: block.previousBlock.status,
+        seedHint: block.previousBlock.seedHint,
+      } : null,
+      solvedAt: block.solvedAt,
+      solvedAttemptId: block.solvedAttemptId,
+      createdAt: block.createdAt,
       attemptCount: block._count.attempts,
     };
   }
@@ -168,11 +199,11 @@ export class BlocksService {
     });
 
     return blocks.map(block => ({
-      id: block.id,
+      id: Number(block.id),
       status: block.status,
       seedHint: block.seedHint,
       difficultyConfig: block.difficultyConfig,
-      accumulatedPoints: block.accumulatedPoints,
+      accumulatedPoints: Number(block.accumulatedPoints),
       winner: block.winner,
       solvedAt: block.solvedAt,
       attemptCount: block._count.attempts,
@@ -291,6 +322,33 @@ export class BlocksService {
         },
       },
     });
+
+    const block = await this.prisma.block.findUnique({
+      where: { id: blockId },
+      select: {
+        id: true,
+        status: true,
+        seedHint: true,
+        difficultyConfig: true,
+        accumulatedPoints: true,
+        createdAt: true,
+        _count: {
+          select: { attempts: true },
+        },
+      },
+    });
+
+    if (block && block.status === 'ACTIVE') {
+      this.sseService.emitCurrentBlockUpdate({
+        id: block.id.toString(),
+        status: block.status,
+        seedHint: block.seedHint || '',
+        difficultyConfig: block.difficultyConfig,
+        accumulatedPoints: block.accumulatedPoints.toString(),
+        attemptCount: block._count?.attempts || 0,
+        createdAt: block.createdAt,
+      });
+    }
   }
 
   async submitHint(blockId: bigint, userId: string, hint: string) {
@@ -391,11 +449,32 @@ export class BlocksService {
         answerPlaintext: password,
         status: 'ACTIVE',
       },
+      select: {
+        id: true,
+        status: true,
+        seedHint: true,
+        difficultyConfig: true,
+        accumulatedPoints: true,
+        createdAt: true,
+        _count: {
+          select: { attempts: true },
+        },
+      },
     });
 
     this.sseService.emitBlockStatusChange({
       blockId: blockId.toString(),
       status: 'ACTIVE',
+    });
+
+    this.sseService.emitCurrentBlockUpdate({
+      id: updatedBlock.id.toString(),
+      status: updatedBlock.status,
+      seedHint: updatedBlock.seedHint || '',
+      difficultyConfig: updatedBlock.difficultyConfig,
+      accumulatedPoints: updatedBlock.accumulatedPoints.toString(),
+      attemptCount: updatedBlock._count?.attempts || 0,
+      createdAt: updatedBlock.createdAt,
     });
 
     return updatedBlock;
@@ -430,11 +509,11 @@ export class BlocksService {
     });
 
     return {
-      id: block.id,
+      id: Number(block.id),
       status: block.status,
       seedHint: block.seedHint,
       difficultyConfig: block.difficultyConfig,
-      accumulatedPoints: block.accumulatedPoints,
+      accumulatedPoints: Number(block.accumulatedPoints),
       createdAt: block.createdAt,
     };
   }

@@ -136,7 +136,7 @@ export function MainGameView() {
 
           {/* 2. Top Attempts */}
           <div className="h-[500px]">
-            <TopAttempts attempts={attempts} />
+            <TopAttempts />
           </div>
 
           {/* 3. AD Placeholder */}

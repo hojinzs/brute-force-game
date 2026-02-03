@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SseGateway } from './gateway/sse.gateway';
 
 export interface SseEventData {
-  type: 'attempt' | 'block-status' | 'ranking' | 'presence';
+  type: 'attempt' | 'block-status' | 'ranking' | 'presence' | 'top-attempts' | 'current-block';
   data: any;
   timestamp: Date;
 }
@@ -41,6 +41,28 @@ export interface PresenceEvent {
   nickname: string;
   action: 'join' | 'leave' | 'activity';
   onlineCount: number;
+}
+
+export interface TopAttemptsEvent {
+  blockId: string;
+  attempts: {
+    userId: string;
+    nickname: string;
+    inputValue: string;
+    similarity: number;
+    isFirstSubmission: boolean;
+    createdAt: Date;
+  }[];
+}
+
+export interface CurrentBlockEvent {
+  id: string;
+  status: string;
+  seedHint: string;
+  difficultyConfig: any;
+  accumulatedPoints: string;
+  attemptCount: number;
+  createdAt: Date;
 }
 
 @Injectable()
@@ -92,5 +114,25 @@ export class SseService {
     
     // Only emit via EventEmitter - SseGateway will handle the broadcasting
     this.eventEmitter.emit('sse.presence', eventData);
+  }
+
+  emitTopAttemptsUpdate(event: TopAttemptsEvent) {
+    const eventData: SseEventData = {
+      type: 'top-attempts',
+      data: event,
+      timestamp: new Date(),
+    };
+    
+    this.eventEmitter.emit('sse.top-attempts', eventData);
+  }
+
+  emitCurrentBlockUpdate(event: CurrentBlockEvent) {
+    const eventData: SseEventData = {
+      type: 'current-block',
+      data: event,
+      timestamp: new Date(),
+    };
+    
+    this.eventEmitter.emit('sse.current-block', eventData);
   }
 }

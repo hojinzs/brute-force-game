@@ -124,6 +124,32 @@ export class SseController {
     });
   }
 
+  @Get('top-attempts')
+  topAttemptsSse(@Res() res: Response, @Req() req: Request, @Query('blockId') blockId?: string): void {
+    const connection = setupSseConnection(res, req, { type: 'feed' }, this.connectionManager);
+    if (!connection) return;
+
+    const subscription = createEventHandler(res, 'top-attempts', this.eventEmitter);
+
+    res.on('close', () => {
+      connection.cleanup();
+      subscription.unsubscribe();
+    });
+  }
+
+  @Get('current-block')
+  currentBlockSse(@Res() res: Response, @Req() req: Request): void {
+    const connection = setupSseConnection(res, req, { type: 'blocks' }, this.connectionManager);
+    if (!connection) return;
+
+    const subscription = createEventHandler(res, 'current-block', this.eventEmitter);
+
+    res.on('close', () => {
+      connection.cleanup();
+      subscription.unsubscribe();
+    });
+  }
+
   @Get('stats')
   getConnectionStats(): Observable<any> {
     return interval(5000).pipe(

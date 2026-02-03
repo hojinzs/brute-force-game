@@ -85,7 +85,7 @@ model Attempt {
   createdAt         DateTime @default(now()) @map("created_at")
   solvedBlock      Block?   @relation("SolvedAttempt")
 
-  @@unique([blockId, userId, inputValue], name: "unique_user_block_input")
+  @@index([blockId, userId, inputValue], name: "attempts_block_id_user_id_input_value_idx")
   @@map("attempts")
 }
 

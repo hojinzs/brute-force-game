@@ -1,46 +1,32 @@
 import {
   Controller,
   Get,
-  Post,
   Param,
-  Body,
   Query,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { Auth } from '../decorators/auth.decorator';
 import type { JwtPayload } from '../auth/auth.service';
 import { AttemptsService } from './attempts.service';
-import { CreateAttemptDto } from './dto/attempt.dto';
 
 @ApiTags('attempts')
 @Controller('attempts')
-// @UseGuards(ThrottlerGuard)
 export class AttemptsController {
   constructor(private readonly attemptsService: AttemptsService) {}
 
-  @Post(':blockId')
-  @Auth()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Submit an attempt for a block' })
-  @ApiResponse({ status: 201, description: 'Attempt submitted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @Get(':blockId/top')
+  @ApiOperation({ summary: 'Get top attempts for a block (by similarity)' })
+  @ApiResponse({ status: 200, description: 'Top attempts retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Block not found' })
   @ApiParam({ name: 'blockId', description: 'Block ID' })
-  async submitAttempt(
-    @CurrentUser() user: JwtPayload,
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of top attempts to return', type: Number })
+  async getTopAttempts(
     @Param('blockId') blockId: string,
-    @Body() createAttemptDto: CreateAttemptDto,
+    @Query('limit') limit?: string,
   ) {
-    return this.attemptsService.submitAttempt(
-      user.sub,
-      BigInt(blockId),
-      createAttemptDto,
-    );
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.attemptsService.getTopAttempts(BigInt(blockId), limitNum);
   }
 
   @Get(':blockId')

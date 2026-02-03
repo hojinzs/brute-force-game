@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SseGateway } from './gateway/sse.gateway';
 import { SseService } from './sse.service';
 import { SseController } from './sse.controller';
@@ -11,7 +10,6 @@ import { SseEventFilterService } from '../shared/services/sse-event-filter.servi
 import { SseRateLimitService } from '../shared/services/sse-rate-limit.service';
 
 @Module({
-  imports: [EventEmitterModule.forRoot()],
   providers: [
     SseGateway, 
     SseService, 
