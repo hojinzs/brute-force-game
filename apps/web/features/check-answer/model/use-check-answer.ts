@@ -31,12 +31,8 @@ export function useCheckAnswer() {
         similarity: adapted.similarity,
       };
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentCP"] });
-
-      if (data.correct) {
-        queryClient.invalidateQueries({ queryKey: ["currentBlock"] });
-      }
     },
   });
 }

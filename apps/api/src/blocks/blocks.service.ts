@@ -449,11 +449,32 @@ export class BlocksService {
         answerPlaintext: password,
         status: 'ACTIVE',
       },
+      select: {
+        id: true,
+        status: true,
+        seedHint: true,
+        difficultyConfig: true,
+        accumulatedPoints: true,
+        createdAt: true,
+        _count: {
+          select: { attempts: true },
+        },
+      },
     });
 
     this.sseService.emitBlockStatusChange({
       blockId: blockId.toString(),
       status: 'ACTIVE',
+    });
+
+    this.sseService.emitCurrentBlockUpdate({
+      id: updatedBlock.id.toString(),
+      status: updatedBlock.status,
+      seedHint: updatedBlock.seedHint || '',
+      difficultyConfig: updatedBlock.difficultyConfig,
+      accumulatedPoints: updatedBlock.accumulatedPoints.toString(),
+      attemptCount: updatedBlock._count?.attempts || 0,
+      createdAt: updatedBlock.createdAt,
     });
 
     return updatedBlock;
