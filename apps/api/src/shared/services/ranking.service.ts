@@ -28,9 +28,10 @@ export class RankingService {
     return { rank: rank + 1, totalPoints: user.totalPoints };
   }
 
-  async getTopRanking(limit: number = 10): Promise<Array<{ rank: number; nickname: string; totalPoints: bigint; country?: string }>> {
+  async getTopRanking(limit: number = 10): Promise<Array<{ id: string; rank: number; nickname: string; totalPoints: bigint; country?: string }>> {
     const topUsers = await this.prisma.user.findMany({
       select: {
+        id: true,
         nickname: true,
         totalPoints: true,
         country: true,
@@ -40,6 +41,7 @@ export class RankingService {
     });
 
     return topUsers.map((user, index) => ({
+      id: user.id,
       rank: index + 1,
       nickname: user.nickname,
       totalPoints: user.totalPoints,
