@@ -15,6 +15,20 @@ import { AttemptsService } from './attempts.service';
 export class AttemptsController {
   constructor(private readonly attemptsService: AttemptsService) {}
 
+  @Get(':blockId/top')
+  @ApiOperation({ summary: 'Get top attempts for a block (by similarity)' })
+  @ApiResponse({ status: 200, description: 'Top attempts retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Block not found' })
+  @ApiParam({ name: 'blockId', description: 'Block ID' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of top attempts to return', type: Number })
+  async getTopAttempts(
+    @Param('blockId') blockId: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.attemptsService.getTopAttempts(BigInt(blockId), limitNum);
+  }
+
   @Get(':blockId')
   @ApiOperation({ summary: 'Get attempts for a specific block' })
   @ApiResponse({ status: 200, description: 'Attempts retrieved successfully' })

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiClient } from "@/shared/api/api-client";
 import { createSSEConnection } from "@/shared/api/sse-client";
-import { useAttempts } from "@/entities/attempt";
+import { adaptAttemptWithNickname, type ApiAttemptWithNickname } from "@/shared/api/adapters";
 import type { AttemptWithNickname } from "@/entities/attempt";
 
 type TopAttemptsData = {
@@ -18,21 +19,31 @@ type TopAttemptsData = {
 };
 
 export function useTopAttemptsSse(blockId: number | undefined) {
-  const { attempts } = useAttempts(blockId);
   const [topAttempts, setTopAttempts] = useState<AttemptWithNickname[]>([]);
 
   useEffect(() => {
-    const sorted = [...attempts]
-      .filter((a) => a.similarity > 0 && a.is_first_submission)
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, 20);
-    setTopAttempts(sorted);
-  }, [attempts]);
-
-  useEffect(() => {
-    if (!blockId) return;
+    if (!blockId) {
+      setTopAttempts([]);
+      return;
+    }
 
     let isActive = true;
+
+    const fetchTopAttempts = async () => {
+      try {
+        const response = await apiClient.get<ApiAttemptWithNickname[]>(`/attempts/${blockId}/top`);
+        
+        if (!isActive || !response.data) return;
+
+        const mappedAttempts = response.data.map(adaptAttemptWithNickname);
+        setTopAttempts(mappedAttempts);
+      } catch (error) {
+        console.error('Failed to fetch top attempts:', error);
+        setTopAttempts([]);
+      }
+    };
+
+    fetchTopAttempts();
 
     const connection = createSSEConnection('/api/sse/top-attempts', {
       eventHandlers: {

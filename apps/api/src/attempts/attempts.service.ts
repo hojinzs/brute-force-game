@@ -62,6 +62,37 @@ export class AttemptsService {
     }));
   }
 
+  async getTopAttempts(blockId: bigint, limit: number = 20) {
+    const topAttempts = await this.prisma.attempt.findMany({
+      where: { 
+        blockId,
+        similarity: { gt: 0 },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+            isAnonymous: true,
+          },
+        },
+      },
+      orderBy: { similarity: 'desc' },
+      take: limit,
+    });
+
+    return topAttempts.map(attempt => ({
+      id: attempt.id,
+      blockId: Number(attempt.blockId),
+      userId: attempt.userId,
+      nickname: attempt.user.nickname,
+      inputValue: attempt.inputValue,
+      similarity: attempt.similarity,
+      isFirstSubmission: attempt.isFirstSubmission,
+      createdAt: attempt.createdAt,
+    }));
+  }
+
   async getAttemptStats(blockId: bigint) {
     const stats = await this.prisma.attempt.groupBy({
       by: ['userId'],
