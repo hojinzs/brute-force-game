@@ -322,6 +322,33 @@ export class BlocksService {
         },
       },
     });
+
+    const block = await this.prisma.block.findUnique({
+      where: { id: blockId },
+      select: {
+        id: true,
+        status: true,
+        seedHint: true,
+        difficultyConfig: true,
+        accumulatedPoints: true,
+        createdAt: true,
+        _count: {
+          select: { attempts: true },
+        },
+      },
+    });
+
+    if (block && block.status === 'ACTIVE') {
+      this.sseService.emitCurrentBlockUpdate({
+        id: block.id.toString(),
+        status: block.status,
+        seedHint: block.seedHint || '',
+        difficultyConfig: block.difficultyConfig,
+        accumulatedPoints: block.accumulatedPoints.toString(),
+        attemptCount: block._count?.attempts || 0,
+        createdAt: block.createdAt,
+      });
+    }
   }
 
   async submitHint(blockId: bigint, userId: string, hint: string) {
