@@ -13,7 +13,7 @@ export function useOnlineUsers(blockId: number | undefined) {
 
     // Build endpoint with user info as query params
     const params = new URLSearchParams();
-    if (user?.id) {
+    if (user?.id && user?.nickname) {
       params.append('userId', user.id);
       params.append('nickname', user.nickname);
     }
