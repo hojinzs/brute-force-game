@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/api-client";
-import { adaptBlockWithNicknames, type ApiBlockWithNicknames } from "@/shared/api/adapters";
+import { adaptBlockWithNicknames, adaptSSECurrentBlock, type ApiBlockWithNicknames, type SSECurrentBlockEvent } from "@/shared/api/adapters";
 import { createSSEConnection } from "@/shared/api/sse-client";
 import { BLOCK_REFETCH_INTERVAL_MS } from "@/shared/config";
 import type { Block, BlockWithNicknames } from "./types";
@@ -38,9 +38,11 @@ export function useCurrentBlock(initialData?: Block) {
         setSseConnected(connected);
       },
       eventHandlers: {
-        'current-block': () => {
+        'current-block': (data: unknown) => {
           if (!isActive) return;
-          void queryClient.invalidateQueries({ queryKey: ["currentBlock"] });
+          
+          const blockData = adaptSSECurrentBlock(data as SSECurrentBlockEvent);
+          queryClient.setQueryData(["currentBlock"], blockData);
         },
       },
     });
