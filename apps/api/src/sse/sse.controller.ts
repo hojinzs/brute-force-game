@@ -119,7 +119,7 @@ export class SseController {
     if (!connection) return;
 
     // Track user presence when they connect (only if both userId and nickname are provided)
-    const shouldTrackUser = userId && nickname;
+    const shouldTrackUser = userId != null && nickname != null;
     if (shouldTrackUser) {
       this.presenceService.userJoined(userId, nickname);
     }
@@ -140,7 +140,7 @@ export class SseController {
     res.on('close', () => {
       // Untrack user presence when they disconnect (only if they were tracked)
       if (shouldTrackUser) {
-        this.presenceService.userLeft(userId);
+        this.presenceService.userLeft(userId!);
       }
       connection.cleanup();
       subscription.unsubscribe();
