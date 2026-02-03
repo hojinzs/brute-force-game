@@ -4,10 +4,11 @@ import { SseService } from './sse.service';
 import { ConnectionManagerService } from '../shared/services/connection-manager.service';
 import { SseRateLimitService } from '../shared/services/sse-rate-limit.service';
 import { SseEventFilterService } from '../shared/services/sse-event-filter.service';
+import { PresenceService } from '../shared/services/presence.service';
 import { Observable, interval } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { setupSseConnection, createEventHandler, getSseHeaders, generateConnectionId, writeConnectedEvent } from '../shared/utils/sse.util';
+import { setupSseConnection, createEventHandler, getSseHeaders, generateConnectionId, writeConnectedEvent, writeSseEvent } from '../shared/utils/sse.util';
 
 @Controller('api/sse')
 export class SseController {
@@ -16,6 +17,7 @@ export class SseController {
     private readonly connectionManager: ConnectionManagerService,
     private readonly rateLimitService: SseRateLimitService,
     private readonly eventFilterService: SseEventFilterService,
+    private readonly presenceService: PresenceService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -112,13 +114,33 @@ export class SseController {
   }
 
   @Get('presence')
-  presenceSse(@Res() res: Response, @Req() req: Request, @Query('userId') userId?: string): void {
+  presenceSse(@Res() res: Response, @Req() req: Request, @Query('userId') userId?: string, @Query('nickname') nickname?: string): void {
     const connection = setupSseConnection(res, req, { type: 'presence' }, this.connectionManager, userId);
     if (!connection) return;
+
+    // Track user presence when they connect
+    if (userId && nickname) {
+      this.presenceService.userJoined(userId, nickname);
+    }
+
+    // Send initial online count immediately after connection
+    const initialOnlineCount = this.presenceService.getOnlineUsersCount();
+    writeSseEvent(res, 'presence', {
+      type: 'presence',
+      data: {
+        action: 'initial',
+        onlineCount: initialOnlineCount,
+      },
+      timestamp: new Date(),
+    });
 
     const subscription = createEventHandler(res, 'presence', this.eventEmitter);
 
     res.on('close', () => {
+      // Untrack user presence when they disconnect
+      if (userId) {
+        this.presenceService.userLeft(userId);
+      }
       connection.cleanup();
       subscription.unsubscribe();
     });
