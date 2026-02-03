@@ -78,9 +78,9 @@ describe('RankingService', () => {
     it('should return top users with rank', async () => {
       const limit = 10;
       const mockUsers = [
-        { nickname: 'user1', totalPoints: BigInt(5000), country: 'KR' },
-        { nickname: 'user2', totalPoints: BigInt(4000), country: 'US' },
-        { nickname: 'user3', totalPoints: BigInt(3000), country: null },
+        { id: 'user1-id', nickname: 'user1', totalPoints: BigInt(5000), country: 'KR' },
+        { id: 'user2-id', nickname: 'user2', totalPoints: BigInt(4000), country: 'US' },
+        { id: 'user3-id', nickname: 'user3', totalPoints: BigInt(3000), country: null },
       ];
 
       jest.spyOn(prismaService.user, 'findMany').mockResolvedValue(mockUsers as any);
@@ -89,18 +89,21 @@ describe('RankingService', () => {
 
       expect(result).toHaveLength(3);
       expect(result[0]).toEqual({
+        id: 'user1-id',
         rank: 1,
         nickname: 'user1',
         totalPoints: BigInt(5000),
         country: 'KR',
       });
       expect(result[1]).toEqual({
+        id: 'user2-id',
         rank: 2,
         nickname: 'user2',
         totalPoints: BigInt(4000),
         country: 'US',
       });
       expect(result[2]).toEqual({
+        id: 'user3-id',
         rank: 3,
         nickname: 'user3',
         totalPoints: BigInt(3000),
@@ -109,6 +112,7 @@ describe('RankingService', () => {
 
       expect(prismaService.user.findMany).toHaveBeenCalledWith({
         select: {
+          id: true,
           nickname: true,
           totalPoints: true,
           country: true,
@@ -121,9 +125,9 @@ describe('RankingService', () => {
     it('should include anonymous users in rankings', async () => {
       const limit = 10;
       const mockUsers = [
-        { nickname: 'regularUser', totalPoints: BigInt(5000), country: 'KR' },
-        { nickname: 'Anonymous#123', totalPoints: BigInt(4000), country: null },
-        { nickname: 'Anonymous#456', totalPoints: BigInt(3000), country: null },
+        { id: 'user1-id', nickname: 'regularUser', totalPoints: BigInt(5000), country: 'KR' },
+        { id: 'user2-id', nickname: 'Anonymous#123', totalPoints: BigInt(4000), country: null },
+        { id: 'user3-id', nickname: 'Anonymous#456', totalPoints: BigInt(3000), country: null },
       ];
 
       jest.spyOn(prismaService.user, 'findMany').mockResolvedValue(mockUsers as any);
@@ -137,6 +141,7 @@ describe('RankingService', () => {
       
       expect(prismaService.user.findMany).toHaveBeenCalledWith({
         select: {
+          id: true,
           nickname: true,
           totalPoints: true,
           country: true,
