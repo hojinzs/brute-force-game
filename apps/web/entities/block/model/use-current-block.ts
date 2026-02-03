@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/api-client";
 import { adaptBlockWithNicknames, type ApiBlockWithNicknames } from "@/shared/api/adapters";
@@ -10,6 +10,7 @@ import type { Block, BlockWithNicknames } from "./types";
 
 export function useCurrentBlock(initialData?: Block) {
   const queryClient = useQueryClient();
+  const [sseConnected, setSseConnected] = useState(false);
 
   const query = useQuery({
     queryKey: ["currentBlock"],
@@ -25,18 +26,20 @@ export function useCurrentBlock(initialData?: Block) {
 
       return adaptBlockWithNicknames(response.data);
     },
-    refetchInterval: BLOCK_REFETCH_INTERVAL_MS, // Fallback polling
+    refetchInterval: sseConnected ? false : BLOCK_REFETCH_INTERVAL_MS,
   });
 
-  // SSE subscription for real-time updates
   useEffect(() => {
     let isActive = true;
 
     const connection = createSSEConnection('/api/sse/current-block', {
+      onConnectionChange: (connected) => {
+        if (!isActive) return;
+        setSseConnected(connected);
+      },
       eventHandlers: {
         'current-block': () => {
           if (!isActive) return;
-          // Invalidate query to trigger refetch
           void queryClient.invalidateQueries({ queryKey: ["currentBlock"] });
         },
       },
@@ -44,6 +47,7 @@ export function useCurrentBlock(initialData?: Block) {
 
     return () => {
       isActive = false;
+      setSseConnected(false);
       connection.close();
     };
   }, [queryClient]);

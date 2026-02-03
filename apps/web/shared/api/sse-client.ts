@@ -2,11 +2,14 @@ export interface SSEOptions {
   onOpen?: () => void;
   onError?: (error: Event) => void;
   onMessage?: (event: MessageEvent) => void;
+  onConnectionChange?: (connected: boolean) => void;
+  onMaxRetriesReached?: () => void;
   eventHandlers?: Record<string, (data: unknown) => void>;
 }
 
 export interface SSEConnection {
   close: () => void;
+  isConnected: () => boolean;
 }
 
 const MAX_RETRIES = 5;
@@ -31,6 +34,7 @@ export function createSSEConnection(
   let eventSource: EventSource | null = null;
   let retryCount = 0;
   let isClosed = false;
+  let connected = false;
 
   const connect = () => {
     if (isClosed) return;
@@ -42,10 +46,14 @@ export function createSSEConnection(
 
     eventSource.onopen = () => {
       retryCount = 0;
+      connected = true;
+      options.onConnectionChange?.(true);
       options.onOpen?.();
     };
 
     eventSource.onerror = (error) => {
+      connected = false;
+      options.onConnectionChange?.(false);
       options.onError?.(error);
       eventSource?.close();
 
@@ -53,6 +61,8 @@ export function createSSEConnection(
         const delay = RETRY_DELAYS[retryCount];
         retryCount++;
         setTimeout(connect, delay);
+      } else if (!isClosed && retryCount >= MAX_RETRIES) {
+        options.onMaxRetriesReached?.();
       }
     };
 
@@ -89,7 +99,9 @@ export function createSSEConnection(
   return {
     close: () => {
       isClosed = true;
+      connected = false;
       eventSource?.close();
     },
+    isConnected: () => connected,
   };
 }
