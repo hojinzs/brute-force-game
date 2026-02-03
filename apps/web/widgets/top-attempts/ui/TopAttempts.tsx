@@ -61,7 +61,7 @@ export function TopAttempts() {
                           : "text-green-400"
                     }`}
                   >
-                    {attempt.similarity}%
+                    {attempt.similarity.toFixed(1)}%
                   </div>
                 </div>
               </div>
