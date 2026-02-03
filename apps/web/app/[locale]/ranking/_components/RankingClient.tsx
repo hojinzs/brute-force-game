@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRankingInfinite, useMyRank } from "@/entities/ranking";
 import { useAuth } from "@/features/auth";
@@ -39,40 +38,11 @@ export function RankingClient() {
   const { user } = useAuth();
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
   } = useRankingInfinite();
   const { data: myRank } = useMyRank(user?.id);
 
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const [target] = entries;
-      if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
-      }
-    },
-    [fetchNextPage, hasNextPage, isFetchingNextPage]
-  );
-
-  useEffect(() => {
-    const element = loadMoreRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(handleObserver, {
-      threshold: 0.1,
-      rootMargin: "100px",
-    });
-
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [handleObserver]);
-
-  const allRankings = data?.pages.flatMap((page) => page) ?? [];
+  const allRankings = data ?? [];
 
   return (
     <div className="space-y-6">
@@ -206,21 +176,6 @@ export function RankingClient() {
               </div>
             );
           })}
-        </div>
-
-        {/* Load More Trigger */}
-        <div ref={loadMoreRef} className="py-4">
-          {isFetchingNextPage && (
-            <div className="flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="ml-2 text-sm text-slate-400">Loading more...</span>
-            </div>
-          )}
-          {!hasNextPage && allRankings.length > 0 && (
-            <p className="text-center text-sm text-slate-500">
-              You&apos;ve reached the end of the leaderboard
-            </p>
-          )}
         </div>
       </div>
     </div>

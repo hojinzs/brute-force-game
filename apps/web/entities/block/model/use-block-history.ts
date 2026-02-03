@@ -17,7 +17,7 @@ export type BlockHistoryEntry = {
 };
 
 const HISTORY_STALE_TIME_MS = 10000;
-const DEFAULT_LIMIT = 50;
+const DEFAULT_LIMIT = 100;
 
 export function useBlockHistory(limit: number = DEFAULT_LIMIT) {
   return useQuery({

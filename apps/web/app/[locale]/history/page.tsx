@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useEffect, useCallback } from "react";
+import { useMemo } from "react";
 import { useBlockHistory } from "@/entities/block";
 
 function formatNumber(value: number | null | undefined) {
@@ -32,34 +32,9 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function HistoryPage() {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, isError } = useBlockHistory();
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { data, isLoading, error, isError } = useBlockHistory();
 
-  const entries = useMemo(() => data?.pages.flatMap((page) => page) ?? [], [data]);
-
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const [target] = entries;
-      if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
-      }
-    },
-    [fetchNextPage, hasNextPage, isFetchingNextPage]
-  );
-
-  useEffect(() => {
-    const element = loadMoreRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(handleObserver, {
-      threshold: 0.1,
-      rootMargin: "100px",
-    });
-
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [handleObserver]);
+  const entries = useMemo(() => data ?? [], [data]);
 
   return (
     <div className="space-y-6">
@@ -146,23 +121,6 @@ export default function HistoryPage() {
               </div>
             </div>
           ))}
-        </div>
-
-        <div ref={loadMoreRef} className="py-4">
-          {isFetchingNextPage && (
-            <div className="flex items-center justify-center">
-              <div
-                className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
-                aria-label="Loading more history entries"
-              />
-              <span className="ml-2 text-sm text-slate-400">Loading more...</span>
-            </div>
-          )}
-          {!hasNextPage && entries.length > 0 && (
-            <p className="text-center text-sm text-slate-500">
-              You&apos;ve reached the end of the history
-            </p>
-          )}
         </div>
       </div>
     </div>
