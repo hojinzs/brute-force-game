@@ -204,9 +204,13 @@ export class GameService {
       select: { nickname: true },
     });
 
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     return {
       rank: rank.rank,
-      nickname: user?.nickname || 'User',
+      nickname: user.nickname,
       totalPoints: rank.totalPoints.toString(),
       above: leaderboard.above.map(user => ({
         rank: user.rank,

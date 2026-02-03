@@ -28,9 +28,9 @@ export function useMyRank(userId: string | undefined) {
 
       const response = await apiClient.get<ApiUserRankResponse>('/game/my-rank');
       
-      // Transform API response to frontend format (camelCase to snake_case)
+      // Transform from API format (camelCase) to frontend format (snake_case)
       return {
-        userId: userId,
+        userId,
         nickname: response.data.nickname,
         total_points: Number(response.data.totalPoints),
         rank: response.data.rank,

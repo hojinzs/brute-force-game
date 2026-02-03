@@ -19,13 +19,13 @@ interface ApiRankingsResponse {
 
 export function useRankingInfinite(limit: number = 100) {
   return useQuery({
-    queryKey: ["rankingInfinite", limit],
+    queryKey: ["rankings", limit],
     queryFn: async (): Promise<RankingEntry[]> => {
       const response = await apiClient.get<ApiRankingsResponse>('/game/rankings', {
         params: { limit },
       });
 
-      // Transform API response to frontend format (camelCase to snake_case)
+      // Transform from API format (camelCase) to frontend format (snake_case)
       return (response.data.rankings || []).map((ranking) => ({
         id: ranking.id,
         nickname: ranking.nickname,
