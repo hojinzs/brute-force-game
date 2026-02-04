@@ -31,15 +31,6 @@ export class BlocksController {
     return this.blocksService.getCurrentBlock();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get block by ID' })
-  @ApiResponse({ status: 200, description: 'Block retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'Block not found' })
-  @ApiParam({ name: 'id', description: 'Block ID' })
-  async getBlockById(@Param('id') id: string) {
-    return this.blocksService.getBlockById(BigInt(id));
-  }
-
   @Get()
   @ApiOperation({ summary: 'Get block history' })
   @ApiResponse({ status: 200, description: 'Block history retrieved successfully' })
@@ -49,6 +40,15 @@ export class BlocksController {
     const pageNum = page ? Math.max(1, parseInt(page, 10)) : 1;
     const limitNum = limit ? Math.max(1, parseInt(limit, 10)) : 20;
     return this.blocksService.getBlockHistory({ page: pageNum, limit: limitNum });
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get block by ID' })
+  @ApiResponse({ status: 200, description: 'Block retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Block not found' })
+  @ApiParam({ name: 'id', description: 'Block ID' })
+  async getBlockById(@Param('id') id: string) {
+    return this.blocksService.getBlockById(BigInt(id));
   }
 
   @Put(':id')

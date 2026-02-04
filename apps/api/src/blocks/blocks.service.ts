@@ -180,9 +180,12 @@ export class BlocksService {
   }
 
   async getBlockHistory({ page, limit }: { page: number; limit: number }) {
+    const where = {};
+
     const [total, blocks] = await this.prisma.$transaction([
-      this.prisma.block.count(),
+      this.prisma.block.count({ where }),
       this.prisma.block.findMany({
+        where,
         select: {
           id: true,
           status: true,
@@ -207,7 +210,7 @@ export class BlocksService {
             select: { attempts: true },
           },
         },
-        orderBy: [{ solvedAt: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),
