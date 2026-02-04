@@ -43,6 +43,7 @@ export function BlockHistoryList() {
         {history.map((block: BlockHistoryEntry) => {
           const isSolved = block.status === "solved";
           const displayTime = block.solved_at ?? block.created_at;
+          const statusLabel = isSolved ? "SOLVED" : block.status.toUpperCase();
 
           return (
             <div
@@ -59,7 +60,7 @@ export function BlockHistoryList() {
                       isSolved ? "bg-emerald-500/10 text-emerald-400" : "bg-blue-500/10 text-blue-400"
                     }`}
                   >
-                    {isSolved ? "SOLVED" : block.status}
+                    {statusLabel}
                   </span>
                 </div>
                 <div

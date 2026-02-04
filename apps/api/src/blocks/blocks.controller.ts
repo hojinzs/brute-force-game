@@ -43,10 +43,12 @@ export class BlocksController {
   @Get()
   @ApiOperation({ summary: 'Get block history' })
   @ApiResponse({ status: 200, description: 'Block history retrieved successfully' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of blocks to return', type: Number })
-  async getBlockHistory(@Query('limit') limit?: string) {
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.blocksService.getBlockHistory(limitNum);
+  @ApiQuery({ name: 'page', required: false, description: 'Page number (1-based)', type: Number })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of blocks per page', type: Number })
+  async getBlockHistory(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNum = page ? Math.max(1, parseInt(page, 10)) : 1;
+    const limitNum = limit ? Math.max(1, parseInt(limit, 10)) : 20;
+    return this.blocksService.getBlockHistory({ page: pageNum, limit: limitNum });
   }
 
   @Put(':id')

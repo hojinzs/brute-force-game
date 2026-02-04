@@ -1,33 +1,43 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/api-client";
 
-export type BlockHistoryEntry = {
-  block_id: number;
-  status: string;
-  seed_hint: string | null;
-  created_at: string;
-  solved_at: string | null;
-  winner_id: string | null;
-  accumulated_points: number;
-  solved_attempt_id: string | null;
-  winner_nickname: string | null;
-  solved_answer: string | null;
-  total_attempts: number;
-  unique_participants: number;
+import type { BlockHistoryEntry } from "./history-types";
+import type { ApiBlockHistoryEntry } from "./normalize-history";
+import { normalizeBlockHistoryResponse } from "./normalize-history";
+
+export type { BlockHistoryEntry } from "./history-types";
+
+export type BlockHistoryPage = {
+  page: number;
+  limit: number;
+  total: number;
+  blocks: BlockHistoryEntry[];
 };
 
 const HISTORY_STALE_TIME_MS = 10000;
 const DEFAULT_LIMIT = 100;
 
-export function useBlockHistory(limit: number = DEFAULT_LIMIT) {
+type ApiBlockHistoryPageResponse = {
+  page: number;
+  limit: number;
+  total: number;
+  blocks: ApiBlockHistoryEntry[];
+};
+
+export function useBlockHistoryPage(page: number, limit: number = DEFAULT_LIMIT) {
   return useQuery({
-    queryKey: ["blockHistory", limit],
-    queryFn: async (): Promise<BlockHistoryEntry[]> => {
-      const response = await apiClient.get<BlockHistoryEntry[]>('/blocks', {
-        params: { limit },
+    queryKey: ["blockHistory", page, limit],
+    queryFn: async (): Promise<BlockHistoryPage> => {
+      const response = await apiClient.get<ApiBlockHistoryPageResponse>("/blocks", {
+        params: { page, limit },
       });
 
-      return response.data || [];
+      return {
+        page: response.data.page,
+        limit: response.data.limit,
+        total: response.data.total,
+        blocks: normalizeBlockHistoryResponse(response.data.blocks),
+      };
     },
     staleTime: HISTORY_STALE_TIME_MS,
   });
@@ -37,11 +47,11 @@ export function useRecentBlockHistory(limit: number = 20) {
   return useQuery({
     queryKey: ["blockHistory", "recent", limit],
     queryFn: async (): Promise<BlockHistoryEntry[]> => {
-      const response = await apiClient.get<BlockHistoryEntry[]>('/blocks', {
-        params: { limit },
+      const response = await apiClient.get<ApiBlockHistoryPageResponse>("/blocks", {
+        params: { page: 1, limit },
       });
 
-      return response.data || [];
+      return normalizeBlockHistoryResponse(response.data.blocks);
     },
     staleTime: HISTORY_STALE_TIME_MS,
   });
