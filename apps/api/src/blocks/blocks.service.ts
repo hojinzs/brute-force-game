@@ -179,35 +179,80 @@ export class BlocksService {
     };
   }
 
-  async getBlockHistory(limit: number = 10) {
-    const blocks = await this.prisma.block.findMany({
-      where: { status: 'SOLVED' },
-      include: {
-        winner: {
-          select: {
-            id: true,
-            nickname: true,
-            isAnonymous: true,
+  async getBlockHistory({ page, limit }: { page: number; limit: number }) {
+    const where = {};
+
+    const [total, blocks] = await this.prisma.$transaction([
+      this.prisma.block.count({ where }),
+      this.prisma.block.findMany({
+        where,
+        select: {
+          id: true,
+          status: true,
+          seedHint: true,
+          difficultyConfig: true,
+          accumulatedPoints: true,
+          createdAt: true,
+          solvedAt: true,
+          winner: {
+            select: {
+              id: true,
+              nickname: true,
+              isAnonymous: true,
+            },
+          },
+          solvedAttempt: {
+            select: {
+              inputValue: true,
+            },
+          },
+          _count: {
+            select: { attempts: true },
           },
         },
-        _count: {
-          select: { attempts: true },
-        },
-      },
-      orderBy: { solvedAt: 'desc' },
-      take: limit,
-    });
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
 
-    return blocks.map(block => ({
-      id: Number(block.id),
-      status: block.status,
-      seedHint: block.seedHint,
-      difficultyConfig: block.difficultyConfig,
-      accumulatedPoints: Number(block.accumulatedPoints),
-      winner: block.winner,
-      solvedAt: block.solvedAt,
-      attemptCount: block._count.attempts,
-    }));
+    const uniqueParticipantsByBlock = new Map<string, number>();
+
+    if (blocks.length > 0) {
+      const uniquePairs = await this.prisma.attempt.groupBy({
+        by: ['blockId', 'userId'],
+        where: { blockId: { in: blocks.map((block) => block.id) } },
+        _count: { _all: true },
+      });
+
+      for (const row of uniquePairs) {
+        const key = row.blockId.toString();
+        uniqueParticipantsByBlock.set(
+          key,
+          (uniqueParticipantsByBlock.get(key) ?? 0) + 1,
+        );
+      }
+    }
+
+    return {
+      page,
+      limit,
+      total,
+      blocks: blocks.map((block) => ({
+        id: Number(block.id),
+        status: block.status,
+        seedHint: block.seedHint,
+        difficultyConfig: block.difficultyConfig,
+        accumulatedPoints: Number(block.accumulatedPoints),
+        winner: block.winner,
+        createdAt: block.createdAt,
+        solvedAt: block.solvedAt,
+        attemptCount: block._count.attempts,
+        uniqueParticipants: uniqueParticipantsByBlock.get(block.id.toString()) ?? 0,
+        solvedAnswer:
+          block.status === 'SOLVED' ? block.solvedAttempt?.inputValue ?? null : null,
+      })),
+    };
   }
 
   async updateBlock(id: bigint, updateBlockDto: UpdateBlockDto, userId: string) {

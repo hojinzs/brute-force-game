@@ -97,6 +97,7 @@
       "ts"
     ],
     "rootDir": "src",
+    "watchman": false,
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

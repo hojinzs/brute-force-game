@@ -184,6 +184,7 @@ export class GameService {
     
     return {
       rankings: rankings.map(ranking => ({
+        id: ranking.id,
         rank: ranking.rank,
         nickname: ranking.nickname,
         totalPoints: ranking.totalPoints.toString(),
@@ -196,9 +197,20 @@ export class GameService {
   async getUserRank(userId: string) {
     const rank = await this.rankingService.getUserRank(userId);
     const leaderboard = await this.rankingService.getLeaderboardAroundUser(userId, 3);
+    
+    // Get user nickname
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { nickname: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     return {
       rank: rank.rank,
+      nickname: user.nickname,
       totalPoints: rank.totalPoints.toString(),
       above: leaderboard.above.map(user => ({
         rank: user.rank,

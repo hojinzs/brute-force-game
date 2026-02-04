@@ -1,8 +1,7 @@
-"use client";
-
 import Link from "next/link";
-import { useMemo, useRef, useEffect, useCallback } from "react";
-import { useBlockHistory } from "@/entities/block";
+import { getBlockHistoryPage } from "@/entities/block/api";
+import { normalizeBlockHistoryResponse } from "@/entities/block/model/normalize-history";
+import type { BlockHistoryEntry } from "@/entities/block/model/use-block-history";
 
 function formatNumber(value: number | null | undefined) {
   if (value === null || value === undefined) return "-";
@@ -31,35 +30,75 @@ function StatusBadge({ status }: { status: string }) {
   }
 }
 
-export default function HistoryPage() {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, isError } = useBlockHistory();
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+export const dynamic = "force-dynamic";
 
-  const entries = useMemo(() => data?.pages.flatMap((page) => page) ?? [], [data]);
+type HistoryPageProps = {
+  searchParams?: Record<string, string | string[] | undefined>;
+};
 
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const [target] = entries;
-      if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
-      }
-    },
-    [fetchNextPage, hasNextPage, isFetchingNextPage]
+function parsePositiveInt(value: unknown, fallback: number) {
+  if (typeof value !== "string") return fallback;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+async function fetchHistoryPage(page: number, limit: number) {
+  const data = await getBlockHistoryPage({ page, limit });
+
+  return {
+    page: data.page,
+    limit: data.limit,
+    total: data.total,
+    entries: normalizeBlockHistoryResponse(data.blocks),
+  };
+}
+
+export default async function HistoryPage({ searchParams }: HistoryPageProps) {
+  const pageParam = searchParams?.page;
+  const limitParam = searchParams?.limit;
+
+  const page = parsePositiveInt(Array.isArray(pageParam) ? pageParam[0] : pageParam, 1);
+  const limit = parsePositiveInt(
+    Array.isArray(limitParam) ? limitParam[0] : limitParam,
+    50
   );
 
-  useEffect(() => {
-    const element = loadMoreRef.current;
-    if (!element) return;
+  let entries: BlockHistoryEntry[] = [];
+  let total = 0;
+  let resolvedPage = page;
+  let resolvedLimit = limit;
+  let errorMessage: string | null = null;
 
-    const observer = new IntersectionObserver(handleObserver, {
-      threshold: 0.1,
-      rootMargin: "100px",
-    });
+  try {
+    const result = await fetchHistoryPage(page, limit);
+    entries = result.entries;
+    total = result.total;
+    resolvedPage = result.page;
+    resolvedLimit = result.limit;
 
-    observer.observe(element);
+    const totalPages = Math.max(1, Math.ceil(total / resolvedLimit));
+    if (resolvedPage > totalPages && total > 0) {
+      const fallback = await fetchHistoryPage(totalPages, resolvedLimit);
+      entries = fallback.entries;
+      total = fallback.total;
+      resolvedPage = fallback.page;
+      resolvedLimit = fallback.limit;
+    }
+  } catch (error) {
+    errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+  }
 
-    return () => observer.disconnect();
-  }, [handleObserver]);
+  const totalPages = Math.max(1, Math.ceil(total / resolvedLimit));
+  const safePage = Math.min(Math.max(1, resolvedPage), totalPages);
+  const hasPrev = safePage > 1;
+  const hasNext = safePage < totalPages;
+
+  const buildHref = (nextPage: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(nextPage));
+    params.set("limit", String(resolvedLimit));
+    return `?${params.toString()}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -90,80 +129,92 @@ export default function HistoryPage() {
           <div className="col-span-3">PASSWORD</div>
         </div>
 
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" aria-label="Loading history" />
-          </div>
-        )}
-
-        {isError && (
+        {errorMessage && (
           <div className="flex flex-col items-center justify-center py-12 text-red-400">
             <p className="text-lg">Failed to load history</p>
-            <p className="text-sm mt-1">{error instanceof Error ? error.message : "Unknown error occurred"}</p>
+            <p className="text-sm mt-1">{errorMessage}</p>
           </div>
         )}
 
-        {!isLoading && entries.length === 0 && (
+        {!errorMessage && entries.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-slate-500">
             <p className="text-lg">No history yet</p>
             <p className="text-sm mt-1">Solve the first block to see history here.</p>
           </div>
         )}
 
-        <div className="divide-y divide-slate-700/50">
-          {entries.map((entry) => (
-            <div
-              key={entry.block_id}
-              className="grid grid-cols-12 gap-4 px-4 py-3 items-start hover:bg-slate-700/30 transition-colors"
-            >
-              <div className="col-span-1 font-mono text-slate-200">#{entry.block_id}</div>
-              <div className="col-span-2">
-                <StatusBadge status={entry.status} />
-                <div className="text-xs text-slate-500 mt-1">{formatDate(entry.created_at)}</div>
-              </div>
-              <div className="col-span-2 text-slate-200 truncate" title={entry.seed_hint ?? undefined}>
-                {entry.seed_hint ?? "-"}
-              </div>
-              <div className="col-span-1 truncate" title={entry.winner_nickname || entry.winner_id || undefined}>
-                {entry.winner_nickname || entry.winner_id || "-"}
-              </div>
-              <div className="col-span-1 text-right font-mono text-emerald-400">
-                {formatNumber(entry.accumulated_points)}
-              </div>
-              <div className="col-span-1 text-right text-slate-200 font-mono">
-                {formatNumber(entry.total_attempts)}
-              </div>
-              <div className="col-span-1 text-right text-slate-200 font-mono">
-                {formatNumber(entry.unique_participants)}
-              </div>
-              <div className="col-span-3">
-                <code
-                  className="block max-w-full truncate rounded-md border border-slate-700/60 bg-slate-900/60 px-2 py-1 font-mono text-slate-100"
-                  title={entry.solved_answer ?? undefined}
+        {!errorMessage && entries.length > 0 && (
+          <>
+            <div className="divide-y divide-slate-700/50">
+              {entries.map((entry) => (
+                <div
+                  key={entry.block_id}
+                  className="grid grid-cols-12 gap-4 px-4 py-3 items-start hover:bg-slate-700/30 transition-colors"
                 >
-                  {entry.solved_answer ?? "-"}
-                </code>
+                  <div className="col-span-1 font-mono text-slate-200">#{entry.block_id}</div>
+                  <div className="col-span-2">
+                    <StatusBadge status={entry.status} />
+                    <div className="text-xs text-slate-500 mt-1">{formatDate(entry.created_at)}</div>
+                  </div>
+                  <div className="col-span-2 text-slate-200 truncate" title={entry.seed_hint ?? undefined}>
+                    {entry.seed_hint ?? "-"}
+                  </div>
+                  <div className="col-span-1 truncate" title={entry.winner_nickname || entry.winner_id || undefined}>
+                    {entry.winner_nickname || entry.winner_id || "-"}
+                  </div>
+                  <div className="col-span-1 text-right font-mono text-emerald-400">
+                    {formatNumber(entry.accumulated_points)}
+                  </div>
+                  <div className="col-span-1 text-right text-slate-200 font-mono">
+                    {formatNumber(entry.total_attempts)}
+                  </div>
+                  <div className="col-span-1 text-right text-slate-200 font-mono">
+                    {formatNumber(entry.unique_participants)}
+                  </div>
+                  <div className="col-span-3">
+                    <code
+                      className="block max-w-full truncate rounded-md border border-slate-700/60 bg-slate-900/60 px-2 py-1 font-mono text-slate-100"
+                      title={entry.solved_answer ?? undefined}
+                    >
+                      {entry.solved_answer ?? "-"}
+                    </code>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-800 border-t border-slate-700 text-sm text-slate-300">
+              <div className="text-slate-400">
+                Page <span className="font-mono text-slate-200">{safePage}</span> /{" "}
+                <span className="font-mono text-slate-200">{totalPages}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={hasPrev ? buildHref(safePage - 1) : buildHref(1)}
+                  aria-disabled={!hasPrev}
+                  className={`px-3 py-1 rounded-lg border transition-colors ${
+                    hasPrev
+                      ? "border-slate-600 hover:bg-slate-700/50 text-slate-200"
+                      : "border-slate-800 text-slate-600 pointer-events-none"
+                  }`}
+                >
+                  ← Prev
+                </Link>
+                <Link
+                  href={hasNext ? buildHref(safePage + 1) : buildHref(totalPages)}
+                  aria-disabled={!hasNext}
+                  className={`px-3 py-1 rounded-lg border transition-colors ${
+                    hasNext
+                      ? "border-slate-600 hover:bg-slate-700/50 text-slate-200"
+                      : "border-slate-800 text-slate-600 pointer-events-none"
+                  }`}
+                >
+                  Next →
+                </Link>
               </div>
             </div>
-          ))}
-        </div>
-
-        <div ref={loadMoreRef} className="py-4">
-          {isFetchingNextPage && (
-            <div className="flex items-center justify-center">
-              <div
-                className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
-                aria-label="Loading more history entries"
-              />
-              <span className="ml-2 text-sm text-slate-400">Loading more...</span>
-            </div>
-          )}
-          {!hasNextPage && entries.length > 0 && (
-            <p className="text-center text-sm text-slate-500">
-              You&apos;ve reached the end of the history
-            </p>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
