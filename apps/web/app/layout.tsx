@@ -1,9 +1,6 @@
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations } from 'next-intl/server';
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import { SoundInitializer } from "@/shared/sounds/sound-initializer";
-import { SoundControlFAB } from "@/shared/sounds/ui/SoundControlFAB";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,8 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export async function generateMetadata() {
-  const t = await getTranslations();
+export function generateMetadata() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   
   return {
@@ -44,23 +40,18 @@ export async function generateMetadata() {
   };
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const messages = await getMessages();
-
   return (
     <html>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NextIntlClientProvider messages={messages}>
-          <Providers>{children}</Providers>
-        </NextIntlClientProvider>
+        <Providers>{children}</Providers>
         <SoundInitializer />
-        <SoundControlFAB />
       </body>
     </html>
   );
