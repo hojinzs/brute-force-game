@@ -1,13 +1,13 @@
 import { PrismaService } from '../src/shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 
-// Migration script to transfer data from Supabase to new PostgreSQL database
+// Migration script to seed or transfer legacy data into PostgreSQL
 async function runMigration() {
   const prismaService = new PrismaService();
 
   try {
     await prismaService.onModuleInit();
-    console.log('🚀 Starting data migration from Supabase to PostgreSQL...');
+    console.log('🚀 Starting data migration to PostgreSQL...');
 
     // Clear existing data
     console.log('🗑️  Clearing existing data...');
@@ -19,7 +19,7 @@ async function runMigration() {
 
     // Migrate Users
     console.log('👥 Migrating users...');
-    // TODO: Replace with actual Supabase client connection
+    // TODO: Replace with actual legacy data source connection
     // For now, create a default admin user
     const adminUser = await prismaService.user.create({
       data: {
@@ -39,7 +39,7 @@ async function runMigration() {
 
     // Migrate Blocks
     console.log('🧩 Migrating blocks...');
-    // TODO: Replace with actual Supabase data fetch
+    // TODO: Replace with actual legacy data fetch
     // For now, create a sample block
     const sampleBlock = await prismaService.block.create({
       data: {
@@ -78,7 +78,7 @@ async function runMigration() {
     console.log('');
     console.log('⚠️  Note: This is a sample migration.');
     console.log('   To migrate real data, update this script to');
-    console.log('   connect to your Supabase instance and fetch data.');
+    console.log('   connect to your legacy data source and fetch data.');
 
   } catch (error) {
     console.error('❌ Migration failed:', error);

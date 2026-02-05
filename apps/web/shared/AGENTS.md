@@ -8,7 +8,7 @@ Cross-cutting utilities, reusable components, and infrastructure shared across f
 ## STRUCTURE
 ```
 shared/
-├── api/        # Supabase client and API utilities
+├── api/        # API clients and adapters
 ├── ui/          # Reusable UI atoms (LoadingSpinner, CountdownTimer)
 ├── store/       # Zustand global state management
 ├── sounds/       # ZZFX audio system and event emitter
@@ -19,7 +19,7 @@ shared/
 ## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
-| Supabase client | `api/supabase-client.ts` | Main DB client initialization |
+| API client | `api/api-client.ts` | Main backend client initialization |
 | Global state | `store/game-store.ts` | Zustand store for app-wide state |
 | Audio system | `sounds/manager.ts` | ZZFX procedural sound engine |
 | UI atoms | `ui/LoadingSpinner.tsx` | Generic components without business logic |
@@ -31,4 +31,4 @@ shared/
 - **Zustand**: All global state managed in `store/`
 - **ZZFX**: Procedural audio via `emitSoundEvent` events
 - **Reusability**: UI components must work across different contexts
-- **API Client**: Single source of truth for Supabase configuration
+- **API Client**: Single source of truth for backend configuration

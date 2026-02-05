@@ -8,11 +8,6 @@ module.exports = {
   },
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  collectCoverageFrom: [
-    'supabase/functions/_shared/**/*.ts',
-    '!supabase/functions/_shared/**/*.test.ts',
-    '!supabase/functions/_shared/**/__tests__/**',
-  ],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: {

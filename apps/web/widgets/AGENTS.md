@@ -19,7 +19,7 @@ widgets/
 |------|----------|-------|
 | Game engine | `hacking-console/model/use-hacking-console.ts` | 13 hooks, central game logic |
 | Terminal UI | `hacking-console/ui/HackingConsoleView.tsx` | Motion animations, error states |
-| Live updates | `live-feed/ui/LiveFeed.tsx` | Real-time feed via Supabase |
+| Live updates | `live-feed/ui/LiveFeed.tsx` | Real-time feed via SSE |
 | CP display | `stats-panel/ui/StatsPanel.tsx` | Computing Power gauge |
 | Onboarding | `onboarding/ui/OnboardingView.tsx` | New user tutorial |
 

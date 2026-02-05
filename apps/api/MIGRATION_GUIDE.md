@@ -2,7 +2,7 @@
 
 ## 개요
 
-Supabase에서 자체 호스팅 NestJS 백엔드로의 전체 마이그레이션이 완료되었습니다. 이 문서는 설치, 실행, 데이터 마이그레이션 방법을 안내합니다.
+기존 BaaS에서 자체 호스팅 NestJS 백엔드로의 전체 마이그레이션이 완료되었습니다. 이 문서는 설치, 실행, 데이터 마이그레이션 방법을 안내합니다.
 
 ## 🚀 빠른 시작
 
@@ -57,16 +57,8 @@ curl http://localhost:3001/health
 pnpm migrate:demo
 ```
 
-### Supabase 데이터 마이그레이션
-```bash
-# 환경변수 설정
-export SUPABASE_URL="your-supabase-url"
-export SUPABASE_ANON_KEY="your-supabase-anon-key"
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/brute_force"
-
-# 마이그레이션 실행
-pnpm migrate:supabase
-```
+### 데이터 마이그레이션 참고
+기존 데이터 이전은 완료되었습니다. 신규 환경에서는 `pnpm prisma:migrate` 및 `pnpm prisma:seed`를 사용하세요.
 
 ## 🏗️ 아키텍처
 
@@ -95,7 +87,7 @@ http://localhost:3001
 │   ├── GET /:blockId           # 블록 시도 목록
 │   ├── GET /:blockId/stats      # 블록 통계
 │   └── GET /user/my-attempts   # 내 시도 기록
-└── /game                      # 게임 로직 (Supabase Edge Functions 대체)
+└── /game                      # 게임 로직
     ├── POST /generate-block     # 블록 생성
     ├── POST /check-answer       # 정답 확인
     ├── GET /current            # 현재 블록
@@ -167,7 +159,7 @@ curl -X POST http://localhost:3001/users/anonymous \
   }'
 ```
 
-### 블록 생성 (Supabase Edge Functions 대체)
+### 블록 생성
 ```bash
 curl -X POST http://localhost:3001/game/generate-block \
   -H "Content-Type: application/json" \
@@ -178,7 +170,7 @@ curl -X POST http://localhost:3001/game/generate-block \
   }'
 ```
 
-### 정답 확인 (Supabase Edge Functions 대체)
+### 정답 확인
 ```bash
 curl -X POST http://localhost:3001/game/check-answer \
   -H "Content-Type: application/json" \
@@ -202,9 +194,7 @@ curl -X POST http://localhost:3001/game/check-answer \
 - 데이터베이스 인덱스 최적화됨
 
 ### 데이터 마이그레이션
-- Supabase 마이그레이션 시 비밀번호는 이전되지 않습니다
-- 마이그레이션 후 사용자들은 비밀번호 재설정 필요
-- 세션 데이터는 마이그레이션되지 않음 (재로그인 필요)
+- 신규 환경에서는 Prisma 마이그레이션과 시드 데이터를 사용합니다
 
 ## 🚀 배포
 
@@ -256,7 +246,7 @@ docker-compose -f docker-compose.infra.yaml logs -f
 
 ## 🎉 마이그레이션 완료
 
-축하합니다! Supabase에서 자체 호스팅 NestJS 백엔드로의 전체 마이그레이션이 완료되었습니다.
+축하합니다! 기존 BaaS에서 자체 호스팅 NestJS 백엔드로의 전체 마이그레이션이 완료되었습니다.
 
 ### 다음 단계
 1. 프론트엔드 API 연결 수정

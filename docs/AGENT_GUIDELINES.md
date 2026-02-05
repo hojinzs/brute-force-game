@@ -5,10 +5,10 @@
 | Layer | Technology |
 |-------|------------|
 | Frontend | Next.js 16+ (App Router), Tailwind CSS, Motion (Framer Motion) |
-| Backend | Supabase (Edge Functions, Realtime, Auth, PostgreSQL) |
-| State | TanStack Query, Supabase Client SDK |
+| Backend | NestJS, Prisma, PostgreSQL, Redis |
+| State | TanStack Query, Zustand |
 | AI | ChatGPT 4.1 mini / Gemini API |
-| Hosting | Vercel (Frontend), Supabase (Backend) |
+| Hosting | Vercel (Frontend), Self-hosted (Backend) |
 
 ## Design Tokens
 
@@ -41,12 +41,12 @@
 | `blocks` | Hack targets | `id`, `status`, `seed_hint`, `answer_hash`, `winner_id`, `accumulated_points` |
 | `attempts` | Global answer logs | `block_id`, `user_id`, `input_value`, `similarity` |
 
-## Edge Functions
+## Backend API
 
-| Function | Purpose |
+| Endpoint | Purpose |
 |----------|---------|
-| `check-answer` | Validate answer, deduct CP, calculate similarity |
-| `generate-block` | Generate new password via AI from seed hint |
+| `POST /game/check-answer` | Validate answer, deduct CP, calculate similarity |
+| `POST /game/generate-block` | Generate new password via AI from seed hint |
 
 ## Security Rules
 

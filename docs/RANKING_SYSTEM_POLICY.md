@@ -208,30 +208,24 @@ Rank    Player              Points
 
 ### 6.1 랭킹 조회
 
-**Supabase Client Query (권장):**
+**REST API Query (권장):**
 ```typescript
 // Top N 조회
-const { data } = await supabase
-  .from('profiles')
-  .select('id, nickname, total_points')
-  .order('total_points', { ascending: false })
-  .limit(50);
+const { data } = await apiClient.get('/game/rankings', {
+  params: { limit: 50 },
+});
 
 // 특정 유저 순위 조회
-const { data: rank } = await supabase.rpc('get_user_rank', {
-  p_user_id: userId,
-});
+const { data: rank } = await apiClient.get('/game/my-rank');
 ```
 
 ### 6.2 무한스크롤 페이지네이션
 
 ```typescript
 // 페이지별 조회 (50명씩)
-const { data } = await supabase
-  .from('profiles')
-  .select('id, nickname, total_points')
-  .order('total_points', { ascending: false })
-  .range(page * 50, (page + 1) * 50 - 1);
+const { data } = await apiClient.get('/game/rankings', {
+  params: { page, pageSize: 50 },
+});
 ```
 
 ---
@@ -255,8 +249,8 @@ const { data } = await supabase
 
 ### 7.4 포인트 조작 방지
 
-- 모든 포인트 연산은 Edge Function (service_role) 내에서만 수행
-- 클라이언트에서 직접 profiles.total_points 수정 불가 (RLS)
+- 모든 포인트 연산은 서버에서만 수행
+- 클라이언트에서 직접 profiles.total_points 수정 불가 (서버 검증)
 
 ---
 

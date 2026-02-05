@@ -16,8 +16,9 @@ Dev Container를 사용하면 모든 도구가 사전 설치된 일관된 개발
 1. VS Code/Cursor에서 프로젝트 열기
 2. "Dev Containers: Reopen in Container" 실행
 3. 컨테이너 빌드 완료 후 자동으로 `pnpm install` 실행됨
-4. `supabase start` 로 로컬 Supabase 시작
-5. `pnpm dev` 로 개발 서버 시작
+4. 인프라 시작: `docker-compose -f docker-compose.infra.yaml up -d`
+5. API 서버 시작: `pnpm --filter api start:dev`
+6. Web 서버 시작: `pnpm --filter web dev`
 
 자세한 내용은 [.devcontainer/README.md](.devcontainer/README.md)를 참고하세요.
 
@@ -26,26 +27,14 @@ Dev Container를 사용하면 모든 도구가 사전 설치된 일관된 개발
 **Prerequisites:**
 - Node.js 20+ & pnpm
 - Docker Desktop
-- Supabase CLI (`brew install supabase/tap/supabase`)
 
-### 1. Start Local Supabase
-
-```bash
-supabase start
-```
-
-This will start all Supabase services in Docker:
-- **Studio**: http://127.0.0.1:54323
-- **API**: http://127.0.0.1:54321
-- **Database**: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
-
-Credentials will be displayed after startup. Copy the keys to `.env.local`:
+### 1. Start Local Infrastructure
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable_key_from_supabase_start>
-SUPABASE_SECRET_KEY=<secret_key_from_supabase_start>
+docker-compose -f docker-compose.infra.yaml up -d
 ```
+
+This will start PostgreSQL, Redis, and PgAdmin in Docker.
 
 ### 2. Install Dependencies
 
@@ -53,10 +42,11 @@ SUPABASE_SECRET_KEY=<secret_key_from_supabase_start>
 pnpm install
 ```
 
-### 3. Run Development Server
+### 3. Run Development Servers
 
 ```bash
-pnpm dev
+pnpm --filter api start:dev
+pnpm --filter web dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the app.
@@ -66,23 +56,9 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 ### Database Management
 
 ```bash
-supabase db reset          # Reset database (deletes all data)
-supabase db push           # Apply migrations
-supabase migration new     # Create new migration
-```
-
-### Edge Functions
-
-```bash
-supabase functions serve check-answer    # Test function locally
-```
-
-Test with curl:
-```bash
-curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/check-answer' \
-  --header 'Authorization: Bearer <your_jwt_token>' \
-  --header 'Content-Type: application/json' \
-  --data '{"inputValue":"123456","blockId":1}'
+pnpm --filter api prisma:migrate      # Apply migrations
+pnpm --filter api prisma:generate     # Re-generate Prisma client
+pnpm --filter api prisma:seed         # Seed local data
 ```
 
 ### Testing
@@ -123,33 +99,23 @@ pnpm --filter api cli create-genesis \
   --charset "lowercase,uppercase,alphanumeric,symbols"
 ```
 
-### CLI Tools
-
-Test similarity algorithm:
-```bash
-npx tsx supabase/functions/_shared/cli/test-similarity.ts "input" "answer"
-```
-
 ## Project Structure
 
 ```
 brute-force/
-├── app/                   # Next.js App Router
+├── apps/
+│   ├── api/               # NestJS backend
+│   └── web/               # Next.js frontend
 ├── docs/                  # Product specs, design guide
-├── supabase/
-│   ├── functions/         # Edge Functions
-│   │   ├── check-answer/  # Password verification
-│   │   └── _shared/       # Shared utilities & tests
-│   └── migrations/        # Database migrations
 └── public/                # Static assets
 ```
 
 ## Tech Stack
 
 - **Frontend**: Next.js 16, Tailwind CSS v4, Motion (Framer Motion)
-- **Backend**: Supabase (Edge Functions, Realtime, Auth, PostgreSQL)
-- **State**: TanStack Query, Supabase Client SDK
-- **Testing**: Jest, ts-jest
+- **Backend**: NestJS, Prisma, PostgreSQL, Redis
+- **State**: TanStack Query, Zustand
+- **Testing**: Jest, Vitest
 - **AI**: ChatGPT 4.1 mini
 
 ## Commands
@@ -160,9 +126,7 @@ pnpm build            # Production build
 pnpm lint             # ESLint check
 pnpm test             # Run tests
 
-supabase start        # Start Supabase stack
-supabase stop         # Stop Supabase stack
-supabase status       # Show service status
+docker-compose -f docker-compose.infra.yaml up -d  # Start infra
 ```
 
 ## Deployment
@@ -171,27 +135,27 @@ supabase status       # Show service status
 
 When deploying changes that involve both database schema and application code:
 
-1. **Apply migrations first**: Run `supabase db push` to ensure schema changes are applied
-2. **Deploy code changes**: Deploy Edge Functions and application code after migrations complete
+1. **Apply migrations first**: Run `pnpm --filter api prisma:migrate` to ensure schema changes are applied
+2. **Deploy code changes**: Deploy backend and frontend after migrations complete
 
-**Why this matters**: Deploying code that references new database columns before migrations are applied will cause runtime errors. For example, the `check-answer` Edge Function references `solved_attempt_id` column which requires the `20260119000001_add_solved_attempt_id_fk.sql` migration to run first.
+**Why this matters**: Deploying code that references new database columns before migrations are applied will cause runtime errors.
 
 **Example workflow**:
 ```bash
 # 1. Ensure database is up to date
-supabase db push
+pnpm --filter api prisma:migrate
 
-# 2. Deploy Edge Functions
-supabase functions deploy check-answer
+# 2. Deploy backend
+pnpm --filter api build
 
 # 3. Deploy application code
-pnpm build && (your deployment command)
+pnpm --filter web build
 ```
 
 ### Production Deployment Checklist
 
-- [ ] All database migrations applied (`supabase db push`)
-- [ ] Edge Functions deployed with correct environment variables
+- [ ] All database migrations applied (`pnpm --filter api prisma:migrate`)
+- [ ] Backend deployed with correct environment variables
 - [ ] Application build passes (`pnpm build`)
 - [ ] Smoke tests pass on production environment
 
@@ -199,7 +163,7 @@ pnpm build && (your deployment command)
 
 See `docs/` for detailed specifications:
 - `PRODUCT_REQUIREMENTS_DOCUMENT.md` - Full PRD (Korean)
-- `TECHNICAL_REQUIREMENTS_DOCUMENTS.md` - DB schema, Edge Functions
+- `TECHNICAL_REQUIREMENTS_DOCUMENTS.md` - Architecture, data model
 - `DESIGN_CONCEPTS.md` - Design tokens, colors, typography
 - `SYSTEM_POLICIES.md` - Race conditions, abuse prevention
 - `AGENT_GUIDELINES.md` - Quick reference for development
