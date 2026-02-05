@@ -2,18 +2,18 @@ import type { Block, BlockStatus, BlockWithNicknames } from '@/entities/block';
 import type { CharsetType } from '@/shared/lib/charset';
 
 export interface ApiBlock {
-  id: number;
+  id: number | string;
   status: string;
   seedHint: string | null;
   difficultyConfig: {
     length: number;
     charset: CharsetType[];
   };
-  winnerId: string | null;
+  winnerId?: string | null;
   createdAt: string;
-  solvedAt: string | null;
-  createdBy: string | null;
-  accumulatedPoints: number;
+  solvedAt?: string | null;
+  createdBy?: string | null;
+  accumulatedPoints: number | string;
   solvedAttemptId?: string | null;
 }
 
@@ -51,16 +51,19 @@ export function adaptBlockStatus(status: string): BlockStatus {
 }
 
 export function adaptBlock(apiBlock: ApiBlock): Block {
+  const normalizedId = Number(apiBlock.id);
+  const accumulatedPoints = Number(apiBlock.accumulatedPoints);
+
   return {
-    id: apiBlock.id,
+    id: Number.isFinite(normalizedId) ? normalizedId : 0,
     status: adaptBlockStatus(apiBlock.status),
     seed_hint: apiBlock.seedHint,
     difficulty_config: apiBlock.difficultyConfig,
-    winner_id: apiBlock.winnerId,
+    winner_id: apiBlock.winnerId ?? null,
     created_at: apiBlock.createdAt,
-    solved_at: apiBlock.solvedAt,
-    created_by: apiBlock.createdBy,
-    accumulated_points: apiBlock.accumulatedPoints,
+    solved_at: apiBlock.solvedAt ?? null,
+    created_by: apiBlock.createdBy ?? null,
+    accumulated_points: Number.isFinite(accumulatedPoints) ? accumulatedPoints : 0,
     solved_attempt_id: apiBlock.solvedAttemptId,
   };
 }
