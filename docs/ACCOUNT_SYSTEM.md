@@ -47,8 +47,8 @@ Brute Force AI는 누구나 즉시 게임에 참여할 수 있습니다. 이 문
 ### 데이터 저장 구조
 
 ```text
-Supabase Auth (raw_user_meta_data)     →     profiles 테이블 (trigger)
-├── nickname                            │     ├── id (auth.users 기준)
+users 테이블                             →     profiles 테이블
+├── nickname                            │     ├── id (users.id 기준)
 ├── country                             │     ├── nickname
 └── email_consent                       │     ├── country
                                         │     ├── email_consent
@@ -57,7 +57,7 @@ Supabase Auth (raw_user_meta_data)     →     profiles 테이블 (trigger)
                                         │     └── total_points (기본값: 0)
 ```
 
-`handle_new_user()` 트리거가 회원가입 시 profiles 레코드를 자동 생성합니다.
+회원가입 처리 시 트랜잭션으로 profiles 레코드를 함께 생성합니다.
 
 ### 회원가입 후 리디렉션
 

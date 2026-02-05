@@ -25,8 +25,7 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
-    "migrate:demo": "tsx scripts/migrate-data.ts",
-    "migrate:supabase": "tsx scripts/migrate-from-supabase.ts"
+    "migrate:demo": "tsx scripts/migrate-data.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

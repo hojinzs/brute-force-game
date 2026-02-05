@@ -29,4 +29,4 @@ entities/
 - **Hooks**: Named `use-*.ts` (kebab-case) in `model/` directory
 - **Public API**: Exposed only through root `index.ts` barrel exports
 - **Separation**: Business logic in model, presentation in ui, no cross-layer imports
-- **Subscriptions**: Real-time updates via Supabase subscriptions in block entity
+- **Subscriptions**: Real-time updates via SSE subscriptions in block entity

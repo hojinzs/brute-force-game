@@ -36,7 +36,7 @@ app/
 | Task | Location | Notes |
 |------|----------|-------|
 | Main Game Entry | `[locale]/(game)/page.tsx` | Server component, NOT app/page.tsx |
-| Server-side Data Fetch | `[locale]/(game)/page.tsx` | `createServerSupabaseClient()` pattern |
+| Server-side Data Fetch | `[locale]/(game)/page.tsx` | Backend API fetch pattern |
 | Auth Callback | `[locale]/auth/callback/page.tsx` | OAuth session handling, redirect logic |
 | Query Client Config | `providers.tsx` | TanStack Query defaults (60s staleTime) |
 | Game Layout | `[locale]/(game)/layout.tsx` | Game-specific providers, styles |
@@ -47,7 +47,7 @@ app/
 - **Route Groups**: Parenthesized folders `(game)` are URL segments not visible in path
 - **Server Components Default**: All pages in `app/` are server components by default
 - **Client Components**: Use `"use client"` directive in `_components/` or specific pages
-- **Data Fetching**: Server-side via `createServerSupabaseClient()` in RSC; client-side via TanStack Query
+- **Data Fetching**: Server-side via backend API fetch in RSC; client-side via TanStack Query
 - **Dynamic Routes**: `export const dynamic = "force-dynamic"` for pages requiring fresh data
 - **Provider Pattern**: Global providers in `providers.tsx`, route-specific in `layout.tsx`
 - **Type Imports**: Import types from `@/entities/*`, never use `any`
