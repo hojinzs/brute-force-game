@@ -1,51 +1,51 @@
 ## 1. Database Schema
 
-- [ ] 1.1 Prisma schema에 `UserRole` enum 추가 (`USER`, `MASTER`)
-- [ ] 1.2 User 모델에 `role` 필드 추가 (`role UserRole @default(USER)`)
+- [x] 1.1 Prisma schema에 `UserRole` enum 추가 (`USER`, `MASTER`)
+- [x] 1.2 User 모델에 `role` 필드 추가 (`role UserRole @default(USER)`)
 - [ ] 1.3 Migration 생성 (`prisma migrate dev --name add_user_role`)
 - [ ] 1.4 Migration 적용 및 기존 유저 default role 확인
 - [ ] 1.5 Prisma client 재생성 (`prisma generate`)
 
 ## 2. Backend Auth - Role System
 
-- [ ] 2.1 `JwtPayload` interface에 `role` 필드 추가 (`auth.service.ts`)
-- [ ] 2.2 `AuthService.generateTokens()`에서 role 포함하도록 수정
-- [ ] 2.3 `@MasterOnly()` decorator 생성 (`decorators/master-only.decorator.ts`)
-- [ ] 2.4 `MasterGuard` CanActivate guard 구현 (`guards/master.guard.ts`)
-- [ ] 2.5 `MasterGuard`를 AuthModule에 등록 및 export
-- [ ] 2.6 Role 변경 시 기존 세션 무효화 로직 추가 (`sessions` 삭제)
+- [x] 2.1 `JwtPayload` interface에 `role` 필드 추가 (`auth.service.ts`)
+- [x] 2.2 `AuthService.generateTokens()`에서 role 포함하도록 수정
+- [x] 2.3 `@MasterOnly()` decorator 생성 (`decorators/master-only.decorator.ts`)
+- [x] 2.4 `MasterGuard` CanActivate guard 구현 (`guards/master.guard.ts`)
+- [x] 2.5 `MasterGuard`를 AuthModule에 등록 및 export
+- [x] 2.6 Role 변경 시 기존 세션 무효화 로직 추가 (`sessions` 삭제)
 
 ## 3. Backend Admin Module Setup
 
-- [ ] 3.1 `apps/api/src/admin/` 디렉토리 구조 생성
-- [ ] 3.2 `AdminModule` 생성 및 `AppModule`에 등록
-- [ ] 3.3 Admin 전용 logger 설정 (감사 로그용)
+- [x] 3.1 `apps/api/src/admin/` 디렉토리 구조 생성
+- [x] 3.2 `AdminModule` 생성 및 `AppModule`에 등록
+- [x] 3.3 Admin 전용 logger 설정 (감사 로그용)
 
 ## 4. Backend Admin Blocks API
 
-- [ ] 4.1 `AdminBlocksController` 생성 (`/api/admin/blocks`)
-- [ ] 4.2 `AdminBlocksService` 생성
-- [ ] 4.3 `GET /api/admin/blocks` - 전체 블록 목록 (pagination, answerPlaintext 포함)
-- [ ] 4.4 `GET /api/admin/blocks/:id` - 블록 상세 (모든 필드)
-- [ ] 4.5 `POST /api/admin/blocks/:id/force-transition` - 상태 강제 전환
-- [ ] 4.6 Force transition DTO 및 validation (targetStatus, hint/password, reason)
-- [ ] 4.7 WAITING_HINT → ACTIVE 전환 로직 (hint 설정)
-- [ ] 4.8 WAITING_PASSWORD → ACTIVE 전환 로직 (password 설정, hash 생성)
-- [ ] 4.9 강제 SOLVED 처리 로직 (winner 없이 종료, 다음 블록 생성)
-- [ ] 4.10 `POST /api/admin/blocks/:id/regenerate-password` - 패스워드 재생성 트리거
-- [ ] 4.11 모든 admin block action에 감사 로그 추가
+- [x] 4.1 `AdminBlocksController` 생성 (`/api/admin/blocks`)
+- [x] 4.2 `AdminBlocksService` 생성
+- [x] 4.3 `GET /api/admin/blocks` - 전체 블록 목록 (pagination, answerPlaintext 포함)
+- [x] 4.4 `GET /api/admin/blocks/:id` - 블록 상세 (모든 필드)
+- [x] 4.5 `POST /api/admin/blocks/:id/force-transition` - 상태 강제 전환
+- [x] 4.6 Force transition DTO 및 validation (targetStatus, hint/password, reason)
+- [x] 4.7 WAITING_HINT → ACTIVE 전환 로직 (hint 설정)
+- [x] 4.8 WAITING_PASSWORD → ACTIVE 전환 로직 (password 설정, hash 생성)
+- [x] 4.9 강제 SOLVED 처리 로직 (winner 없이 종료, 다음 블록 생성)
+- [x] 4.10 `POST /api/admin/blocks/:id/regenerate-password` - 패스워드 재생성 트리거
+- [x] 4.11 모든 admin block action에 감사 로그 추가
 
 ## 5. Backend Admin Users API
 
-- [ ] 5.1 `AdminUsersController` 생성 (`/api/admin/users`)
-- [ ] 5.2 `AdminUsersService` 생성
-- [ ] 5.3 `GET /api/admin/users` - 유저 목록 (pagination, filtering, search)
-- [ ] 5.4 `GET /api/admin/users/stats` - 유저 통계 (total, anonymous, masters, active24h)
-- [ ] 5.5 `GET /api/admin/users/:id` - 유저 상세 (attempt 통계 포함)
-- [ ] 5.6 `PUT /api/admin/users/:id/role` - role 변경 (self-change 금지)
-- [ ] 5.7 Role 변경 시 대상 유저 세션 invalidate
-- [ ] 5.8 `POST /api/admin/users/:id/reset-cp` - CP 리셋
-- [ ] 5.9 모든 admin user action에 감사 로그 추가
+- [x] 5.1 `AdminUsersController` 생성 (`/api/admin/users`)
+- [x] 5.2 `AdminUsersService` 생성
+- [x] 5.3 `GET /api/admin/users` - 유저 목록 (pagination, filtering, search)
+- [x] 5.4 `GET /api/admin/users/stats` - 유저 통계 (total, anonymous, masters, active24h)
+- [x] 5.5 `GET /api/admin/users/:id` - 유저 상세 (attempt 통계 포함)
+- [x] 5.6 `PUT /api/admin/users/:id/role` - role 변경 (self-change 금지)
+- [x] 5.7 Role 변경 시 대상 유저 세션 invalidate
+- [x] 5.8 `POST /api/admin/users/:id/reset-cp` - CP 리셋
+- [x] 5.9 모든 admin user action에 감사 로그 추가
 
 ## 6. Backend Admin SSE
 
