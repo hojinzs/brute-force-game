@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { User } from '../../prisma/generated/client';
+import { User, UserRole } from '../../prisma/generated/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcrypt';
 
@@ -10,6 +10,7 @@ export interface JwtPayload {
   email: string;
   nickname: string;
   isAnonymous: boolean;
+  role: UserRole;
 }
 
 export interface AuthTokens {
@@ -40,6 +41,7 @@ export class AuthService {
       email: user.email || '',
       nickname: user.nickname,
       isAnonymous: user.isAnonymous,
+      role: user.role,
     };
 
     const accessToken = this.jwtService.sign(payload, {
