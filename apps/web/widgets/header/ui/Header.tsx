@@ -23,13 +23,6 @@ export function Header() {
 
         {!loading && (
           <nav className="flex items-center gap-2">
-            <Link
-              href="/settings"
-              className="px-3 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium transition-colors"
-              title="Settings"
-            >
-              ⚙️
-            </Link>
             {user ? (
               user.is_anonymous ? (
                 <>
