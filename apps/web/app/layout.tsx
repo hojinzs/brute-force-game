@@ -2,6 +2,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
+import { SoundInitializer } from "@/shared/sounds/sound-initializer";
+import { SoundControlFAB } from "@/shared/sounds/ui/SoundControlFAB";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -55,6 +57,8 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
+        <SoundInitializer />
+        <SoundControlFAB />
       </body>
     </html>
   );

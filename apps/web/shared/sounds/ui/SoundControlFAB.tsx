@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSoundSettingsStore } from "../sound-settings-store";
-import { SoundSettingsModal } from "./SoundSettingsModal";
+import { GameSettingsModal } from "./GameSettingsModal";
 
 export function SoundControlFAB() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -50,7 +50,7 @@ export function SoundControlFAB() {
         </button>
       </div>
 
-      <SoundSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <GameSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>
   );
 }

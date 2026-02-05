@@ -36,25 +36,8 @@ export default function SignupPage() {
                 : t("auth.signup.joinBruteForce")}
             </p>
 
-            <div className="bg-[#0f172a]/50 p-6 rounded-xl border border-[#334155]/50">
-              <h3 className="text-slate-200 font-semibold mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                {t("auth.signup.whyEmail")}
-              </h3>
-              <ul className="space-y-3 text-sm">
-                <li className="flex gap-3">
-                  <span className="text-slate-500">01</span>
-                  <span>{t("auth.signup.emailReason1")}</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-slate-500">02</span>
-                  <span>{t("auth.signup.emailReason2")}</span>
-                </li>
-              </ul>
-            </div>
-
             <p className="text-sm text-slate-500">
-              {t("auth.signup.countryDisclaimer")}
+              {t('auth.signup.countryDisclaimer')}
             </p>
           </div>
         </div>
