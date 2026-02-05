@@ -1,5 +1,11 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { BlockStatus } from '../../../prisma/generated/client';
+
+enum BlockStatus {
+  WAITING_HINT = 'WAITING_HINT',
+  WAITING_PASSWORD = 'WAITING_PASSWORD',
+  ACTIVE = 'ACTIVE',
+  SOLVED = 'SOLVED',
+}
 
 export class ForceTransitionDto {
   @IsEnum(BlockStatus)

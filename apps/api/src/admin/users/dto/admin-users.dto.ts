@@ -1,5 +1,9 @@
 import { IsEnum } from 'class-validator';
-import { UserRole } from '../../../prisma/generated/client';
+
+enum UserRole {
+  USER = 'USER',
+  MASTER = 'MASTER',
+}
 
 export class UpdateUserRoleDto {
   @IsEnum(UserRole)

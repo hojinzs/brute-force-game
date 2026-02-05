@@ -8,7 +8,6 @@ import { PrismaService } from '../../shared/database/prisma.service';
 import { PasswordService } from '../../shared/services/password.service';
 import { SseService } from '../../sse/sse.service';
 import { ForceTransitionDto } from './dto/admin-blocks.dto';
-import { BlockStatus } from '../../prisma/generated/client';
 
 @Injectable()
 export class AdminBlocksService {
@@ -188,7 +187,7 @@ export class AdminBlocksService {
   private async forceActivate(
     block: {
       id: bigint;
-      status: BlockStatus;
+      status: string;
       difficultyConfig: unknown;
       blockMasterId: string | null;
       seedHint: string | null;
@@ -252,7 +251,7 @@ export class AdminBlocksService {
   private async forceSolve(
     blockId: bigint,
     block: {
-      status: BlockStatus;
+      status: string;
       difficultyConfig: unknown;
     },
     reason: string,
@@ -310,7 +309,7 @@ export class AdminBlocksService {
     });
   }
 
-  private emitActiveUpdate(block: { id: bigint; status: BlockStatus }) {
+  private emitActiveUpdate(block: { id: bigint; status: string }) {
     this.sseService.emitBlockStatusChange({
       blockId: block.id.toString(),
       status: 'ACTIVE',
@@ -321,8 +320,8 @@ export class AdminBlocksService {
     action: string,
     actorId: string,
     targetBlockId: bigint,
-    previousStatus: BlockStatus,
-    newStatus: BlockStatus,
+    previousStatus: string,
+    newStatus: string,
     reason: string,
   ) {
     this.logger.log({
