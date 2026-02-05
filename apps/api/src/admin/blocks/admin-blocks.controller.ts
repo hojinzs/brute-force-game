@@ -28,6 +28,8 @@ export class AdminBlocksController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Blocks retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   async listBlocks(@Query('page') page?: string, @Query('limit') limit?: string) {
     const pageNum = page ? Math.max(1, parseInt(page, 10)) : 1;
     const limitNum = limit ? Math.max(1, parseInt(limit, 10)) : 20;
@@ -38,6 +40,10 @@ export class AdminBlocksController {
   @ApiOperation({ summary: 'Get block detail (admin)' })
   @ApiParam({ name: 'id', description: 'Block ID' })
   @ApiResponse({ status: 200, description: 'Block retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Block not found' })
   async getBlock(@Param('id') id: string) {
     return this.adminBlocksService.getBlockById(BigInt(id));
   }
@@ -47,6 +53,10 @@ export class AdminBlocksController {
   @ApiOperation({ summary: 'Force block status transition (admin)' })
   @ApiParam({ name: 'id', description: 'Block ID' })
   @ApiResponse({ status: 200, description: 'Block transitioned successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Block not found' })
   async forceTransition(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
@@ -60,6 +70,10 @@ export class AdminBlocksController {
   @ApiOperation({ summary: 'Regenerate block password (admin)' })
   @ApiParam({ name: 'id', description: 'Block ID' })
   @ApiResponse({ status: 200, description: 'Password regenerated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Block not found' })
   async regeneratePassword(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
