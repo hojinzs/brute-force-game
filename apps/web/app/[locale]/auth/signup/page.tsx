@@ -117,31 +117,6 @@ export default function SignupPage() {
             <p className="text-sm text-slate-500">
               {t('auth.signup.countryDisclaimer')}
             </p>
-            
-            <div className="bg-[#0f172a]/50 p-6 rounded-xl border border-[#334155]/50">
-              <h3 className="text-slate-200 font-semibold mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                Why do we need your email?
-              </h3>
-              <ul className="space-y-3 text-sm">
-                <li className="flex gap-3">
-                  <span className="text-slate-500">01</span>
-                  <span>
-                    To notify you of important game events, such as when a Block is solved or when your similarity score beats the top record.
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-slate-500">02</span>
-                  <span>
-                    To serve as a secure channel for future rewards distribution (Phase 2 Economy).
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            <p className="text-sm text-slate-500">
-              * Country information is collected solely for the purpose of global/regional ranking aggregation.
-            </p>
           </div>
         </div>
       </div>
