@@ -18,8 +18,10 @@ const geistMono = Geist_Mono({
 
 export async function generateMetadata() {
   const t = await getTranslations();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   
   return {
+    metadataBase: new URL(baseUrl),
     title: "Brute Force AI - Global Social Hacking Simulation",
     description: "Crack password and take the prize. A global social hacking simulation where everyone targets the same block.",
     openGraph: {
