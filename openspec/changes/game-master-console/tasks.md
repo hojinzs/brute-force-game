@@ -2,9 +2,9 @@
 
 - [x] 1.1 Prisma schema에 `UserRole` enum 추가 (`USER`, `MASTER`)
 - [x] 1.2 User 모델에 `role` 필드 추가 (`role UserRole @default(USER)`)
-- [ ] 1.3 Migration 생성 (`prisma migrate dev --name add_user_role`)
-- [ ] 1.4 Migration 적용 및 기존 유저 default role 확인
-- [ ] 1.5 Prisma client 재생성 (`prisma generate`)
+- [x] 1.3 Migration 생성 (`prisma migrate dev --name add_user_role`)
+- [x] 1.4 Migration 적용 및 기존 유저 default role 확인
+- [x] 1.5 Prisma client 재생성 (`prisma generate`)
 
 ## 2. Backend Auth - Role System
 
@@ -49,73 +49,73 @@
 
 ## 6. Backend Admin SSE
 
-- [ ] 6.1 Admin SSE stream 엔드포인트 생성 (`GET /api/admin/events`)
-- [ ] 6.2 블록 상태 변경 이벤트 emit
-- [ ] 6.3 신규 유저 등록 이벤트 emit
+- [x] 6.1 Admin SSE stream 엔드포인트 생성 (`GET /api/admin/events`)
+- [x] 6.2 블록 상태 변경 이벤트 emit
+- [x] 6.3 신규 유저 등록 이벤트 emit
 
 ## 7. Backend CLI Command
 
-- [ ] 7.1 `promote-master` CLI command 추가 (`--email` 또는 `--userId`)
-- [ ] 7.2 CLI command 문서화 (README 업데이트)
+- [x] 7.1 `promote-master` CLI command 추가 (`--email` 또는 `--userId`)
+- [x] 7.2 CLI command 문서화 (README 업데이트)
 
 ## 8. Frontend Auth Integration
 
-- [ ] 8.1 User type/interface에 `role` 필드 추가
-- [ ] 8.2 Auth store/context에서 role 관리
-- [ ] 8.3 `useAuth()` hook에서 role 반환
+- [x] 8.1 User type/interface에 `role` 필드 추가
+- [x] 8.2 Auth store/context에서 role 관리
+- [x] 8.3 `useAuth()` hook에서 role 반환
 
 ## 9. Frontend Admin Layout
 
-- [ ] 9.1 `app/[locale]/admin/` route group 생성
-- [ ] 9.2 `admin/layout.tsx` - MASTER role 검증 및 리다이렉트
-- [ ] 9.3 AdminShell 컴포넌트 (header, sidebar, MASTER badge)
-- [ ] 9.4 Admin 전용 스타일링 (dark theme 유지, 구분되는 accent color)
+- [x] 9.1 `app/[locale]/admin/` route group 생성
+- [x] 9.2 `admin/layout.tsx` - MASTER role 검증 및 리다이렉트
+- [x] 9.3 AdminShell 컴포넌트 (header, sidebar, MASTER badge)
+- [x] 9.4 Admin 전용 스타일링 (dark theme 유지, 구분되는 accent color)
 
 ## 10. Frontend Admin Dashboard
 
-- [ ] 10.1 `admin/page.tsx` - 대시보드 페이지 생성
-- [ ] 10.2 현재 블록 상태 카드 (status, ID, 경과 시간)
-- [ ] 10.3 유저 통계 카드 (total, active, online)
-- [ ] 10.4 Stuck 블록 경고 알림 (5분 이상 WAITING 상태)
-- [ ] 10.5 SSE 연결 및 실시간 업데이트
+- [x] 10.1 `admin/page.tsx` - 대시보드 페이지 생성
+- [x] 10.2 현재 블록 상태 카드 (status, ID, 경과 시간)
+- [x] 10.3 유저 통계 카드 (total, active, online)
+- [x] 10.4 Stuck 블록 경고 알림 (5분 이상 WAITING 상태)
+- [x] 10.5 SSE 연결 및 실시간 업데이트
 
 ## 11. Frontend Block Management
 
-- [ ] 11.1 `admin/blocks/page.tsx` - 블록 관리 페이지 생성
-- [ ] 11.2 블록 테이블 (status, ID, winner, timestamps)
-- [ ] 11.3 블록 상세 패널 (클릭 시 표시, answerPlaintext 포함)
-- [ ] 11.4 Force transition UI (WAITING 상태 블록용)
-- [ ] 11.5 Skip block 버튼 및 확인 dialog
-- [ ] 11.6 Regenerate password 버튼 (WAITING_PASSWORD용)
-- [ ] 11.7 TanStack Query hooks for admin blocks API
+- [x] 11.1 `admin/blocks/page.tsx` - 블록 관리 페이지 생성
+- [x] 11.2 블록 테이블 (status, ID, winner, timestamps)
+- [x] 11.3 블록 상세 패널 (클릭 시 표시, answerPlaintext 포함)
+- [x] 11.4 Force transition UI (WAITING 상태 블록용)
+- [x] 11.5 Skip block 버튼 및 확인 dialog
+- [x] 11.6 Regenerate password 버튼 (WAITING_PASSWORD용)
+- [x] 11.7 TanStack Query hooks for admin blocks API
 
 ## 12. Frontend User Management
 
-- [ ] 12.1 `admin/users/page.tsx` - 유저 관리 페이지 생성
-- [ ] 12.2 유저 테이블 (nickname, email, role, points, createdAt)
-- [ ] 12.3 검색 및 필터 UI (nickname 검색, role 필터)
-- [ ] 12.4 유저 상세 패널 (클릭 시 표시, activity 포함)
-- [ ] 12.5 Role 변경 dropdown 및 확인 dialog
-- [ ] 12.6 CP 리셋 버튼
-- [ ] 12.7 TanStack Query hooks for admin users API
+- [x] 12.1 `admin/users/page.tsx` - 유저 관리 페이지 생성
+- [x] 12.2 유저 테이블 (nickname, email, role, points, createdAt)
+- [x] 12.3 검색 및 필터 UI (nickname 검색, role 필터)
+- [x] 12.4 유저 상세 패널 (클릭 시 표시, activity 포함)
+- [x] 12.5 Role 변경 dropdown 및 확인 dialog
+- [x] 12.6 CP 리셋 버튼
+- [x] 12.7 TanStack Query hooks for admin users API
 
 ## 13. Frontend Mobile Responsiveness
 
-- [ ] 13.1 Admin layout 반응형 적용 (sidebar collapse)
-- [ ] 13.2 Dashboard 모바일 뷰
-- [ ] 13.3 Block/User 테이블 모바일 뷰 (카드 형태)
-- [ ] 13.4 Critical action 2-tap 접근성 확인
+- [x] 13.1 Admin layout 반응형 적용 (sidebar collapse)
+- [x] 13.2 Dashboard 모바일 뷰
+- [x] 13.3 Block/User 테이블 모바일 뷰 (카드 형태)
+- [x] 13.4 Critical action 2-tap 접근성 확인
 
 ## 14. Testing
 
-- [ ] 14.1 MasterGuard unit test
-- [ ] 14.2 AdminBlocksController integration test (guard 적용 확인)
-- [ ] 14.3 AdminUsersController integration test (self-role-change 금지 확인)
-- [ ] 14.4 Force transition 시나리오 테스트
-- [ ] 14.5 Frontend admin layout role 검증 테스트
+- [x] 14.1 MasterGuard unit test
+- [x] 14.2 AdminBlocksController integration test (guard 적용 확인)
+- [x] 14.3 AdminUsersController integration test (self-role-change 금지 확인)
+- [x] 14.4 Force transition 시나리오 테스트
+- [x] 14.5 Frontend admin layout role 검증 테스트
 
 ## 15. Documentation & Deployment
 
-- [ ] 15.1 README에 admin CLI 명령어 추가
-- [ ] 15.2 첫 MASTER 유저 생성 방법 문서화
-- [ ] 15.3 Migration 순서 확인 (DB → Backend → Frontend)
+- [x] 15.1 README에 admin CLI 명령어 추가
+- [x] 15.2 첫 MASTER 유저 생성 방법 문서화
+- [x] 15.3 Migration 순서 확인 (DB → Backend → Frontend)

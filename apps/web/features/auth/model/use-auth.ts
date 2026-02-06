@@ -9,6 +9,7 @@ export type AuthUser = {
   id: string;
   email?: string;
   is_anonymous?: boolean;
+  role?: 'USER' | 'MASTER';
 };
 
 export type SignUpParams = {
@@ -40,6 +41,7 @@ export function useAuth() {
     id: storeUser.id,
     email: storeUser.email,
     is_anonymous: storeUser.isAnonymous,
+    role: storeUser.role,
   } : null;
 
   const signInWithPassword = useCallback(

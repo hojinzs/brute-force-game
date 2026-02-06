@@ -90,8 +90,8 @@ export class SseService {
       timestamp: new Date(),
     };
     
-    // Only emit via EventEmitter - SseGateway will handle the broadcasting
     this.eventEmitter.emit('sse.block-status', eventData);
+    this.eventEmitter.emit('block.statusChanged', event);
   }
 
   emitRankingUpdate(event: RankingEvent) {

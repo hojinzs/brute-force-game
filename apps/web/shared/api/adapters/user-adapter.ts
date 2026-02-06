@@ -1,11 +1,12 @@
 import type { Profile } from '@/entities/profile';
-import type { User } from '../store/auth-store';
+import type { User, UserRole } from '@/shared/store/auth-store';
 
 export interface ApiUser {
   id: string;
   email?: string;
   nickname: string;
   isAnonymous: boolean;
+  role?: UserRole;
   cpCount?: number;
   totalPoints?: number;
   country?: string;
@@ -26,6 +27,7 @@ export function adaptUser(apiUser: ApiUser): User {
     email: apiUser.email,
     nickname: apiUser.nickname,
     isAnonymous: apiUser.isAnonymous,
+    role: apiUser.role || 'USER',
   };
 }
 

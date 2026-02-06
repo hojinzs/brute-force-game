@@ -8,10 +8,12 @@ import { AdminBlocksController } from './blocks/admin-blocks.controller';
 import { AdminBlocksService } from './blocks/admin-blocks.service';
 import { AdminUsersController } from './users/admin-users.controller';
 import { AdminUsersService } from './users/admin-users.service';
+import { AdminEventsController } from './events/admin-events.controller';
+import { AdminEventsService } from './events/admin-events.service';
 
 @Module({
   imports: [AuthModule, DatabaseModule, BlocksModule, UsersModule, SseModule],
-  controllers: [AdminBlocksController, AdminUsersController],
-  providers: [AdminBlocksService, AdminUsersService],
+  controllers: [AdminBlocksController, AdminUsersController, AdminEventsController],
+  providers: [AdminBlocksService, AdminUsersService, AdminEventsService],
 })
 export class AdminModule {}

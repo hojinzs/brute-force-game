@@ -99,6 +99,30 @@ pnpm --filter api cli create-genesis \
   --charset "lowercase,uppercase,alphanumeric,symbols"
 ```
 
+#### Promote User to MASTER
+
+Promotes a user to MASTER role for accessing the admin console. Invalidates all existing sessions for the user.
+
+```bash
+# From project root
+pnpm --filter api cli promote-master --email "admin@example.com"
+
+# Or by user ID:
+pnpm --filter api cli promote-master --userId "user-id-here"
+
+# Options:
+#   --email <string>    Email of the user to promote
+#   --userId <string>   User ID of the user to promote
+#   Note: Either --email or --userId is required
+```
+
+**Creating the First MASTER User:**
+
+1. First, create a regular user account through the web UI (sign up)
+2. Then, promote that user to MASTER using the CLI command above
+3. The user will need to log out and log back in for the role change to take effect
+4. Access the admin console at `/admin` after logging back in
+
 ## Project Structure
 
 ```

@@ -1,4 +1,5 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../shared/database/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { CpService } from '../shared/services/cp.service';
@@ -11,6 +12,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
     private readonly cpService: CpService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private serializeUser<T extends { totalPoints: bigint }>(
@@ -49,8 +51,15 @@ export class UsersService {
         country: registerDto.country,
         emailConsent: registerDto.emailConsent || false,
         emailConsentAt: registerDto.emailConsent ? new Date() : null,
-        cpCount: 50, // Authenticated users start with 50 CP
+        cpCount: 50,
       },
+    });
+
+    this.eventEmitter.emit('user.registered', {
+      userId: user.id,
+      nickname: user.nickname,
+      isAnonymous: false,
+      timestamp: new Date(),
     });
 
     const tokens = this.authService.generateTokens(user);
@@ -136,8 +145,15 @@ export class UsersService {
       data: {
         nickname: createAnonymousUserDto.nickname,
         isAnonymous: true,
-        cpCount: 5, // Anonymous users start with 5 CP
+        cpCount: 5,
       },
+    });
+
+    this.eventEmitter.emit('user.registered', {
+      userId: user.id,
+      nickname: user.nickname,
+      isAnonymous: true,
+      timestamp: new Date(),
     });
 
     const tokens = this.authService.generateTokens(user);
