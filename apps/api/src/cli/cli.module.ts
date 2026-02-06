@@ -4,6 +4,7 @@ import { DatabaseModule } from '../shared/database/database.module';
 import { BlocksModule } from '../blocks/blocks.module';
 import { SseModule } from '../sse/sse.module';
 import { CreateGenesisCommand } from './create-genesis.command';
+import { PromoteMasterCommand } from './promote-master.command';
 
 @Module({
   imports: [
@@ -12,6 +13,6 @@ import { CreateGenesisCommand } from './create-genesis.command';
     BlocksModule,
     SseModule,
   ],
-  providers: [CreateGenesisCommand],
+  providers: [CreateGenesisCommand, PromoteMasterCommand],
 })
 export class CliModule {}

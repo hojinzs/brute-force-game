@@ -10,6 +10,7 @@ export interface JwtPayload {
   email: string;
   nickname: string;
   isAnonymous: boolean;
+  role: 'USER' | 'MASTER';
 }
 
 export interface AuthTokens {
@@ -40,6 +41,7 @@ export class AuthService {
       email: user.email || '',
       nickname: user.nickname,
       isAnonymous: user.isAnonymous,
+      role: user.role,
     };
 
     const accessToken = this.jwtService.sign(payload, {

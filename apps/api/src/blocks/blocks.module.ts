@@ -28,6 +28,6 @@ import { SseModule } from '../sse/sse.module';
     PasswordService,
     RankingService,
   ],
-  exports: [BlocksService],
+  exports: [BlocksService, PasswordService],
 })
 export class BlocksModule {}

@@ -20,6 +20,7 @@ model User {
   cpCount           Int       @default(50) @map("cp_count")
   lastCpRefillAt    DateTime  @default(now()) @map("last_cp_refill_at")
   totalPoints       BigInt    @default(0) @map("total_points")
+  role              UserRole  @default(USER)
   country           String?
   emailConsent      Boolean   @default(false) @map("email_consent")
   emailConsentAt    DateTime? @map("email_consent_at")
@@ -94,4 +95,9 @@ enum BlockStatus {
   WAITING_PASSWORD
   ACTIVE
   SOLVED
+}
+
+enum UserRole {
+  USER
+  MASTER
 }

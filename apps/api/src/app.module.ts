@@ -10,6 +10,7 @@ import { BlocksModule } from './blocks/blocks.module';
 import { AttemptsModule } from './attempts/attempts.module';
 import { GameModule } from './game/game.module';
 import { SseModule } from './sse/sse.module';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -26,6 +27,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     AttemptsModule,
     GameModule,
     SseModule,
+    AdminModule,
     ThrottlerModule.forRoot([{
       ttl: 60000, // 1 minute
       limit: 100, // 100 requests per minute (general)
