@@ -1,43 +1,60 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { UpdateUserRoleDto } from './dto/admin-users.dto';
 
 @Injectable()
 export class AdminUsersService {
-  private readonly logger = new Logger('AdminAction');
+  private readonly logger = new Logger('AdminAudit');
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getUsers(page: number, limit: number, search?: string, role?: string) {
+  async listUsers({
+    page,
+    limit,
+    role,
+    search,
+  }: {
+    page: number;
+    limit: number;
+    role?: string;
+    search?: string;
+  }) {
     const where: any = {};
-
-    if (search) {
-      where.nickname = { contains: search, mode: 'insensitive' };
-    }
 
     if (role) {
       where.role = role;
+    }
+
+    if (search) {
+      where.OR = [
+        { nickname: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     const [total, users] = await this.prisma.$transaction([
       this.prisma.user.count({ where }),
       this.prisma.user.findMany({
         where,
-        select: {
-          id: true,
-          email: true,
-          nickname: true,
-          role: true,
-          isAnonymous: true,
-          cpCount: true,
-          totalPoints: true,
-          country: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: { select: { attempts: true, wonBlocks: true } },
-        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
+        select: {
+          id: true,
+          nickname: true,
+          email: true,
+          role: true,
+          totalPoints: true,
+          cpCount: true,
+          createdAt: true,
+          isAnonymous: true,
+        },
       }),
     ]);
 
@@ -47,43 +64,57 @@ export class AdminUsersService {
       total,
       users: users.map((user) => ({
         ...user,
-        totalPoints: Number(user.totalPoints),
-        attemptCount: user._count.attempts,
-        wonBlockCount: user._count.wonBlocks,
-        _count: undefined,
+        totalPoints: user.totalPoints.toString(),
       })),
     };
   }
 
-  async getUserStats() {
-    const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  async getStats() {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const [totalUsers, totalAnonymous, totalMasters, activeUsersLast24h, newUsersToday] =
-      await this.prisma.$transaction([
-        this.prisma.user.count(),
-        this.prisma.user.count({ where: { isAnonymous: true } }),
-        this.prisma.user.count({ where: { role: 'MASTER' } }),
-        this.prisma.user.count({ where: { updatedAt: { gte: oneDayAgo } } }),
-        this.prisma.user.count({ where: { createdAt: { gte: startOfDay } } }),
-      ]);
+    const [total, anonymous, masters, active24h] = await this.prisma.$transaction([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { isAnonymous: true } }),
+      this.prisma.user.count({ where: { role: 'MASTER' } }),
+      this.prisma.user.count({
+        where: {
+          sessions: {
+            some: {
+              createdAt: { gte: since },
+            },
+          },
+        },
+      }),
+    ]);
 
     return {
-      totalUsers,
-      totalAnonymous,
-      totalRegistered: totalUsers - totalAnonymous,
-      totalMasters,
-      activeUsersLast24h,
-      newUsersToday,
+      total,
+      anonymous,
+      masters,
+      active24h,
     };
   }
 
-  async getUserById(id: string) {
+  async getUserById(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: {
-        _count: { select: { attempts: true, wonBlocks: true, sessions: true } },
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        nickname: true,
+        role: true,
+        totalPoints: true,
+        cpCount: true,
+        isAnonymous: true,
+        createdAt: true,
+        _count: {
+          select: { attempts: true },
+        },
+        attempts: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { createdAt: true, blockId: true },
+        },
       },
     });
 
@@ -91,82 +122,62 @@ export class AdminUsersService {
       throw new NotFoundException('User not found');
     }
 
-    // Get recent attempt stats
-    const recentAttempts = await this.prisma.attempt.count({
-      where: {
-        userId: id,
-        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-      },
-    });
-
-    const successfulAttempts = await this.prisma.attempt.count({
-      where: { userId: id, similarity: 100 },
-    });
-
-    const { passwordHash, ...userData } = user;
-
     return {
-      ...userData,
-      totalPoints: Number(user.totalPoints),
+      ...user,
+      totalPoints: user.totalPoints.toString(),
       attemptCount: user._count.attempts,
-      wonBlockCount: user._count.wonBlocks,
-      activeSessions: user._count.sessions,
-      recentAttempts7d: recentAttempts,
-      successfulAttempts,
-      successRate: user._count.attempts > 0
-        ? ((successfulAttempts / user._count.attempts) * 100).toFixed(2)
-        : '0',
-      _count: undefined,
+      lastAttempt: user.attempts[0] || null,
     };
   }
 
-  async updateUserRole(targetUserId: string, newRole: string, actorId: string) {
-    if (targetUserId === actorId) {
-      throw new BadRequestException('Cannot modify own role');
-    }
-
-    if (newRole !== 'USER' && newRole !== 'MASTER') {
-      throw new BadRequestException('Invalid role. Must be USER or MASTER');
+  async updateUserRole(userId: string, dto: UpdateUserRoleDto, actorId: string) {
+    if (userId === actorId) {
+      throw new ForbiddenException('Cannot change your own role');
     }
 
     const user = await this.prisma.user.findUnique({
-      where: { id: targetUserId },
+      where: { id: userId },
+      select: { id: true, role: true },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const previousRole = user.role;
+    if (user.role === dto.role) {
+      throw new BadRequestException('Role is already set');
+    }
 
     const updated = await this.prisma.user.update({
-      where: { id: targetUserId },
-      data: { role: newRole as any },
+      where: { id: userId },
+      data: { role: dto.role },
+      select: {
+        id: true,
+        nickname: true,
+        email: true,
+        role: true,
+      },
     });
 
-    // Invalidate all sessions for the target user (force re-login with new role in JWT)
-    await this.prisma.session.deleteMany({
-      where: { userId: targetUserId },
+    await this.prisma.session.deleteMany({ where: { userId } });
+
+    this.logger.log({
+      type: 'ADMIN_ACTION',
+      action: 'UPDATE_USER_ROLE',
+      actorId,
+      targetUserId: userId,
+      previousRole: user.role,
+      newRole: dto.role,
+      timestamp: new Date().toISOString(),
     });
 
-    this.logAdminAction('CHANGE_USER_ROLE', actorId, {
-      targetUserId,
-      previousRole,
-      newRole,
-    });
-
-    return {
-      id: updated.id,
-      nickname: updated.nickname,
-      role: updated.role,
-      previousRole,
-      sessionsInvalidated: true,
-    };
+    return updated;
   }
 
-  async resetUserCp(targetUserId: string, actorId: string) {
+  async resetCp(userId: string, actorId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { id: targetUserId },
+      where: { id: userId },
+      select: { id: true },
     });
 
     if (!user) {
@@ -174,33 +185,25 @@ export class AdminUsersService {
     }
 
     const updated = await this.prisma.user.update({
-      where: { id: targetUserId },
+      where: { id: userId },
       data: {
         cpCount: 50,
         lastCpRefillAt: new Date(),
       },
+      select: {
+        id: true,
+        cpCount: true,
+      },
     });
 
-    this.logAdminAction('RESET_USER_CP', actorId, {
-      targetUserId,
-      previousCp: user.cpCount,
-      newCp: 50,
-    });
-
-    return {
-      id: updated.id,
-      nickname: updated.nickname,
-      cpCount: updated.cpCount,
-    };
-  }
-
-  private logAdminAction(action: string, actorId: string, details: Record<string, any>) {
     this.logger.log({
       type: 'ADMIN_ACTION',
-      action,
+      action: 'RESET_CP',
       actorId,
-      ...details,
+      targetUserId: userId,
       timestamp: new Date().toISOString(),
     });
+
+    return updated;
   }
 }

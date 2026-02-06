@@ -1,24 +1,41 @@
+## Architecture
+
+The admin console SHALL be implemented as a **separate Next.js application** at `/apps/console`, independent from the main web app (`/apps/web`).
+
+### Technical Stack (mirrors main web app)
+- **Framework**: Next.js 16 (App Router)
+- **Styling**: Tailwind CSS v4
+- **State**: TanStack Query (server state), Zustand (client state)
+- **API**: Shared NestJS backend (`/apps/api`)
+- **Path Alias**: `@console/*` pointing to `/apps/console/*`
+
+### Deployment
+- Separate deployment target (e.g., `console.bruteforce.app` or internal-only domain)
+- Can be restricted at infrastructure level (VPN, IP whitelist, etc.)
+
+---
+
 ## ADDED Requirements
 
-### Requirement: Admin console route protection
+### Requirement: Admin console authentication
 
-The admin console pages SHALL only be accessible to authenticated users with MASTER role.
+The admin console app SHALL only be accessible to authenticated users with MASTER role.
 
 #### Scenario: Master user accesses admin console
-- **WHEN** a user with MASTER role navigates to `/admin`
+- **WHEN** a user with MASTER role navigates to the console app root (`/`)
 - **THEN** the admin console dashboard SHALL be displayed
 
 #### Scenario: Regular user redirected
-- **WHEN** a user with USER role navigates to `/admin`
-- **THEN** the system SHALL redirect to the main game page with an error toast "Access denied"
+- **WHEN** a user with USER role navigates to the console app
+- **THEN** the system SHALL display an "Access denied" error page with link to main game
 
 #### Scenario: Unauthenticated user redirected
-- **WHEN** an unauthenticated user navigates to `/admin`
-- **THEN** the system SHALL redirect to the login page
+- **WHEN** an unauthenticated user navigates to the console app
+- **THEN** the system SHALL redirect to the login page (can use shared auth or dedicated login)
 
 ### Requirement: Admin dashboard overview
 
-The admin console SHALL display a dashboard with key system metrics at `/admin`.
+The admin console SHALL display a dashboard with key system metrics at `/` (app root).
 
 #### Scenario: Dashboard shows block status
 - **WHEN** a MASTER user views the admin dashboard
@@ -34,10 +51,10 @@ The admin console SHALL display a dashboard with key system metrics at `/admin`.
 
 ### Requirement: Block management page
 
-The admin console SHALL provide a block management page at `/admin/blocks`.
+The admin console SHALL provide a block management page at `/blocks`.
 
 #### Scenario: View all blocks
-- **WHEN** a MASTER user navigates to `/admin/blocks`
+- **WHEN** a MASTER user navigates to `/blocks`
 - **THEN** the page SHALL display a table of all blocks with status, ID, winner, and timestamps
 
 #### Scenario: View block details
@@ -54,10 +71,10 @@ The admin console SHALL provide a block management page at `/admin/blocks`.
 
 ### Requirement: User management page
 
-The admin console SHALL provide a user management page at `/admin/users`.
+The admin console SHALL provide a user management page at `/users`.
 
 #### Scenario: View user list
-- **WHEN** a MASTER user navigates to `/admin/users`
+- **WHEN** a MASTER user navigates to `/users`
 - **THEN** the page SHALL display a searchable, filterable table of all users
 
 #### Scenario: Search users

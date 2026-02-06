@@ -1,47 +1,49 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
-import { BlocksService } from '../../blocks/blocks.service';
 import { PasswordService } from '../../shared/services/password.service';
 import { SseService } from '../../sse/sse.service';
+import { ForceTransitionDto } from './dto/admin-blocks.dto';
 
 @Injectable()
 export class AdminBlocksService {
-  private readonly logger = new Logger('AdminAction');
+  private readonly logger = new Logger('AdminAudit');
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly blocksService: BlocksService,
     private readonly passwordService: PasswordService,
     private readonly sseService: SseService,
   ) {}
 
-  async getBlocks(page: number, limit: number) {
+  async listBlocks({ page, limit }: { page: number; limit: number }) {
     const [total, blocks] = await this.prisma.$transaction([
       this.prisma.block.count(),
       this.prisma.block.findMany({
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
         select: {
           id: true,
           status: true,
           seedHint: true,
-          difficultyConfig: true,
           answerPlaintext: true,
           answerHash: true,
           accumulatedPoints: true,
-          winnerId: true,
-          blockMasterId: true,
-          waitingStartedAt: true,
-          passwordRetryCount: true,
-          previousBlockId: true,
-          solvedAttemptId: true,
           createdAt: true,
           solvedAt: true,
-          winner: { select: { id: true, nickname: true } },
-          blockMaster: { select: { id: true, nickname: true } },
-          _count: { select: { attempts: true } },
+          waitingStartedAt: true,
+          winner: {
+            select: {
+              id: true,
+              nickname: true,
+              isAnonymous: true,
+            },
+          },
         },
-        orderBy: { id: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
       }),
     ]);
 
@@ -50,22 +52,9 @@ export class AdminBlocksService {
       limit,
       total,
       blocks: blocks.map((block) => ({
+        ...block,
         id: Number(block.id),
-        status: block.status,
-        seedHint: block.seedHint,
-        difficultyConfig: block.difficultyConfig,
-        answerPlaintext: block.answerPlaintext,
         accumulatedPoints: Number(block.accumulatedPoints),
-        winnerId: block.winnerId,
-        winner: block.winner,
-        blockMasterId: block.blockMasterId,
-        blockMaster: block.blockMaster,
-        waitingStartedAt: block.waitingStartedAt,
-        passwordRetryCount: block.passwordRetryCount,
-        previousBlockId: block.previousBlockId ? Number(block.previousBlockId) : null,
-        createdAt: block.createdAt,
-        solvedAt: block.solvedAt,
-        attemptCount: block._count.attempts,
       })),
     };
   }
@@ -74,9 +63,30 @@ export class AdminBlocksService {
     const block = await this.prisma.block.findUnique({
       where: { id },
       include: {
-        winner: { select: { id: true, nickname: true, email: true } },
-        blockMaster: { select: { id: true, nickname: true, email: true } },
-        _count: { select: { attempts: true } },
+        winner: {
+          select: {
+            id: true,
+            nickname: true,
+            isAnonymous: true,
+          },
+        },
+        blockMaster: {
+          select: {
+            id: true,
+            nickname: true,
+            isAnonymous: true,
+          },
+        },
+        previousBlock: {
+          select: {
+            id: true,
+            status: true,
+            seedHint: true,
+          },
+        },
+        _count: {
+          select: { attempts: true },
+        },
       },
     });
 
@@ -85,152 +95,197 @@ export class AdminBlocksService {
     }
 
     return {
+      ...block,
       id: Number(block.id),
-      status: block.status,
-      seedHint: block.seedHint,
-      difficultyConfig: block.difficultyConfig,
-      answerPlaintext: block.answerPlaintext,
-      answerHash: block.answerHash,
-      accumulatedPoints: Number(block.accumulatedPoints),
-      winnerId: block.winnerId,
-      winner: block.winner,
-      blockMasterId: block.blockMasterId,
-      blockMaster: block.blockMaster,
-      waitingStartedAt: block.waitingStartedAt,
-      passwordRetryCount: block.passwordRetryCount,
       previousBlockId: block.previousBlockId ? Number(block.previousBlockId) : null,
-      solvedAttemptId: block.solvedAttemptId,
-      createdAt: block.createdAt,
-      solvedAt: block.solvedAt,
+      accumulatedPoints: Number(block.accumulatedPoints),
       attemptCount: block._count.attempts,
     };
   }
 
-  async forceTransition(
-    blockId: bigint,
-    targetStatus: string,
-    masterId: string,
-    options: { hint?: string; password?: string; reason?: string },
-  ) {
+  async forceTransition(blockId: bigint, dto: ForceTransitionDto, actorId: string) {
     const block = await this.prisma.block.findUnique({
       where: { id: blockId },
+      select: {
+        id: true,
+        status: true,
+        difficultyConfig: true,
+        blockMasterId: true,
+        seedHint: true,
+        accumulatedPoints: true,
+      },
     });
 
     if (!block) {
       throw new NotFoundException('Block not found');
     }
 
-    const previousStatus = block.status;
+    if (dto.targetStatus === 'ACTIVE') {
+      return this.forceActivate(block, dto, actorId);
+    }
 
-    if (targetStatus === 'ACTIVE' && block.status === 'WAITING_HINT') {
-      if (!options.hint) {
-        throw new BadRequestException('Hint is required when transitioning from WAITING_HINT to ACTIVE');
+    if (dto.targetStatus === 'SOLVED') {
+      return this.forceSolve(blockId, block, dto.reason, actorId);
+    }
+
+    throw new BadRequestException('Unsupported target status');
+  }
+
+  async regeneratePassword(blockId: bigint, actorId: string) {
+    const block = await this.prisma.block.findUnique({
+      where: { id: blockId },
+      select: {
+        id: true,
+        status: true,
+        difficultyConfig: true,
+      },
+    });
+
+    if (!block) {
+      throw new NotFoundException('Block not found');
+    }
+
+    if (block.status !== 'WAITING_PASSWORD') {
+      throw new BadRequestException('Block is not waiting for password');
+    }
+
+    const password = this.passwordService.generatePassword(block.difficultyConfig as any);
+    const answerHash = await this.passwordService.hashPassword(password);
+
+    const updated = await this.prisma.block.update({
+      where: { id: blockId },
+      data: {
+        answerHash,
+        answerPlaintext: password,
+        passwordRetryCount: { increment: 1 },
+      },
+      select: {
+        id: true,
+        status: true,
+        seedHint: true,
+        difficultyConfig: true,
+        accumulatedPoints: true,
+        createdAt: true,
+      },
+    });
+
+    this.logger.log({
+      type: 'ADMIN_ACTION',
+      action: 'REGENERATE_PASSWORD',
+      actorId,
+      targetBlockId: blockId.toString(),
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      ...updated,
+      id: Number(updated.id),
+      accumulatedPoints: Number(updated.accumulatedPoints),
+    };
+  }
+
+  private async forceActivate(
+    block: {
+      id: bigint;
+      status: string;
+      difficultyConfig: unknown;
+      blockMasterId: string | null;
+      seedHint: string | null;
+      accumulatedPoints: bigint;
+    },
+    dto: ForceTransitionDto,
+    actorId: string,
+  ) {
+    if (block.status === 'WAITING_HINT') {
+      if (!dto.hint) {
+        throw new BadRequestException('Hint is required for WAITING_HINT transition');
       }
 
-      // Set hint first, then transition to WAITING_PASSWORD and immediately to ACTIVE
-      // We need a password too
-      if (!options.password) {
-        // Just set the hint to move to WAITING_PASSWORD
-        await this.blocksService.setSystemHint(blockId, options.hint);
+      const password = dto.password
+        ? dto.password
+        : this.passwordService.generatePassword(block.difficultyConfig as any);
+      const answerHash = await this.passwordService.hashPassword(password);
 
-        this.logAdminAction('FORCE_BLOCK_TRANSITION', masterId, {
-          blockId: Number(blockId),
-          previousStatus,
-          newStatus: 'WAITING_PASSWORD',
-          reason: options.reason,
-        });
-
-        return { blockId: Number(blockId), previousStatus, newStatus: 'WAITING_PASSWORD' };
-      }
-
-      // Set hint then password
-      await this.prisma.block.update({
-        where: { id: blockId },
-        data: { seedHint: options.hint },
-      });
-
-      const answerHash = await this.passwordService.hashPassword(options.password);
-      const updatedBlock = await this.prisma.block.update({
-        where: { id: blockId },
+      const updated = await this.prisma.block.update({
+        where: { id: block.id },
         data: {
+          seedHint: dto.hint,
           answerHash,
-          answerPlaintext: options.password,
+          answerPlaintext: password,
           status: 'ACTIVE',
+          waitingStartedAt: null,
         },
       });
 
-      this.sseService.emitBlockStatusChange({
-        blockId: blockId.toString(),
-        status: 'ACTIVE',
-      });
+      this.emitActiveUpdate(updated);
+      this.logAction('FORCE_TRANSITION', actorId, block.id, block.status, 'ACTIVE', dto.reason);
 
-      this.sseService.emitCurrentBlockUpdate({
-        id: updatedBlock.id.toString(),
-        status: updatedBlock.status,
-        seedHint: updatedBlock.seedHint || '',
-        difficultyConfig: updatedBlock.difficultyConfig,
-        accumulatedPoints: updatedBlock.accumulatedPoints.toString(),
-        attemptCount: 0,
-        createdAt: updatedBlock.createdAt,
-      });
-
-      this.logAdminAction('FORCE_BLOCK_TRANSITION', masterId, {
-        blockId: Number(blockId),
-        previousStatus,
-        newStatus: 'ACTIVE',
-        reason: options.reason,
-      });
-
-      return { blockId: Number(blockId), previousStatus, newStatus: 'ACTIVE' };
+      return { id: Number(updated.id), status: updated.status };
     }
 
-    if (targetStatus === 'ACTIVE' && block.status === 'WAITING_PASSWORD') {
-      if (!options.password) {
-        throw new BadRequestException('Password is required when transitioning from WAITING_PASSWORD to ACTIVE');
+    if (block.status === 'WAITING_PASSWORD') {
+      if (!dto.password) {
+        throw new BadRequestException('Password is required for WAITING_PASSWORD transition');
       }
 
-      await this.blocksService.setPassword(blockId, options.password);
-
-      this.logAdminAction('FORCE_BLOCK_TRANSITION', masterId, {
-        blockId: Number(blockId),
-        previousStatus,
-        newStatus: 'ACTIVE',
-        reason: options.reason,
+      const answerHash = await this.passwordService.hashPassword(dto.password);
+      const updated = await this.prisma.block.update({
+        where: { id: block.id },
+        data: {
+          answerHash,
+          answerPlaintext: dto.password,
+          status: 'ACTIVE',
+          waitingStartedAt: null,
+        },
       });
 
-      return { blockId: Number(blockId), previousStatus, newStatus: 'ACTIVE' };
+      this.emitActiveUpdate(updated);
+      this.logAction('FORCE_TRANSITION', actorId, block.id, block.status, 'ACTIVE', dto.reason);
+
+      return { id: Number(updated.id), status: updated.status };
     }
 
-    if (targetStatus === 'SOLVED') {
-      if (block.status === 'SOLVED') {
-        throw new BadRequestException('Block is already solved');
-      }
+    throw new BadRequestException('Block is not in a waiting state');
+  }
 
-      // Force solve: mark as solved without a winner, create next block
+  private async forceSolve(
+    blockId: bigint,
+    block: {
+      status: string;
+      difficultyConfig: unknown;
+    },
+    reason: string,
+    actorId: string,
+  ) {
+    if (block.status === 'SOLVED') {
+      throw new BadRequestException('Block is already solved');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.block.update({
+        where: { id: blockId },
+        data: {
+          status: 'SOLVED',
+          winnerId: null,
+          solvedAttemptId: null,
+          solvedAt: new Date(),
+        },
+      });
+
       const nextDifficulty = this.passwordService.generateNextDifficulty(
         block.difficultyConfig as any,
       );
 
-      await this.prisma.$transaction(async (tx) => {
-        await tx.block.update({
-          where: { id: blockId },
-          data: {
-            status: 'SOLVED',
-            solvedAt: new Date(),
-          },
-        });
-
-        await tx.block.create({
-          data: {
-            status: 'WAITING_HINT',
-            previousBlockId: blockId,
-            difficultyConfig: nextDifficulty as any,
-            accumulatedPoints: BigInt(100),
-            waitingStartedAt: new Date(),
-            passwordRetryCount: 0,
-            seedHint: null,
-          },
-        });
+      const nextBlock = await tx.block.create({
+        data: {
+          status: 'WAITING_HINT',
+          previousBlockId: blockId,
+          difficultyConfig: nextDifficulty as any,
+          accumulatedPoints: BigInt(100),
+          waitingStartedAt: new Date(),
+          passwordRetryCount: 0,
+          seedHint: null,
+        },
       });
 
       this.sseService.emitBlockStatusChange({
@@ -239,52 +294,44 @@ export class AdminBlocksService {
         solvedAt: new Date(),
       });
 
-      this.logAdminAction('FORCE_BLOCK_SOLVED', masterId, {
-        blockId: Number(blockId),
-        previousStatus,
-        reason: options.reason || 'manual skip',
+      this.sseService.emitBlockStatusChange({
+        blockId: nextBlock.id.toString(),
+        status: 'WAITING_HINT',
+        waitingStartedAt: nextBlock.waitingStartedAt || undefined,
       });
 
-      return { blockId: Number(blockId), previousStatus, newStatus: 'SOLVED' };
-    }
+      this.logAction('FORCE_SOLVE', actorId, blockId, block.status, 'SOLVED', reason);
 
-    throw new BadRequestException(
-      `Invalid transition: ${block.status} -> ${targetStatus}`,
-    );
+      return {
+        solvedBlockId: Number(updated.id),
+        nextBlockId: Number(nextBlock.id),
+      };
+    });
   }
 
-  async regeneratePassword(blockId: bigint, masterId: string) {
-    const block = await this.prisma.block.findUnique({
-      where: { id: blockId },
+  private emitActiveUpdate(block: { id: bigint; status: string }) {
+    this.sseService.emitBlockStatusChange({
+      blockId: block.id.toString(),
+      status: 'ACTIVE',
     });
-
-    if (!block) {
-      throw new NotFoundException('Block not found');
-    }
-
-    if (block.status !== 'WAITING_PASSWORD') {
-      throw new BadRequestException('Block is not in WAITING_PASSWORD status');
-    }
-
-    // Reset retry count and trigger re-generation
-    await this.prisma.block.update({
-      where: { id: blockId },
-      data: { passwordRetryCount: 0 },
-    });
-
-    this.logAdminAction('REGENERATE_PASSWORD', masterId, {
-      blockId: Number(blockId),
-    });
-
-    return { blockId: Number(blockId), message: 'Password regeneration triggered' };
   }
 
-  private logAdminAction(action: string, actorId: string, details: Record<string, any>) {
+  private logAction(
+    action: string,
+    actorId: string,
+    targetBlockId: bigint,
+    previousStatus: string,
+    newStatus: string,
+    reason: string,
+  ) {
     this.logger.log({
       type: 'ADMIN_ACTION',
       action,
       actorId,
-      ...details,
+      targetBlockId: targetBlockId.toString(),
+      previousStatus,
+      newStatus,
+      reason,
       timestamp: new Date().toISOString(),
     });
   }

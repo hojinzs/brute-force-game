@@ -1,7 +1,7 @@
 import { applyDecorators, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { MasterGuard } from '../auth/master.guard';
+import { MasterGuard } from '../guards/master.guard';
 import { MasterOnly } from './master-only.decorator';
 
 /**

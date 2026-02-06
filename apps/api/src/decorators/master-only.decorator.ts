@@ -1,4 +1,6 @@
-import { SetMetadata } from '@nestjs/common';
+import { applyDecorators, UseGuards } from '@nestjs/common';
+import { MasterGuard } from '../guards/master.guard';
 
-export const MASTER_ONLY_KEY = 'masterOnly';
-export const MasterOnly = () => SetMetadata(MASTER_ONLY_KEY, true);
+export function MasterOnly() {
+  return applyDecorators(UseGuards(MasterGuard));
+}
