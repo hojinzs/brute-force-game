@@ -2,21 +2,21 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/auth-store';
+import { useMasterAuth } from '@/lib/use-master-auth';
 
 export default function Home() {
   const router = useRouter();
-  const { accessToken, user } = useAuthStore();
+  const { hasHydrated, isMaster } = useMasterAuth();
 
   useEffect(() => {
-    if (!accessToken || !user) {
-      router.replace('/login');
-    } else if (user.role !== 'MASTER') {
+    if (!hasHydrated) return;
+
+    if (!isMaster) {
       router.replace('/login');
     } else {
       router.replace('/dashboard');
     }
-  }, [accessToken, user, router]);
+  }, [hasHydrated, isMaster, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

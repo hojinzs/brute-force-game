@@ -21,7 +21,7 @@
     "@react-three/fiber": "^9.5.0",
     "@tanstack/react-query": "^5.90.16",
     "@types/three": "^0.182.0",
-    "axios": "^1.13.4",
+    "axios": "^1.13.5",
     "lucide-react": "^0.562.0",
     "motion": "^12.26.2",
     "next": "16.1.5",

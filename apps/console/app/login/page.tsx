@@ -1,17 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
+import { getApiErrorMessage } from '@/lib/error-utils';
+import { useMasterAuth } from '@/lib/use-master-auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const { hasHydrated, isMaster } = useMasterAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!hasHydrated || !isMaster) return;
+    router.replace('/dashboard');
+  }, [hasHydrated, isMaster, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,8 +43,8 @@ export default function LoginPage() {
         role: user.role,
       });
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Login failed'));
       setLoading(false);
     }
   }

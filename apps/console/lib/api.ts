@@ -8,7 +8,26 @@ const api = axios.create({
   baseURL: API_BASE,
 });
 
-api.interceptors.request.use((config) => {
+const waitForAuthHydration = (): Promise<void> =>
+  new Promise((resolve) => {
+    if (useAuthStore.persist.hasHydrated()) {
+      resolve();
+      return;
+    }
+
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      unsub();
+      resolve();
+    });
+
+    setTimeout(() => {
+      unsub();
+      resolve();
+    }, 5000);
+  });
+
+api.interceptors.request.use(async (config) => {
+  await waitForAuthHydration();
   const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -20,14 +39,21 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      await waitForAuthHydration();
       const refreshToken = useAuthStore.getState().refreshToken;
       if (refreshToken && !error.config._retry) {
         error.config._retry = true;
         try {
+          const currentUser = useAuthStore.getState().user;
+          if (!currentUser) {
+            useAuthStore.getState().clearAuth();
+            return Promise.reject(error);
+          }
+
           const { data } = await axios.post(`${API_BASE}/users/refresh`, { refreshToken });
           useAuthStore.getState().setAuth(
             { accessToken: data.tokens.accessToken, refreshToken: data.tokens.refreshToken },
-            useAuthStore.getState().user!,
+            currentUser,
           );
           error.config.headers.Authorization = `Bearer ${data.tokens.accessToken}`;
           return api(error.config);

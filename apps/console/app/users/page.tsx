@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminShell } from '@/components/admin-shell';
+import { RequireMaster } from '@/components/require-master';
 import { getAdminUsers, getAdminUser, updateUserRole, resetUserCp } from '@/lib/api';
-import type { UserDetail } from '@/lib/types';
+import { getApiErrorMessage } from '@/lib/error-utils';
+import { useMasterAuth } from '@/lib/use-master-auth';
 
 function RoleBadge({ role }: { role: string }) {
   return role === 'MASTER' ? (
@@ -132,10 +134,10 @@ function UserDetailPanel({ userId, onClose }: { userId: string; onClose: () => v
         {showRoleChange && (
           <div className="border border-warning/30 rounded-lg p-4 space-y-3 bg-warning/5">
             <h3 className="text-sm font-bold text-warning">
-              Change {user.nickname}'s role to {newRole}?
+              Change {user.nickname}&apos;s role to {newRole}?
             </h3>
             <p className="text-xs text-muted">
-              This will invalidate all of the user's sessions, forcing them to re-login.
+              This will invalidate all of the user&apos;s sessions, forcing them to re-login.
             </p>
             <div className="flex gap-2">
               <button
@@ -154,7 +156,7 @@ function UserDetailPanel({ userId, onClose }: { userId: string; onClose: () => v
             </div>
             {roleMutation.isError && (
               <div className="text-xs text-danger">
-                {(roleMutation.error as any)?.response?.data?.message || 'Failed to update role'}
+                {getApiErrorMessage(roleMutation.error, 'Failed to update role')}
               </div>
             )}
           </div>
@@ -165,6 +167,8 @@ function UserDetailPanel({ userId, onClose }: { userId: string; onClose: () => v
 }
 
 export default function UsersPage() {
+  const { hasHydrated, isMaster } = useMasterAuth();
+  const enabled = hasHydrated && isMaster;
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -173,15 +177,17 @@ export default function UsersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', page, search, roleFilter],
     queryFn: () => getAdminUsers(page, 20, search || undefined, roleFilter || undefined),
+    enabled,
     refetchInterval: 30000,
   });
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 0;
 
   return (
-    <AdminShell>
-      <div className="space-y-4">
-        <h1 className="text-xl font-bold font-mono">User Management</h1>
+    <RequireMaster>
+      <AdminShell>
+        <div className="space-y-4">
+          <h1 className="text-xl font-bold font-mono">User Management</h1>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3">
@@ -314,7 +320,8 @@ export default function UsersPage() {
             </button>
           </div>
         )}
-      </div>
-    </AdminShell>
+        </div>
+      </AdminShell>
+    </RequireMaster>
   );
 }

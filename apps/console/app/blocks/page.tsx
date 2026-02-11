@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminShell } from '@/components/admin-shell';
+import { RequireMaster } from '@/components/require-master';
 import { getAdminBlocks, getAdminBlock, forceTransition, regeneratePassword } from '@/lib/api';
-import type { Block, BlockDetail } from '@/lib/types';
+import { getApiErrorMessage } from '@/lib/error-utils';
+import { useMasterAuth } from '@/lib/use-master-auth';
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -28,7 +30,6 @@ function BlockDetailPanel({ blockId, onClose }: { blockId: number; onClose: () =
   });
 
   const [showForceTransition, setShowForceTransition] = useState(false);
-  const [targetStatus, setTargetStatus] = useState('');
   const [hint, setHint] = useState('');
   const [password, setPassword] = useState('');
   const [reason, setReason] = useState('');
@@ -215,7 +216,7 @@ function BlockDetailPanel({ blockId, onClose }: { blockId: number; onClose: () =
             </div>
 
             {forceMutation.isError && (
-              <div className="text-xs text-danger">{(forceMutation.error as any)?.response?.data?.message || 'Failed'}</div>
+              <div className="text-xs text-danger">{getApiErrorMessage(forceMutation.error, 'Failed')}</div>
             )}
           </div>
         )}
@@ -262,21 +263,25 @@ function BlockDetailPanel({ blockId, onClose }: { blockId: number; onClose: () =
 }
 
 export default function BlocksPage() {
+  const { hasHydrated, isMaster } = useMasterAuth();
+  const enabled = hasHydrated && isMaster;
   const [page, setPage] = useState(1);
   const [selectedBlockId, setSelectedBlockId] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-blocks', page],
     queryFn: () => getAdminBlocks(page, 20),
+    enabled,
     refetchInterval: 10000,
   });
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 0;
 
   return (
-    <AdminShell>
-      <div className="space-y-4">
-        <h1 className="text-xl font-bold font-mono">Block Management</h1>
+    <RequireMaster>
+      <AdminShell>
+        <div className="space-y-4">
+          <h1 className="text-xl font-bold font-mono">Block Management</h1>
 
         {/* Selected block detail */}
         {selectedBlockId !== null && (
@@ -377,7 +382,8 @@ export default function BlocksPage() {
             </button>
           </div>
         )}
-      </div>
-    </AdminShell>
+        </div>
+      </AdminShell>
+    </RequireMaster>
   );
 }

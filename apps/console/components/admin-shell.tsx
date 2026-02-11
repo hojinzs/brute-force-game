@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 
@@ -13,22 +13,10 @@ const NAV_ITEMS = [
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, accessToken, clearAuth } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (mounted && (!accessToken || !user || user.role !== 'MASTER')) {
-      clearAuth();
-      router.replace('/login');
-    }
-  }, [mounted, accessToken, user, clearAuth, router]);
-
-  if (!mounted || !user) {
+  if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="animate-pulse text-muted font-mono">Loading...</div>

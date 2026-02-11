@@ -53,17 +53,17 @@ export interface BlockDetail extends Block {
   solvedAttemptId: string | null;
 }
 
-export interface PaginatedResponse<T> {
+export interface PaginatedResponse {
   page: number;
   limit: number;
   total: number;
 }
 
-export interface BlocksResponse extends PaginatedResponse<Block> {
+export interface BlocksResponse extends PaginatedResponse {
   blocks: Block[];
 }
 
-export interface UsersResponse extends PaginatedResponse<User> {
+export interface UsersResponse extends PaginatedResponse {
   users: User[];
 }
 
