@@ -57,6 +57,29 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## CLI Commands
+
+```bash
+# Create the genesis block
+$ pnpm run cli create-genesis --password "mypass" --hint "a hint for players"
+
+# Promote a user to MASTER role (by email)
+$ pnpm run cli promote-master --email admin@example.com
+
+# Promote a user to MASTER role (by user ID)
+$ pnpm run cli promote-master --userId <uuid>
+```
+
+### First MASTER user setup
+
+1. Register a normal account via the web app
+2. Run the promote command:
+   ```bash
+   pnpm run cli promote-master --email your@email.com
+   ```
+3. Re-login to get the updated JWT with MASTER role
+4. Access the Master Console at `http://localhost:3002`
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

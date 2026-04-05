@@ -1,6 +1,8 @@
 import { applyDecorators, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { MasterGuard } from '../guards/master.guard';
+import { MasterOnly } from './master-only.decorator';
 
 /**
  * Auth decorator for protected endpoints
@@ -9,6 +11,18 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export function Auth() {
   return applyDecorators(
     UseGuards(JwtAuthGuard),
+    ApiBearerAuth('JWT-auth'),
+  );
+}
+
+/**
+ * MasterAuth decorator for MASTER-only endpoints
+ * Combines Auth + MasterOnly + MasterGuard
+ */
+export function MasterAuth() {
+  return applyDecorators(
+    UseGuards(JwtAuthGuard, MasterGuard),
+    MasterOnly(),
     ApiBearerAuth('JWT-auth'),
   );
 }
